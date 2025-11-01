@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { InstituteProfileModal } from '../modals/InstituteProfileModal';
 import {
   GraduationCap, LayoutDashboard, Users, BookOpen, Calendar, DollarSign,
   MessageSquare, Settings, LogOut, Menu, X, Bell, Search, ChevronDown,
@@ -23,8 +24,10 @@ const DashboardLayout = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [showInstituteProfile, setShowInstituteProfile] = useState(false);
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  console.log('Current user role:', user.role); // Debug line
 
   // Load dark mode preference from localStorage
   useEffect(() => {
@@ -85,6 +88,10 @@ const DashboardLayout = () => {
     localStorage.removeItem('user');
     navigate('/login');
   };
+
+  useEffect(() => {
+    setShowInstituteProfile(location.pathname === '/dashboard/settings/institute');
+  }, [location.pathname]);
 
   const menuItems = [
     {
@@ -418,6 +425,7 @@ const DashboardLayout = () => {
   const filteredMenuItems = menuItems.filter(item => 
     item.roles.includes(user.role)
   );
+  console.log('Filtered menu items:', filteredMenuItems); // Debug line
 
   const isActive = (path) => {
     return location.pathname === path;
@@ -548,7 +556,7 @@ const DashboardLayout = () => {
       {/* Sidebar */}
       <aside
         className={`fixed left-0 top-16 h-[calc(100vh-4rem)] bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 z-20 overflow-y-auto ${
-          sidebarOpen ? 'w-80' : 'w-0 lg:w-20'
+          sidebarOpen ? 'w-80' : 'lg:w-20'
         } ${mobileMenuOpen ? 'block' : 'hidden lg:block'}`}
       >
         <nav className="p-4 space-y-2">

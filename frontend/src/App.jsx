@@ -10,6 +10,7 @@ import MarkAttendance from './pages/Attendance/MarkAttendance';
 import AllExams from './pages/Exams/AllExams';
 import FeeStructure from './pages/Fees/FeeStructure';
 import NoticeBoard from './pages/Communication/NoticeBoard';
+import InstituteProfile from './pages/Dashboard/settings/InstituteProfile';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -37,7 +38,7 @@ function App() {
           <Route index element={<Home />} />
           
           {/* General Settings Routes */}
-          <Route path="settings/institute" element={<GeneralSettings />} />
+          <Route path="settings/institute" element={<InstituteProfile />} />
           <Route path="settings/fees-particulars" element={<div className="card">Fees Particulars - Coming Soon</div>} />
           <Route path="settings/fees-structure" element={<FeeStructure />} />
           <Route path="settings/accounts" element={<div className="card">Accounts For Fees Invoice - Coming Soon</div>} />

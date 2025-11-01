@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, DollarSign, Calendar, UserCheck, UserX, UserPlus, ArrowUpRight, ArrowDownRight, ChevronLeft, ChevronRight, TrendingUp, Briefcase } from 'lucide-react';
+import { Users, DollarSign, Calendar, UserCheck, UserX, UserPlus, ArrowUpRight, ArrowDownRight, ChevronLeft, ChevronRight, TrendingUp, Briefcase, Settings } from 'lucide-react';
 
 const Home = () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
