@@ -21,6 +21,8 @@ import AssignSubject from './pages/Dashboard/subjects/AssignSubject';
 
 import AllStudents from './pages/Dashboard/students/AllStudents';
 import AddStudents from './pages/Dashboard/students/AddStudents';
+import ManageFamily from './pages/Dashboard/students/ManageFamily';
+import ActiveInactive from './pages/Dashboard/students/ActiveInactive';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -67,19 +69,14 @@ function App() {
           {/* Students Routes */}
           <Route path="students/all" element={<AllStudents/>} />
           <Route path="students/add-new" element={<AddStudents/>} />
+          <Route path="students/families" element={<ManageFamily/>} />
+          <Route path="students/status" element={<ActiveInactive/>} />
 
 
           {/* Admin Routes */}
           <Route path="admin/settings" element={<GeneralSettings />} />
           <Route path="admin/roles" element={<div className="card">Roles & Permissions - Coming Soon</div>} />
           <Route path="admin/backup" element={<div className="card">Backup & Restore - Coming Soon</div>} />
-          
-          
-          {/* Student Routes */}
-          <Route path="students/all" element={<div className="card">All Students - Coming Soon</div>} />
-          <Route path="students/add" element={<div className="card">Add Student - Coming Soon</div>} />
-          <Route path="students/promotion" element={<div className="card">Student Promotion - Coming Soon</div>} />
-          <Route path="students/id-card" element={<div className="card">ID Card Generator - Coming Soon</div>} />
           
           {/* Staff Routes */}
           <Route path="staff/all" element={<div className="card">All Staff - Coming Soon</div>} />

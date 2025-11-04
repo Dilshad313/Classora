@@ -11,11 +11,9 @@
         const theme = localStorage.getItem('theme');
         if (theme === 'dark') {
           document.documentElement.classList.add('dark');
-          document.body.classList.add('dark');
           console.log('🌙 Dark mode loaded from localStorage');
         } else {
           document.documentElement.classList.remove('dark');
-          document.body.classList.remove('dark');
           console.log('☀️ Light mode loaded (default)');
         }
       })();

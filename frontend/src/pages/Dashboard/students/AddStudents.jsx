@@ -2,20 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, 
-  Save, 
   X, 
   Upload, 
   User, 
-  Mail, 
   Phone, 
   MapPin, 
   Calendar,
   BookOpen,
   Users,
-  IdCard,
-  Shield,
-  Home,
-  ChevronRight,
   UserPlus,
   ArrowLeft,
   Heart,
@@ -23,65 +17,54 @@ import {
   DollarSign,
   FileText,
   AlertCircle,
-  Info
+  ChevronRight,
+  Hash,
+  School,
+  Cross,
+  Stethoscope,
+  StickyNote,
+  Home
 } from 'lucide-react';
 
 const AddStudents = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    // Student Information
     studentName: '',
     picture: null,
-    lastRegistration: '2201236',
     dateOfAdmission: '',
     selectClass: '',
     discountInFee: '',
     mobileNo: '',
-    
-    // Other Information
     dateOfBirth: '',
     gender: '',
-    identificationMark: '',
     bloodGroup: '',
-    disease: '',
-    birthFormId: '',
-    caste: '',
-    previousSchool: '',
-    previousId: '',
-    additionalNote: '',
-    orphanStudent: '',
-    osc: '',
-    religion: '',
-    selectFamily: '',
-    totalSiblings: '',
     address: '',
-    
-    // Father/Guardian Information
     fatherName: '',
-    fatherEducation: '',
-    fatherNationalId: '',
     fatherMobile: '',
     fatherOccupation: '',
-    fatherProfession: '',
-    fatherIncome: '',
-    
-    // Mother Information
     motherName: '',
-    motherEducation: '',
-    motherNationalId: '',
     motherMobile: '',
     motherOccupation: '',
-    motherProfession: '',
-    motherIncome: ''
+    documents: [],
+    registrationNo: '',
+    orphanStudent: '',
+    caste: '',
+    osc: '',
+    identificationMark: '',
+    previousSchool: '',
+    religion: '',
+    previousIdBoardRollNo: '',
+    selectFamily: '',
+    disease: '',
+    additionalNote: '',
+    totalSiblings: ''
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const classes = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
-  const sections = ['A', 'B', 'C', 'D', 'E'];
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
-  const families = ['Family 1', 'Family 2', 'Family 3', 'Family 4', 'Family 5'];
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -89,7 +72,6 @@ const AddStudents = () => {
       [field]: value
     }));
 
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({
         ...prev,
@@ -112,17 +94,13 @@ const AddStudents = () => {
     const files = Array.from(event.target.files);
     setFormData(prev => ({
       ...prev,
-      documents: [...prev.documents, ...files]
+      documents: [...(prev.documents || []), ...files]
     }));
   };
 
   const validateForm = () => {
     const newErrors = {};
-
-    // Required fields validation
-    const requiredFields = [
-      'studentName', 'dateOfAdmission', 'selectClass', 'discountInFee'
-    ];
+    const requiredFields = ['studentName', 'registrationNo', 'dateOfAdmission', 'selectClass', 'discountInFee'];
 
     requiredFields.forEach(field => {
       if (!formData[field] || formData[field].toString().trim() === '') {
@@ -144,38 +122,10 @@ const AddStudents = () => {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
       console.log('Student data:', formData);
       alert('Student added successfully!');
-      
-      // Reset form
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        dateOfBirth: '',
-        gender: '',
-        address: '',
-        class: '',
-        section: '',
-        rollNumber: '',
-        admissionNumber: '',
-        admissionDate: '',
-        parentName: '',
-        parentEmail: '',
-        parentPhone: '',
-        parentOccupation: '',
-        bloodGroup: '',
-        nationality: '',
-        religion: '',
-        previousSchool: '',
-        photo: null,
-        documents: []
-      });
-      
+      navigate('/dashboard/students/all');
     } catch (error) {
       console.error('Error adding student:', error);
       alert('Error adding student. Please try again.');
@@ -184,106 +134,181 @@ const AddStudents = () => {
     }
   };
 
-  const generateRollNumber = () => {
-    const randomNum = Math.floor(Math.random() * 900) + 100;
-    const totalStudents = 236; // Example total
-    return `${randomNum}/${totalStudents}`;
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+      <div className="max-w-5xl mx-auto">
+        {/* Breadcrumb Navigation */}
+        <div className="flex items-center gap-2 mb-6 text-sm">
+          <button 
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-1.5 text-gray-600 hover:text-blue-600 transition-colors font-medium"
+          >
+            <Home className="w-4 h-4" />
+            <span>Dashboard</span>
+          </button>
+          <ChevronRight className="w-4 h-4 text-gray-400" />
+          <button 
+            onClick={() => navigate('/dashboard/students/all')}
+            className="text-gray-600 hover:text-blue-600 transition-colors font-medium"
+          >
+            Students
+          </button>
+          <ChevronRight className="w-4 h-4 text-gray-400" />
+          <span className="text-gray-900 font-semibold">Add New</span>
+        </div>
+
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Add New Student</h1>
-          <p className="text-gray-600 mt-1">Complete the form below to add a new student</p>
+          <button
+            onClick={() => navigate('/dashboard/students/all')}
+            className="flex items-center text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Students
+          </button>
+          
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+              <UserPlus className="w-7 h-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Add New Student</h1>
+              <p className="text-gray-600 mt-1">Fill in the student information to create a new record</p>
+            </div>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            {/* Form Sections */}
-            <div className="p-6 space-y-8">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+            <div className="p-8 space-y-10">
               {/* Personal Information */}
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-                  <User className="w-5 h-5 text-blue-600" />
-                  <span>Personal Information</span>
-                </h2>
+                <div className="flex items-center space-x-3 mb-6 pb-3 border-b-2 border-blue-100">
+                  <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <User className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900">Personal Information</h2>
+                </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      First Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.firstName}
-                      onChange={(e) => handleInputChange('firstName', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.firstName ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="Enter first name"
-                    />
-                    {errors.firstName && <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Last Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.lastName}
-                      onChange={(e) => handleInputChange('lastName', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.lastName ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="Enter last name"
-                    />
-                    {errors.lastName && <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email <span className="text-red-500">*</span>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Student Name <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <Mail className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <User className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
-                        className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.email ? 'border-red-500' : 'border-gray-300'
+                        type="text"
+                        value={formData.studentName}
+                        onChange={(e) => handleInputChange('studentName', e.target.value)}
+                        className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                          errors.studentName ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-gray-400'
                         }`}
-                        placeholder="student@example.com"
+                        placeholder="Enter student full name"
                       />
                     </div>
-                    {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+                    {errors.studentName && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        {errors.studentName}
+                      </p>
+                    )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone <span className="text-red-500">*</span>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Registration No <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Hash className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        value={formData.registrationNo}
+                        onChange={(e) => handleInputChange('registrationNo', e.target.value)}
+                        className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                          errors.registrationNo ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                        placeholder="Enter registration number"
+                      />
+                    </div>
+                    {errors.registrationNo && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        {errors.registrationNo}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Mobile Number
                     </label>
                     <div className="relative">
                       <Phone className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <input
                         type="tel"
-                        value={formData.phone}
-                        onChange={(e) => handleInputChange('phone', e.target.value)}
-                        className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.phone ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                        placeholder="+1 234-567-8900"
+                        value={formData.mobileNo}
+                        onChange={(e) => handleInputChange('mobileNo', e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        placeholder="+91 XXXXX XXXXX"
                       />
                     </div>
-                    {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Date of Birth <span className="text-red-500">*</span>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Date of Admission <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Calendar className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="date"
+                        value={formData.dateOfAdmission}
+                        onChange={(e) => handleInputChange('dateOfAdmission', e.target.value)}
+                        className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                          errors.dateOfAdmission ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                      />
+                    </div>
+                    {errors.dateOfAdmission && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        {errors.dateOfAdmission}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Select Class <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <BookOpen className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" />
+                      <select
+                        value={formData.selectClass}
+                        onChange={(e) => handleInputChange('selectClass', e.target.value)}
+                        className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white ${
+                          errors.selectClass ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                      >
+                        <option value="">Select Class</option>
+                        {classes.map(className => (
+                          <option key={className} value={className}>Class {className}</option>
+                        ))}
+                      </select>
+                      <ChevronRight className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none" />
+                    </div>
+                    {errors.selectClass && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        {errors.selectClass}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Date of Birth
                     </label>
                     <div className="relative">
                       <Calendar className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -291,32 +316,79 @@ const AddStudents = () => {
                         type="date"
                         value={formData.dateOfBirth}
                         onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                        className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.dateOfBirth ? 'border-red-500' : 'border-gray-300'
-                        }`}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
                       />
                     </div>
-                    {errors.dateOfBirth && <p className="mt-1 text-sm text-red-600">{errors.dateOfBirth}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Gender
                     </label>
-                    <select
-                      value={formData.gender}
-                      onChange={(e) => handleInputChange('gender', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="">Select Gender</option>
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                      <option value="other">Other</option>
-                    </select>
+                    <div className="relative">
+                      <Users className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" />
+                      <select
+                        value={formData.gender}
+                        onChange={(e) => handleInputChange('gender', e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white hover:border-gray-400"
+                      >
+                        <option value="">Select Gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                      </select>
+                      <ChevronRight className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Discount in Fee (%) <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <DollarSign className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="number"
+                        value={formData.discountInFee}
+                        onChange={(e) => handleInputChange('discountInFee', e.target.value)}
+                        className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                          errors.discountInFee ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+                        }`}
+                        placeholder="0"
+                        min="0"
+                        max="100"
+                      />
+                    </div>
+                    {errors.discountInFee && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        {errors.discountInFee}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Blood Group
+                    </label>
+                    <div className="relative">
+                      <Heart className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" />
+                      <select
+                        value={formData.bloodGroup}
+                        onChange={(e) => handleInputChange('bloodGroup', e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white hover:border-gray-400"
+                      >
+                        <option value="">Select Blood Group</option>
+                        {bloodGroups.map(group => (
+                          <option key={group} value={group}>{group}</option>
+                        ))}
+                      </select>
+                      <ChevronRight className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none" />
+                    </div>
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Address
                     </label>
                     <div className="relative">
@@ -325,7 +397,7 @@ const AddStudents = () => {
                         value={formData.address}
                         onChange={(e) => handleInputChange('address', e.target.value)}
                         rows="3"
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400 resize-none"
                         placeholder="Enter full address"
                       />
                     </div>
@@ -333,292 +405,355 @@ const AddStudents = () => {
                 </div>
               </div>
 
-              {/* Academic Information */}
+              {/* Additional Information */}
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-                  <BookOpen className="w-5 h-5 text-green-600" />
-                  <span>Academic Information</span>
-                </h2>
+                <div className="flex items-center space-x-3 mb-6 pb-3 border-b-2 border-green-100">
+                  <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-green-600" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900">Additional Information</h2>
+                </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Class <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={formData.class}
-                      onChange={(e) => handleInputChange('class', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.class ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    >
-                      <option value="">Select Class</option>
-                      {classes.map(className => (
-                        <option key={className} value={className}>{className}</option>
-                      ))}
-                    </select>
-                    {errors.class && <p className="mt-1 text-sm text-red-600">{errors.class}</p>}
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Section <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={formData.section}
-                      onChange={(e) => handleInputChange('section', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.section ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    >
-                      <option value="">Select Section</option>
-                      {sections.map(section => (
-                        <option key={section} value={section}>Section {section}</option>
-                      ))}
-                    </select>
-                    {errors.section && <p className="mt-1 text-sm text-red-600">{errors.section}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Roll Number <span className="text-red-500">*</span>
-                    </label>
-                    <div className="flex space-x-2">
-                      <input
-                        type="text"
-                        value={formData.rollNumber}
-                        onChange={(e) => handleInputChange('rollNumber', e.target.value)}
-                        className={`flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.rollNumber ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                        placeholder="Enter roll number"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleInputChange('rollNumber', generateRollNumber())}
-                        className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
-                      >
-                        Generate
-                      </button>
-                    </div>
-                    {errors.rollNumber && <p className="mt-1 text-sm text-red-600">{errors.rollNumber}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Admission Number <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.admissionNumber}
-                      onChange={(e) => handleInputChange('admissionNumber', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.admissionNumber ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="Enter admission number"
-                    />
-                    {errors.admissionNumber && <p className="mt-1 text-sm text-red-600">{errors.admissionNumber}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Admission Date <span className="text-red-500">*</span>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Orphan Student
                     </label>
                     <div className="relative">
-                      <Calendar className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <Users className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" />
+                      <select
+                        value={formData.orphanStudent}
+                        onChange={(e) => handleInputChange('orphanStudent', e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white hover:border-gray-400"
+                      >
+                        <option value="">Select</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                      <ChevronRight className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Caste
+                    </label>
+                    <div className="relative">
+                      <User className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <input
-                        type="date"
-                        value={formData.admissionDate}
-                        onChange={(e) => handleInputChange('admissionDate', e.target.value)}
-                        className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.admissionDate ? 'border-red-500' : 'border-gray-300'
-                        }`}
+                        type="text"
+                        value={formData.caste}
+                        onChange={(e) => handleInputChange('caste', e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        placeholder="Enter caste"
                       />
                     </div>
-                    {errors.admissionDate && <p className="mt-1 text-sm text-red-600">{errors.admissionDate}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      OSC (Other Special Category)
+                    </label>
+                    <div className="relative">
+                      <Users className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" />
+                      <select
+                        value={formData.osc}
+                        onChange={(e) => handleInputChange('osc', e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white hover:border-gray-400"
+                      >
+                        <option value="">Select</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                      <ChevronRight className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Any Identification Mark?
+                    </label>
+                    <div className="relative">
+                      <FileText className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        value={formData.identificationMark}
+                        onChange={(e) => handleInputChange('identificationMark', e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        placeholder="Enter identification mark"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Previous School
+                    </label>
+                    <div className="relative">
+                      <School className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        value={formData.previousSchool}
+                        onChange={(e) => handleInputChange('previousSchool', e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        placeholder="Enter previous school name"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Religion
+                    </label>
+                    <div className="relative">
+                      <Cross className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        value={formData.religion}
+                        onChange={(e) => handleInputChange('religion', e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        placeholder="Enter religion"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Previous ID / Board Roll No
+                    </label>
+                    <div className="relative">
+                      <Hash className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        value={formData.previousIdBoardRollNo}
+                        onChange={(e) => handleInputChange('previousIdBoardRollNo', e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        placeholder="Enter previous ID or board roll no"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Select Family
+                    </label>
+                    <div className="relative">
+                      <Users className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        value={formData.selectFamily}
+                        onChange={(e) => handleInputChange('selectFamily', e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        placeholder="Enter family name"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Disease (if any)
+                    </label>
+                    <div className="relative">
+                      <Stethoscope className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        value={formData.disease}
+                        onChange={(e) => handleInputChange('disease', e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        placeholder="Enter disease if any"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Total Siblings
+                    </label>
+                    <div className="relative">
+                      <Users className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="number"
+                        value={formData.totalSiblings}
+                        onChange={(e) => handleInputChange('totalSiblings', e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        placeholder="Enter number of siblings"
+                        min="0"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Any Additional Note
+                    </label>
+                    <div className="relative">
+                      <StickyNote className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
+                      <textarea
+                        value={formData.additionalNote}
+                        onChange={(e) => handleInputChange('additionalNote', e.target.value)}
+                        rows="3"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400 resize-none"
+                        placeholder="Enter any additional notes"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Parent/Guardian Information */}
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-                  <Users className="w-5 h-5 text-purple-600" />
-                  <span>Parent/Guardian Information</span>
-                </h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Parent Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.parentName}
-                      onChange={(e) => handleInputChange('parentName', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.parentName ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="Enter parent/guardian name"
-                    />
-                    {errors.parentName && <p className="mt-1 text-sm text-red-600">{errors.parentName}</p>}
+                <div className="flex items-center space-x-3 mb-6 pb-3 border-b-2 border-purple-100">
+                  <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <Users className="w-6 h-6 text-purple-600" />
                   </div>
-
+                  <h2 className="text-2xl font-bold text-gray-900">Parent/Guardian Information</h2>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Parent Email
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Father's Name
                     </label>
                     <div className="relative">
-                      <Mail className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <User className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <input
-                        type="email"
-                        value={formData.parentEmail}
-                        onChange={(e) => handleInputChange('parentEmail', e.target.value)}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="parent@example.com"
+                        type="text"
+                        value={formData.fatherName}
+                        onChange={(e) => handleInputChange('fatherName', e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        placeholder="Enter father's name"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Parent Phone <span className="text-red-500">*</span>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Father's Mobile
                     </label>
                     <div className="relative">
                       <Phone className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <input
                         type="tel"
-                        value={formData.parentPhone}
-                        onChange={(e) => handleInputChange('parentPhone', e.target.value)}
-                        className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.parentPhone ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                        placeholder="+1 234-567-8900"
+                        value={formData.fatherMobile}
+                        onChange={(e) => handleInputChange('fatherMobile', e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        placeholder="+91 XXXXX XXXXX"
                       />
                     </div>
-                    {errors.parentPhone && <p className="mt-1 text-sm text-red-600">{errors.parentPhone}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Parent Occupation
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Father's Occupation
                     </label>
-                    <input
-                      type="text"
-                      value={formData.parentOccupation}
-                      onChange={(e) => handleInputChange('parentOccupation', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Enter occupation"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Additional Information */}
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-                  <Shield className="w-5 h-5 text-orange-600" />
-                  <span>Additional Information</span>
-                </h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Blood Group
-                    </label>
-                    <select
-                      value={formData.bloodGroup}
-                      onChange={(e) => handleInputChange('bloodGroup', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="">Select Blood Group</option>
-                      {bloodGroups.map(group => (
-                        <option key={group} value={group}>{group}</option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <Briefcase className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        value={formData.fatherOccupation}
+                        onChange={(e) => handleInputChange('fatherOccupation', e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        placeholder="Enter occupation"
+                      />
+                    </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nationality
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Mother's Name
                     </label>
-                    <input
-                      type="text"
-                      value={formData.nationality}
-                      onChange={(e) => handleInputChange('nationality', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Enter nationality"
-                    />
+                    <div className="relative">
+                      <User className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        value={formData.motherName}
+                        onChange={(e) => handleInputChange('motherName', e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        placeholder="Enter mother's name"
+                      />
+                    </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Religion
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Mother's Mobile
                     </label>
-                    <input
-                      type="text"
-                      value={formData.religion}
-                      onChange={(e) => handleInputChange('religion', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Enter religion"
-                    />
+                    <div className="relative">
+                      <Phone className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="tel"
+                        value={formData.motherMobile}
+                        onChange={(e) => handleInputChange('motherMobile', e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        placeholder="+91 XXXXX XXXXX"
+                      />
+                    </div>
                   </div>
 
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Previous School
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Mother's Occupation
                     </label>
-                    <input
-                      type="text"
-                      value={formData.previousSchool}
-                      onChange={(e) => handleInputChange('previousSchool', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Enter previous school name"
-                    />
+                    <div className="relative">
+                      <Briefcase className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        value={formData.motherOccupation}
+                        onChange={(e) => handleInputChange('motherOccupation', e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        placeholder="Enter occupation"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Documents Upload */}
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-                  <Upload className="w-5 h-5 text-indigo-600" />
-                  <span>Documents</span>
-                </h2>
+                <div className="flex items-center space-x-3 mb-6 pb-3 border-b-2 border-indigo-100">
+                  <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+                    <Upload className="w-6 h-6 text-indigo-600" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900">Documents</h2>
+                </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Student Photo
                     </label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 transition-colors bg-gray-50">
                       <input
                         type="file"
                         accept="image/*"
-                        onChange={(e) => handleFileUpload(e, 'photo')}
+                        onChange={(e) => handleFileUpload(e, 'picture')}
                         className="hidden"
                         id="student-photo"
                       />
                       <label
                         htmlFor="student-photo"
-                        className="cursor-pointer inline-flex items-center space-x-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+                        className="cursor-pointer inline-flex flex-col items-center"
                       >
-                        <Upload className="w-4 h-4" />
-                        <span>Upload Photo</span>
+                        <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-3">
+                          <Upload className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">Click to upload photo</span>
+                        <span className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB</span>
                       </label>
-                      {formData.photo && (
-                        <p className="mt-2 text-sm text-gray-600">
-                          Selected: {formData.photo.name}
+                      {formData.picture && (
+                        <p className="mt-3 text-sm text-green-600 font-medium">
+                          ✓ {formData.picture.name}
                         </p>
                       )}
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Additional Documents
                     </label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 transition-colors bg-gray-50">
                       <input
                         type="file"
                         multiple
@@ -628,17 +763,18 @@ const AddStudents = () => {
                       />
                       <label
                         htmlFor="documents-upload"
-                        className="cursor-pointer inline-flex items-center space-x-2 px-4 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                        className="cursor-pointer inline-flex flex-col items-center"
                       >
-                        <Upload className="w-4 h-4" />
-                        <span>Upload Documents</span>
-                      </label>
-                      {formData.documents.length > 0 && (
-                        <div className="mt-2">
-                          <p className="text-sm text-gray-600">
-                            {formData.documents.length} file(s) selected
-                          </p>
+                        <div className="w-12 h-12 bg-gray-200 rounded-xl flex items-center justify-center mb-3">
+                          <FileText className="w-6 h-6 text-gray-600" />
                         </div>
+                        <span className="text-sm font-medium text-gray-700">Click to upload documents</span>
+                        <span className="text-xs text-gray-500 mt-1">PDF, DOC, JPG</span>
+                      </label>
+                      {formData.documents && formData.documents.length > 0 && (
+                        <p className="mt-3 text-sm text-green-600 font-medium">
+                          ✓ {formData.documents.length} file(s) selected
+                        </p>
                       )}
                     </div>
                   </div>
@@ -647,57 +783,33 @@ const AddStudents = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+            <div className="flex justify-between items-center p-6 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
               <button
                 type="button"
-                onClick={() => {
-                  setFormData({
-                    firstName: '',
-                    lastName: '',
-                    email: '',
-                    phone: '',
-                    dateOfBirth: '',
-                    gender: '',
-                    address: '',
-                    class: '',
-                    section: '',
-                    rollNumber: '',
-                    admissionNumber: '',
-                    admissionDate: '',
-                    parentName: '',
-                    parentEmail: '',
-                    parentPhone: '',
-                    parentOccupation: '',
-                    bloodGroup: '',
-                    nationality: '',
-                    religion: '',
-                    previousSchool: '',
-                    photo: null,
-                    documents: []
-                  });
-                  setErrors({});
-                }}
-                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                onClick={() => navigate('/dashboard/students/all')}
+                className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-white hover:border-gray-400 transition-all font-medium flex items-center space-x-2"
               >
-                Reset
+                <X className="w-4 h-4" />
+                <span>Cancel</span>
               </button>
+              
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 ${
+                className={`px-8 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 ${
                   isSubmitting
                     ? 'bg-gray-400 cursor-not-allowed text-gray-200'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
+                    : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
                 }`}
               >
                 {isSubmitting ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Adding...</span>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Adding Student...</span>
                   </>
                 ) : (
                   <>
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-5 h-5" />
                     <span>Add Student</span>
                   </>
                 )}
