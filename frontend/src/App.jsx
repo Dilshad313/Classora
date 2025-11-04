@@ -4,13 +4,23 @@ import Register from './pages/Register';
 import DashboardLayout from './components/Layout/DashboardLayout';
 import Home from './pages/Dashboard/Home';
 import GeneralSettings from './pages/Admin/GeneralSettings';
-import Classes from './pages/Academic/Classes';
-import AllStudents from './pages/Students/AllStudents';
-import MarkAttendance from './pages/Attendance/MarkAttendance';
-import AllExams from './pages/Exams/AllExams';
-import FeeStructure from './pages/Fees/FeeStructure';
-import NoticeBoard from './pages/Communication/NoticeBoard';
+
 import InstituteProfile from './pages/Dashboard/settings/InstituteProfile';
+import FeesParticulars from './pages/Dashboard/settings/FeesParticulars';
+import FeeStructure from './pages/Dashboard/settings/FeeStructure';
+import AccountInvoice from './pages/Dashboard/settings/AccountInvoice';
+import RulesRegulations from './pages/Dashboard/settings/RulesRegulations';
+import MarksGrading from './pages/Dashboard/settings/MarksGrading';
+import AccountSettings from './pages/Dashboard/settings/AccountSettings';
+
+import AllClasses from './pages/Dashboard/classes/AllClasses';
+import NewClasses from './pages/Dashboard/classes/NewClasses';
+
+import ClassesWithSubject from './pages/Dashboard/subjects/ClassesWithSubject';
+import AssignSubject from './pages/Dashboard/subjects/AssignSubject';
+
+import AllStudents from './pages/Dashboard/students/AllStudents';
+import AddStudents from './pages/Dashboard/students/AddStudents';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -39,27 +49,34 @@ function App() {
           
           {/* General Settings Routes */}
           <Route path="settings/institute" element={<InstituteProfile />} />
-          <Route path="settings/fees-particulars" element={<div className="card">Fees Particulars - Coming Soon</div>} />
+          <Route path="settings/fees-particulars" element={<FeesParticulars/>} />
           <Route path="settings/fees-structure" element={<FeeStructure />} />
-          <Route path="settings/accounts" element={<div className="card">Accounts For Fees Invoice - Coming Soon</div>} />
-          <Route path="settings/rules" element={<div className="card">Rules & Regulations - Coming Soon</div>} />
-          <Route path="settings/grading" element={<div className="card">Marks Grading - Coming Soon</div>} />
-          <Route path="settings/theme" element={<div className="card">Theme & Language - Coming Soon</div>} />
-          <Route path="settings/account" element={<div className="card">Account Settings - Coming Soon</div>} />
-          
+          <Route path="settings/accounts" element={<AccountInvoice/>} />
+          <Route path="settings/rules" element={<RulesRegulations/>} />
+          <Route path="settings/grading" element={<MarksGrading/>} />
+          <Route path="settings/account" element={<AccountSettings/>} />
+
+          {/* Classes Routes */}
+          <Route path="classes/all" element={<AllClasses/>} />
+          <Route path="classes/new" element={<NewClasses/>} />
+
+          {/* Subjects Routes */}
+          <Route path="subjects/classes" element={<ClassesWithSubject/>} />
+          <Route path="subjects/assign" element={<AssignSubject/>} />
+
+          {/* Students Routes */}
+          <Route path="students/all" element={<AllStudents/>} />
+          <Route path="students/add-new" element={<AddStudents/>} />
+
+
           {/* Admin Routes */}
           <Route path="admin/settings" element={<GeneralSettings />} />
           <Route path="admin/roles" element={<div className="card">Roles & Permissions - Coming Soon</div>} />
           <Route path="admin/backup" element={<div className="card">Backup & Restore - Coming Soon</div>} />
           
-          {/* Academic Routes */}
-          <Route path="academic/classes" element={<Classes />} />
-          <Route path="academic/subjects" element={<div className="card">Subjects - Coming Soon</div>} />
-          <Route path="academic/routine" element={<div className="card">Class Routine - Coming Soon</div>} />
-          <Route path="academic/syllabus" element={<div className="card">Syllabus - Coming Soon</div>} />
           
           {/* Student Routes */}
-          <Route path="students/all" element={<AllStudents />} />
+          <Route path="students/all" element={<div className="card">All Students - Coming Soon</div>} />
           <Route path="students/add" element={<div className="card">Add Student - Coming Soon</div>} />
           <Route path="students/promotion" element={<div className="card">Student Promotion - Coming Soon</div>} />
           <Route path="students/id-card" element={<div className="card">ID Card Generator - Coming Soon</div>} />
@@ -71,7 +88,7 @@ function App() {
           <Route path="staff/attendance" element={<div className="card">Staff Attendance - Coming Soon</div>} />
           
           {/* Attendance Routes */}
-          <Route path="attendance/mark" element={<MarkAttendance />} />
+          <Route path="attendance/mark" element={<div className="card">Mark Attendance - Coming Soon</div>} />
           <Route path="attendance/reports" element={<div className="card">Attendance Reports - Coming Soon</div>} />
           <Route path="attendance/settings" element={<div className="card">Attendance Settings - Coming Soon</div>} />
           
@@ -81,7 +98,7 @@ function App() {
           <Route path="homework/submissions" element={<div className="card">Submissions - Coming Soon</div>} />
           
           {/* Exam Routes */}
-          <Route path="exams/all" element={<AllExams />} />
+          <Route path="exams/all" element={<div className="card">All Exams - Coming Soon</div>} />
           <Route path="exams/schedule" element={<div className="card">Exam Schedule - Coming Soon</div>} />
           <Route path="exams/marks" element={<div className="card">Mark Entry - Coming Soon</div>} />
           <Route path="exams/reports" element={<div className="card">Report Cards - Coming Soon</div>} />
@@ -93,7 +110,7 @@ function App() {
           <Route path="fees/invoices" element={<div className="card">Invoices - Coming Soon</div>} />
           
           {/* Communication Routes */}
-          <Route path="communication/notices" element={<NoticeBoard />} />
+          <Route path="communication/notices" element={<div className="card">Notice Board - Coming Soon</div>} />
           <Route path="communication/messages" element={<div className="card">Messages - Coming Soon</div>} />
           <Route path="communication/events" element={<div className="card">Events - Coming Soon</div>} />
           

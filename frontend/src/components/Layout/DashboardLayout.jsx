@@ -25,6 +25,7 @@ const DashboardLayout = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showInstituteProfile, setShowInstituteProfile] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   console.log('Current user role:', user.role); // Debug line
@@ -84,9 +85,22 @@ const DashboardLayout = () => {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  const handleLogout = () => {
+  const confirmLogout = () => {
+    // Clear all user data from localStorage
     localStorage.removeItem('user');
-    navigate('/login');
+    localStorage.removeItem('token');
+    
+    // Close any open menus
+    setUserMenuOpen(false);
+    setMobileMenuOpen(false);
+    setShowLogoutConfirm(false);
+    
+    // Navigate to login page
+    navigate('/login', { replace: true });
+  };
+
+  const handleLogout = () => {
+    setShowLogoutConfirm(true);
   };
 
   useEffect(() => {
@@ -111,7 +125,7 @@ const DashboardLayout = () => {
         { title: 'Accounts For Fees Invoice', path: '/dashboard/settings/accounts', icon: FileCheck },
         { title: 'Rules & Regulations', path: '/dashboard/settings/rules', icon: Scale },
         { title: 'Marks Grading', path: '/dashboard/settings/grading', icon: TrendingUp },
-        { title: 'Theme & Language', path: '/dashboard/settings/theme', icon: Palette },
+        // { title: 'Theme & Language', path: '/dashboard/settings/theme', icon: Palette },
         { title: 'Account Settings', path: '/dashboard/settings/account', icon: UserCog },
         { title: 'Log out', path: '/logout', icon: LogOut },
       ]
@@ -590,11 +604,11 @@ const DashboardLayout = () => {
                               setMobileMenuOpen(false);
                             }
                           }}
-                          className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-sm ${
+                          className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm font-medium ${
                             subItem.path === '/logout'
-                              ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+                              ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:scale-105'
                               : isActive(subItem.path)
-                              ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 font-medium'
+                              ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
                               : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
                           }`}
                         >
@@ -643,6 +657,43 @@ const DashboardLayout = () => {
           className="fixed inset-0 bg-black bg-opacity-50 z-10 lg:hidden"
           onClick={() => setMobileMenuOpen(false)}
         ></div>
+      )}
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                <LogOut className="w-6 h-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Confirm Logout</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Are you sure you want to logout?</p>
+              </div>
+            </div>
+            
+            <p className="text-gray-700 dark:text-gray-300 mb-6">
+              You will be redirected to the login page and need to sign in again to access your account.
+            </p>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all font-semibold hover:scale-105"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl transition-all font-semibold shadow-lg hover:shadow-xl flex items-center justify-center gap-2 hover:scale-105"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
