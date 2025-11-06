@@ -158,9 +158,9 @@ const DashboardLayout = () => {
         { title: 'Manage Families', path: '/dashboard/students/families', icon: Home },
         { title: 'Active / Inactive', path: '/dashboard/students/status', icon: UserCheck },
         { title: 'Admission Letter', path: '/dashboard/students/admission-letter', icon: FileText },
-        { title: 'Student ID Cards', path: '/dashboard/students/id-cards', icon: IdCard },
+        { title: 'Student ID Cards', path: '/dashboard/students/student-idcard', icon: IdCard },
         { title: 'Print Basic List', path: '/dashboard/students/print-list', icon: Printer },
-        { title: 'Manage Login', path: '/dashboard/students/login', icon: UserCog },
+        { title: 'Manage Login', path: '/dashboard/students/manage-login', icon: UserCog },
         { title: 'Promote Students', path: '/dashboard/students/promote', icon: TrendingUp },
       ]
     },
@@ -169,11 +169,11 @@ const DashboardLayout = () => {
       icon: Briefcase,
       roles: ['admin'],
       submenu: [
-        { title: 'All Employees', path: '/dashboard/employees/all', icon: Users2 },
-        { title: 'Add New', path: '/dashboard/employees/add-new', icon: UserPlus },
-        { title: 'Staff ID Cards', path: '/dashboard/employees/id-cards', icon: IdCard },
-        { title: 'Job Letter', path: '/dashboard/employees/job-letter', icon: FileText },
-        { title: 'Manage Login', path: '/dashboard/employees/login', icon: UserCog },
+        { title: 'All Employees', path: '/dashboard/employee/all', icon: Users2 },
+        { title: 'Add New', path: '/dashboard/employee/add-new', icon: UserPlus },
+        { title: 'Staff ID Cards', path: '/dashboard/employee/id-cards', icon: IdCard },
+        { title: 'Job Letter', path: '/dashboard/employee/job-letter', icon: FileText },
+        { title: 'Manage Login', path: '/dashboard/employee/manage-login', icon: UserCog },
       ]
     },
     {

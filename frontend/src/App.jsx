@@ -23,6 +23,17 @@ import AllStudents from './pages/Dashboard/students/AllStudents';
 import AddStudents from './pages/Dashboard/students/AddStudents';
 import ManageFamily from './pages/Dashboard/students/ManageFamily';
 import ActiveInactive from './pages/Dashboard/students/ActiveInactive';
+import AdmissionLetter from './pages/Dashboard/students/AdmissionLetter';
+import StudentIDCard from './pages/Dashboard/students/StudentIDCard';
+import PrintBasicList from './pages/Dashboard/students/PrintBasicList';
+import ManageLogin from './pages/Dashboard/students/ManageLogin';
+import PromoteStudents from './pages/Dashboard/students/PromoteStudents'
+
+import AllEmployees from './pages/Dashboard/employees/AllEmployees';
+import AddEmployees from './pages/Dashboard/employees/AddEmployees';
+import EmployeesIDCard from './pages/Dashboard/employees/EmployeesIDCard';
+import JobLetter from './pages/Dashboard/employees/JobLetter';
+import EmployeeManageLogin from './pages/Dashboard/employees/EmployeeManageLogin';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -71,6 +82,18 @@ function App() {
           <Route path="students/add-new" element={<AddStudents/>} />
           <Route path="students/families" element={<ManageFamily/>} />
           <Route path="students/status" element={<ActiveInactive/>} />
+          <Route path="students/admission-letter" element={<AdmissionLetter/>} />
+          <Route path="students/student-idcard" element={<StudentIDCard/>} />
+          <Route path="students/print-list" element={<PrintBasicList/>} />
+          <Route path="students/manage-login" element={<ManageLogin/>} />
+          <Route path="students/promote" element={<PromoteStudents/>} />
+
+          {/* Employee Routes */}
+          <Route path="employee/all" element={<AllEmployees/>} />
+          <Route path="employee/add-new" element={<AddEmployees/>} />
+          <Route path="employee/id-cards" element={<EmployeesIDCard/>} />
+          <Route path="employee/job-letter" element={<JobLetter/>} />
+          <Route path="employee/manage-login" element={<EmployeeManageLogin/>} />
 
 
           {/* Admin Routes */}
