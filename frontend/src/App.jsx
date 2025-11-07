@@ -3,7 +3,6 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import DashboardLayout from './components/Layout/DashboardLayout';
 import Home from './pages/Dashboard/Home';
-import GeneralSettings from './pages/Admin/GeneralSettings';
 
 import InstituteProfile from './pages/Dashboard/settings/InstituteProfile';
 import FeesParticulars from './pages/Dashboard/settings/FeesParticulars';
@@ -34,6 +33,15 @@ import AddEmployees from './pages/Dashboard/employees/AddEmployees';
 import EmployeesIDCard from './pages/Dashboard/employees/EmployeesIDCard';
 import JobLetter from './pages/Dashboard/employees/JobLetter';
 import EmployeeManageLogin from './pages/Dashboard/employees/EmployeeManageLogin';
+
+import AddIncome from './pages/Dashboard/account/AddIncome';
+import AddExpense from './pages/Dashboard/account/AddExpense';
+import AccountStatement from './pages/Dashboard/account/AccountStatement';
+
+import GenerateFeesInvoice from './pages/Dashboard/fees/GenerateFeesInvoice';
+import CollectFees from './pages/Dashboard/fees/CollectFees';
+import FeesPaidSlip from './pages/Dashboard/fees/FeesPaidSlip';
+
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -95,65 +103,17 @@ function App() {
           <Route path="employee/job-letter" element={<JobLetter/>} />
           <Route path="employee/manage-login" element={<EmployeeManageLogin/>} />
 
+          {/* Account Routes */}
+          <Route path="account/add-income" element={<AddIncome/>} />
+          <Route path="account/add-expense" element={<AddExpense/>} />
+          <Route path="account/statement" element={<AccountStatement/>} />
 
-          {/* Admin Routes */}
-          <Route path="admin/settings" element={<GeneralSettings />} />
-          <Route path="admin/roles" element={<div className="card">Roles & Permissions - Coming Soon</div>} />
-          <Route path="admin/backup" element={<div className="card">Backup & Restore - Coming Soon</div>} />
+          {/* Fees Routes */}
+          <Route path="fees/generate-invoice" element={<GenerateFeesInvoice/>} />
+          <Route path="fees/collect-fees" element={<CollectFees/>} />
+          <Route path="fees/paid-slip" element={<FeesPaidSlip/>} />
+
           
-          {/* Staff Routes */}
-          <Route path="staff/all" element={<div className="card">All Staff - Coming Soon</div>} />
-          <Route path="staff/add" element={<div className="card">Add Staff - Coming Soon</div>} />
-          <Route path="staff/departments" element={<div className="card">Departments - Coming Soon</div>} />
-          <Route path="staff/attendance" element={<div className="card">Staff Attendance - Coming Soon</div>} />
-          
-          {/* Attendance Routes */}
-          <Route path="attendance/mark" element={<div className="card">Mark Attendance - Coming Soon</div>} />
-          <Route path="attendance/reports" element={<div className="card">Attendance Reports - Coming Soon</div>} />
-          <Route path="attendance/settings" element={<div className="card">Attendance Settings - Coming Soon</div>} />
-          
-          {/* Homework Routes */}
-          <Route path="homework/all" element={<div className="card">All Assignments - Coming Soon</div>} />
-          <Route path="homework/create" element={<div className="card">Create Assignment - Coming Soon</div>} />
-          <Route path="homework/submissions" element={<div className="card">Submissions - Coming Soon</div>} />
-          
-          {/* Exam Routes */}
-          <Route path="exams/all" element={<div className="card">All Exams - Coming Soon</div>} />
-          <Route path="exams/schedule" element={<div className="card">Exam Schedule - Coming Soon</div>} />
-          <Route path="exams/marks" element={<div className="card">Mark Entry - Coming Soon</div>} />
-          <Route path="exams/reports" element={<div className="card">Report Cards - Coming Soon</div>} />
-          
-          {/* Fee Routes */}
-          <Route path="fees/structure" element={<FeeStructure />} />
-          <Route path="fees/collect" element={<div className="card">Collect Fees - Coming Soon</div>} />
-          <Route path="fees/reports" element={<div className="card">Fee Reports - Coming Soon</div>} />
-          <Route path="fees/invoices" element={<div className="card">Invoices - Coming Soon</div>} />
-          
-          {/* Communication Routes */}
-          <Route path="communication/notices" element={<div className="card">Notice Board - Coming Soon</div>} />
-          <Route path="communication/messages" element={<div className="card">Messages - Coming Soon</div>} />
-          <Route path="communication/events" element={<div className="card">Events - Coming Soon</div>} />
-          
-          {/* Library Routes */}
-          <Route path="library/books" element={<div className="card">Books - Coming Soon</div>} />
-          <Route path="library/issue" element={<div className="card">Issue/Return - Coming Soon</div>} />
-          <Route path="library/members" element={<div className="card">Library Members - Coming Soon</div>} />
-          
-          {/* Transport Routes */}
-          <Route path="transport/routes" element={<div className="card">Routes - Coming Soon</div>} />
-          <Route path="transport/vehicles" element={<div className="card">Vehicles - Coming Soon</div>} />
-          <Route path="transport/assign" element={<div className="card">Assign Students - Coming Soon</div>} />
-          
-          {/* Online Classes Routes */}
-          <Route path="online/schedule" element={<div className="card">Schedule Class - Coming Soon</div>} />
-          <Route path="online/join" element={<div className="card">Join Class - Coming Soon</div>} />
-          <Route path="online/recordings" element={<div className="card">Recordings - Coming Soon</div>} />
-          
-          {/* Reports Routes */}
-          <Route path="reports/students" element={<div className="card">Student Reports - Coming Soon</div>} />
-          <Route path="reports/academic" element={<div className="card">Academic Reports - Coming Soon</div>} />
-          <Route path="reports/financial" element={<div className="card">Financial Reports - Coming Soon</div>} />
-          <Route path="reports/custom" element={<div className="card">Custom Reports - Coming Soon</div>} />
         </Route>
         
         {/* Default Route */}

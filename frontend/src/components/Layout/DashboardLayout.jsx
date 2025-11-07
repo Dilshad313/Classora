@@ -192,7 +192,7 @@ const DashboardLayout = () => {
       roles: ['admin'],
       submenu: [
         { title: 'Generate Fees Invoice', path: '/dashboard/fees/generate-invoice', icon: FileText },
-        { title: 'Collect Fees', path: '/dashboard/fees/collect', icon: Banknote },
+        { title: 'Collect Fees', path: '/dashboard/fees/collect-fees', icon: Banknote },
         { title: 'Fees Paid Slip', path: '/dashboard/fees/paid-slip', icon: Receipt },
         { title: 'Fees Defaulters', path: '/dashboard/fees/defaulters', icon: UserCheck },
         { title: 'Fees Report', path: '/dashboard/fees/report', icon: BarChart3 },
