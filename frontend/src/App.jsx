@@ -41,6 +41,20 @@ import AccountStatement from './pages/Dashboard/account/AccountStatement';
 import GenerateFeesInvoice from './pages/Dashboard/fees/GenerateFeesInvoice';
 import CollectFees from './pages/Dashboard/fees/CollectFees';
 import FeesPaidSlip from './pages/Dashboard/fees/FeesPaidSlip';
+import FeesDefaulters from './pages/Dashboard/fees/FeesDefaulters';
+import FeesReport from './pages/Dashboard/fees/FeesReport';
+import DeleteFees from './pages/Dashboard/fees/DeleteFees';
+
+import PaySalary from './pages/Dashboard/salary/PaySalary';
+import SalaryPaidSlip from './pages/Dashboard/salary/SalaryPaidSlip';
+import SalarySheet from './pages/Dashboard/salary/SalarySheet';
+import SalaryReport from './pages/Dashboard/salary/SalaryReport';
+
+import StudentAttendance from './pages/Dashboard/attendance/StudentAttendance';
+import EmployeesAttendance from './pages/Dashboard/attendance/EmployeesAttendance';
+import ClassWiseReport from './pages/Dashboard/attendance/ClassWiseReport';
+import StudentsReport from './pages/Dashboard/attendance/StudentsReport';
+import EmployeeReport from './pages/Dashboard/attendance/EmployeeReport';
 
 
 // Protected Route Component
@@ -112,6 +126,22 @@ function App() {
           <Route path="fees/generate-invoice" element={<GenerateFeesInvoice/>} />
           <Route path="fees/collect-fees" element={<CollectFees/>} />
           <Route path="fees/paid-slip" element={<FeesPaidSlip/>} />
+          <Route path="fees/defaulters" element={<FeesDefaulters/>} />
+          <Route path="fees/report" element={<FeesReport/>} />
+          <Route path="fees/delete" element={<DeleteFees/>} />
+
+          {/* Salary Routes */}
+          <Route path="salary/pay" element={<PaySalary/>} />
+          <Route path="salary/paid-slip" element={<SalaryPaidSlip/>} />
+          <Route path="salary/sheet" element={<SalarySheet/>} />
+          <Route path="salary/report" element={<SalaryReport/>} />
+
+          {/* Attendance Routes */}
+          <Route path="attendance/student" element={<StudentAttendance/>} />
+          <Route path="attendance/employee" element={<EmployeesAttendance/>} />
+          <Route path="attendance/class-report" element={<ClassWiseReport/>} />
+          <Route path="attendance/students-report" element={<StudentsReport/>} />
+          <Route path="attendance/employees-report" element={<EmployeeReport/>} />
 
           
         </Route>

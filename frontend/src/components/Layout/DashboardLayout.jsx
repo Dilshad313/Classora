@@ -215,11 +215,11 @@ const DashboardLayout = () => {
       icon: ClipboardList,
       roles: ['admin'],
       submenu: [
-        { title: 'Students Attendance', path: '/dashboard/attendance/students', icon: Users },
-        { title: 'Employees Attendance', path: '/dashboard/attendance/employees', icon: Briefcase },
+        { title: 'Students Attendance', path: '/dashboard/attendance/student', icon: Users },
+        { title: 'Employees Attendance', path: '/dashboard/attendance/employee', icon: Briefcase },
         { title: 'Class wise Report', path: '/dashboard/attendance/class-report', icon: School },
-        { title: 'Students Attendance Report', path: '/dashboard/attendance/students-report', icon: FileBarChart },
-        { title: 'Employees Attendance Report', path: '/dashboard/attendance/employees-report', icon: FileBarChart },
+        { title: 'Students Report', path: '/dashboard/attendance/students-report', icon: FileBarChart },
+        { title: 'Employees Report', path: '/dashboard/attendance/employees-report', icon: FileBarChart },
       ]
     },
     {
