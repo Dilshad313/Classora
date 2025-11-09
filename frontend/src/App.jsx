@@ -56,6 +56,29 @@ import ClassWiseReport from './pages/Dashboard/attendance/ClassWiseReport';
 import StudentsReport from './pages/Dashboard/attendance/StudentsReport';
 import EmployeeReport from './pages/Dashboard/attendance/EmployeeReport';
 
+import WeekDays from './pages/Dashboard/timetable/WeekDays';
+import TimePeriods from './pages/Dashboard/timetable/TimePeriods';
+import ClassRooms from './pages/Dashboard/timetable/ClassRooms';
+import CreateTimetable from './pages/Dashboard/timetable/CreateTimetable';
+import GenerateClass from './pages/Dashboard/timetable/GenerateClass';
+import GenerateTeacher from './pages/Dashboard/timetable/GenerateTeacher';
+
+import HomeWork from './pages/Dashboard/homework/HomeWork';
+
+import Message from './pages/Dashboard/messaging/Message';
+
+import FreeSMS from './pages/Dashboard/sms/FreeSMS';
+
+import LiveClass from './pages/Dashboard/live-class/LiveClass';
+
+import SubjectChapters from './pages/Dashboard/question-paper/SubjectChapters';
+import QuestionBank from './pages/Dashboard/question-paper/QuestionBank';
+import CreateQuestion from './pages/Dashboard/question-paper/CreateQuestion';
+
+import CreateExam from './pages/Dashboard/exams/CreateExam';
+import ExamMarks from './pages/Dashboard/exams/ExamMarks';
+import ResultCard from './pages/Dashboard/exams/ResultCard';
+
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -142,6 +165,36 @@ function App() {
           <Route path="attendance/class-report" element={<ClassWiseReport/>} />
           <Route path="attendance/students-report" element={<StudentsReport/>} />
           <Route path="attendance/employees-report" element={<EmployeeReport/>} />
+
+          {/* Timetable Routes */}
+          <Route path="timetable/weekdays" element={<WeekDays/>} />
+          <Route path="timetable/periods" element={<TimePeriods/>} />
+          <Route path="timetable/classrooms" element={<ClassRooms/>} />
+          <Route path="timetable/create" element={<CreateTimetable/>} />
+          <Route path="timetable/class" element={<GenerateClass/>} />
+          <Route path="timetable/teacher" element={<GenerateTeacher/>} />
+
+          {/* Homework Routes */}
+          <Route path="homework" element={<HomeWork/>} />
+
+          {/* Messaging Routes */}
+          <Route path="messaging" element={<Message/>} />
+
+          {/* SMS Routes */}
+          <Route path="sms/gateway" element={<FreeSMS/>} />
+
+          {/* Live Class Routes */}
+          <Route path="live-class" element={<LiveClass/>} />
+
+          {/* Question Paper Routes */}
+          <Route path="question-paper/chapters" element={<SubjectChapters/>} />
+          <Route path="question-paper/bank" element={<QuestionBank/>} />
+          <Route path="question-paper/create" element={<CreateQuestion/>} />
+
+          {/* Exam Routes */}
+          <Route path="exams/create" element={<CreateExam/>} />
+          <Route path="exams/marks" element={<ExamMarks/>} />
+          <Route path="exams/result-card" element={<ResultCard/>} />
 
           
         </Route>

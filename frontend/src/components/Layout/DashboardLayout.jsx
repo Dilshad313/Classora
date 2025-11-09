@@ -231,8 +231,8 @@ const DashboardLayout = () => {
         { title: 'Time Periods', path: '/dashboard/timetable/periods', icon: Clock },
         { title: 'Class Rooms', path: '/dashboard/timetable/classrooms', icon: DoorClosed },
         { title: 'Create Timetable', path: '/dashboard/timetable/create', icon: Plus },
-        { title: 'Generate For Class', path: '/dashboard/timetable/generate-class', icon: School },
-        { title: 'Generate For Teacher', path: '/dashboard/timetable/generate-teacher', icon: User },
+        { title: 'Generate For Class', path: '/dashboard/timetable/class', icon: School },
+        { title: 'Generate For Teacher', path: '/dashboard/timetable/teacher', icon: User },
       ]
     },
     {
@@ -279,10 +279,6 @@ const DashboardLayout = () => {
         { title: 'Create New Exam', path: '/dashboard/exams/create', icon: Plus },
         { title: 'Add / update Exam Marks', path: '/dashboard/exams/marks', icon: FileEdit },
         { title: 'Result Card', path: '/dashboard/exams/result-card', icon: IdCard },
-        { title: 'Result Sheet', path: '/dashboard/exams/result-sheet', icon: FileSpreadsheet },
-        { title: 'Exam Schedule', path: '/dashboard/exams/schedule', icon: Calendar },
-        { title: 'Date Sheet', path: '/dashboard/exams/date-sheet', icon: CalendarDays },
-        { title: 'Blank Award List', path: '/dashboard/exams/award-list', icon: Award },
       ]
     },
     {
@@ -302,12 +298,6 @@ const DashboardLayout = () => {
         { title: 'Students report Card', path: '/dashboard/reports/student-card', icon: IdCard },
         { title: 'Students info report', path: '/dashboard/reports/student-info', icon: Users },
         { title: 'Parents info report', path: '/dashboard/reports/parent-info', icon: Home },
-        { title: 'Students Monthly Attendance Report', path: '/dashboard/reports/student-attendance', icon: Calendar },
-        { title: 'Staff Monthly Attendance Report', path: '/dashboard/reports/staff-attendance', icon: Calendar },
-        { title: 'Fee Collection Report', path: '/dashboard/reports/fee-collection', icon: DollarSign },
-        { title: 'Student Progress Report', path: '/dashboard/reports/student-progress', icon: TrendingUp },
-        { title: 'Accounts Report', path: '/dashboard/reports/accounts', icon: Wallet },
-        { title: 'Customised Reports', path: '/dashboard/reports/customised', icon: FileBarChart },
       ]
     },
     {
