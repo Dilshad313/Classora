@@ -79,6 +79,14 @@ import CreateExam from './pages/Dashboard/exams/CreateExam';
 import ExamMarks from './pages/Dashboard/exams/ExamMarks';
 import ResultCard from './pages/Dashboard/exams/ResultCard';
 
+import ManageTest from './pages/Dashboard/class-tests/ManageTest';
+import TestResult from './pages/Dashboard/class-tests/TestResult';
+
+import StudentCard from './pages/Dashboard/reports/StudentReport';
+import StudentInfo from './pages/Dashboard/reports/StudentInfo';
+import ParentInfo from './pages/Dashboard/reports/ParentInfo';
+
+
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -195,6 +203,15 @@ function App() {
           <Route path="exams/create" element={<CreateExam/>} />
           <Route path="exams/marks" element={<ExamMarks/>} />
           <Route path="exams/result-card" element={<ResultCard/>} />
+
+          {/* Class Tests Routes */}
+          <Route path="class-tests/marks" element={<ManageTest/>} />
+          <Route path="class-tests/result" element={<TestResult/>} />
+
+          {/* Reports Routes */}
+          <Route path="reports/student-card" element={<StudentCard/>} />
+          <Route path="reports/student-info" element={<StudentInfo/>} />
+          <Route path="reports/parent-info" element={<ParentInfo/>} />
 
           
         </Route>
