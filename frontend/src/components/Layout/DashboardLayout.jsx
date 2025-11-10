@@ -507,9 +507,13 @@ const DashboardLayout = () => {
               </button>
 
               {/* Notifications */}
-              <button className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
+              <button 
+                onClick={() => navigate('/dashboard/notifications')}
+                className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all"
+                title="View Notifications"
+              >
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
               </button>
 
               <div className="relative">
@@ -533,11 +537,23 @@ const DashboardLayout = () => {
                       <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{user.name}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
                     </div>
-                    <button className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-700 dark:text-gray-200">
+                    <button 
+                      onClick={() => {
+                        navigate('/dashboard/settings/institute');
+                        setUserMenuOpen(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-700 dark:text-gray-200"
+                    >
                       <User className="w-4 h-4" />
                       My Profile
                     </button>
-                    <button className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-700 dark:text-gray-200">
+                    <button 
+                      onClick={() => {
+                        navigate('/dashboard/settings/account');
+                        setUserMenuOpen(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-700 dark:text-gray-200"
+                    >
                       <Settings className="w-4 h-4" />
                       Settings
                     </button>

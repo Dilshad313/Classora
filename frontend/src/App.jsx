@@ -86,6 +86,11 @@ import StudentCard from './pages/Dashboard/reports/StudentReport';
 import StudentInfo from './pages/Dashboard/reports/StudentInfo';
 import ParentInfo from './pages/Dashboard/reports/ParentInfo';
 
+import GenerateCertificate from './pages/Dashboard/certificates/GenerateCertificate';
+import CertificateTemplates from './pages/Dashboard/certificates/CertificateTemplates';
+
+import Notifications from './pages/Dashboard/Notifications';
+
 
 
 // Protected Route Component
@@ -212,6 +217,13 @@ function App() {
           <Route path="reports/student-card" element={<StudentCard/>} />
           <Route path="reports/student-info" element={<StudentInfo/>} />
           <Route path="reports/parent-info" element={<ParentInfo/>} />
+
+          {/* Certificates Routes */}
+          <Route path="certificates/generate" element={<GenerateCertificate/>} />
+          <Route path="certificates/templates" element={<CertificateTemplates/>} />
+
+          {/* Notifications Route */}
+          <Route path="notifications" element={<Notifications/>} />
 
           
         </Route>
