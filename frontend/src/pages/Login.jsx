@@ -56,8 +56,16 @@ const Login = () => {
               formData.role === 'student' ? 'Emma Johnson' : 'Parent Guardian'
       }));
       
-      // Navigate to dashboard
-      navigate('/dashboard');
+      // Navigate to appropriate dashboard based on role
+      if (formData.role === 'teacher') {
+        navigate('/teacher/dashboard');
+      } else if (formData.role === 'admin') {
+        navigate('/dashboard');
+      } else if (formData.role === 'student') {
+        navigate('/student/dashboard');
+      } else if (formData.role === 'parent') {
+        navigate('/parent/dashboard');
+      }
     } else {
       setErrors(newErrors);
     }

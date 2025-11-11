@@ -1,4 +1,4 @@
-import { InstituteProfileModal } from '../../../components/modals/InstituteProfileModal';
+import { InstituteProfileModal } from '../../modals/InstituteProfileModal';
 import { useNavigate } from 'react-router-dom';
 
 export const InstituteProfile = () => {

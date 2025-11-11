@@ -1,102 +1,169 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import DashboardLayout from './components/Layout/DashboardLayout';
-import Home from './pages/Dashboard/Home';
+import DashboardLayout from './pages/Admin/Layout/DashboardLayout';
+import Home from './pages/Admin/Dashboard/Home';
 
-import InstituteProfile from './pages/Dashboard/settings/InstituteProfile';
-import FeesParticulars from './pages/Dashboard/settings/FeesParticulars';
-import FeeStructure from './pages/Dashboard/settings/FeeStructure';
-import AccountInvoice from './pages/Dashboard/settings/AccountInvoice';
-import RulesRegulations from './pages/Dashboard/settings/RulesRegulations';
-import MarksGrading from './pages/Dashboard/settings/MarksGrading';
-import AccountSettings from './pages/Dashboard/settings/AccountSettings';
+import InstituteProfile from './pages/Admin/Dashboard/settings/InstituteProfile';
+import FeesParticulars from './pages/Admin/Dashboard/settings/FeesParticulars';
+import FeeStructure from './pages/Admin/Dashboard/settings/FeeStructure';
+import AccountInvoice from './pages/Admin/Dashboard/settings/AccountInvoice';
+import RulesRegulations from './pages/Admin/Dashboard/settings/RulesRegulations';
+import MarksGrading from './pages/Admin/Dashboard/settings/MarksGrading';
+import AccountSettings from './pages/Admin/Dashboard/settings/AccountSettings';
 
-import AllClasses from './pages/Dashboard/classes/AllClasses';
-import NewClasses from './pages/Dashboard/classes/NewClasses';
+import AllClasses from './pages/Admin/Dashboard/classes/AllClasses';
+import NewClasses from './pages/Admin/Dashboard/classes/NewClasses';
 
-import ClassesWithSubject from './pages/Dashboard/subjects/ClassesWithSubject';
-import AssignSubject from './pages/Dashboard/subjects/AssignSubject';
+import ClassesWithSubject from './pages/Admin/Dashboard/subjects/ClassesWithSubject';
+import AssignSubject from './pages/Admin/Dashboard/subjects/AssignSubject';
 
-import AllStudents from './pages/Dashboard/students/AllStudents';
-import AddStudents from './pages/Dashboard/students/AddStudents';
-import ManageFamily from './pages/Dashboard/students/ManageFamily';
-import ActiveInactive from './pages/Dashboard/students/ActiveInactive';
-import AdmissionLetter from './pages/Dashboard/students/AdmissionLetter';
-import StudentIDCard from './pages/Dashboard/students/StudentIDCard';
-import PrintBasicList from './pages/Dashboard/students/PrintBasicList';
-import ManageLogin from './pages/Dashboard/students/ManageLogin';
-import PromoteStudents from './pages/Dashboard/students/PromoteStudents'
+import AllStudents from './pages/Admin/Dashboard/students/AllStudents';
+import AddStudents from './pages/Admin/Dashboard/students/AddStudents';
+import ManageFamily from './pages/Admin/Dashboard/students/ManageFamily';
+import ActiveInactive from './pages/Admin/Dashboard/students/ActiveInactive';
+import AdmissionLetter from './pages/Admin/Dashboard/students/AdmissionLetter';
+import StudentIDCard from './pages/Admin/Dashboard/students/StudentIDCard';
+import PrintBasicList from './pages/Admin/Dashboard/students/PrintBasicList';
+import ManageLogin from './pages/Admin/Dashboard/students/ManageLogin';
+import PromoteStudents from './pages/Admin/Dashboard/students/PromoteStudents'
 
-import AllEmployees from './pages/Dashboard/employees/AllEmployees';
-import AddEmployees from './pages/Dashboard/employees/AddEmployees';
-import EmployeesIDCard from './pages/Dashboard/employees/EmployeesIDCard';
-import JobLetter from './pages/Dashboard/employees/JobLetter';
-import EmployeeManageLogin from './pages/Dashboard/employees/EmployeeManageLogin';
+import AllEmployees from './pages/Admin/Dashboard/employees/AllEmployees';
+import AddEmployees from './pages/Admin/Dashboard/employees/AddEmployees';
+import EmployeesIDCard from './pages/Admin/Dashboard/employees/EmployeesIDCard';
+import JobLetter from './pages/Admin/Dashboard/employees/JobLetter';
+import EmployeeManageLogin from './pages/Admin/Dashboard/employees/EmployeeManageLogin';
 
-import AddIncome from './pages/Dashboard/account/AddIncome';
-import AddExpense from './pages/Dashboard/account/AddExpense';
-import AccountStatement from './pages/Dashboard/account/AccountStatement';
+import AddIncome from './pages/Admin/Dashboard/account/AddIncome';
+import AddExpense from './pages/Admin/Dashboard/account/AddExpense';
+import AccountStatement from './pages/Admin/Dashboard/account/AccountStatement';
 
-import GenerateFeesInvoice from './pages/Dashboard/fees/GenerateFeesInvoice';
-import CollectFees from './pages/Dashboard/fees/CollectFees';
-import FeesPaidSlip from './pages/Dashboard/fees/FeesPaidSlip';
-import FeesDefaulters from './pages/Dashboard/fees/FeesDefaulters';
-import FeesReport from './pages/Dashboard/fees/FeesReport';
-import DeleteFees from './pages/Dashboard/fees/DeleteFees';
+import GenerateFeesInvoice from './pages/Admin/Dashboard/fees/GenerateFeesInvoice';
+import CollectFees from './pages/Admin/Dashboard/fees/CollectFees';
+import FeesPaidSlip from './pages/Admin/Dashboard/fees/FeesPaidSlip';
+import FeesDefaulters from './pages/Admin/Dashboard/fees/FeesDefaulters';
+import FeesReport from './pages/Admin/Dashboard/fees/FeesReport';
+import DeleteFees from './pages/Admin/Dashboard/fees/DeleteFees';
 
-import PaySalary from './pages/Dashboard/salary/PaySalary';
-import SalaryPaidSlip from './pages/Dashboard/salary/SalaryPaidSlip';
-import SalarySheet from './pages/Dashboard/salary/SalarySheet';
-import SalaryReport from './pages/Dashboard/salary/SalaryReport';
+import PaySalary from './pages/Admin/Dashboard/salary/PaySalary';
+import SalaryPaidSlip from './pages/Admin/Dashboard/salary/SalaryPaidSlip';
+import SalarySheet from './pages/Admin/Dashboard/salary/SalarySheet';
+import SalaryReport from './pages/Admin/Dashboard/salary/SalaryReport';
 
-import StudentAttendance from './pages/Dashboard/attendance/StudentAttendance';
-import EmployeesAttendance from './pages/Dashboard/attendance/EmployeesAttendance';
-import ClassWiseReport from './pages/Dashboard/attendance/ClassWiseReport';
-import StudentsReport from './pages/Dashboard/attendance/StudentsReport';
-import EmployeeReport from './pages/Dashboard/attendance/EmployeeReport';
+import StudentAttendance from './pages/Admin/Dashboard/attendance/StudentAttendance';
+import EmployeesAttendance from './pages/Admin/Dashboard/attendance/EmployeesAttendance';
+import ClassWiseReport from './pages/Admin/Dashboard/attendance/ClassWiseReport';
+import StudentsReport from './pages/Admin/Dashboard/attendance/StudentsReport';
+import EmployeeReport from './pages/Admin/Dashboard/attendance/EmployeeReport';
 
-import WeekDays from './pages/Dashboard/timetable/WeekDays';
-import TimePeriods from './pages/Dashboard/timetable/TimePeriods';
-import ClassRooms from './pages/Dashboard/timetable/ClassRooms';
-import CreateTimetable from './pages/Dashboard/timetable/CreateTimetable';
-import GenerateClass from './pages/Dashboard/timetable/GenerateClass';
-import GenerateTeacher from './pages/Dashboard/timetable/GenerateTeacher';
+import WeekDays from './pages/Admin/Dashboard/timetable/WeekDays';
+import TimePeriods from './pages/Admin/Dashboard/timetable/TimePeriods';
+import ClassRooms from './pages/Admin/Dashboard/timetable/ClassRooms';
+import CreateTimetable from './pages/Admin/Dashboard/timetable/CreateTimetable';
+import GenerateClass from './pages/Admin/Dashboard/timetable/GenerateClass';
+import GenerateTeacher from './pages/Admin/Dashboard/timetable/GenerateTeacher';
 
-import HomeWork from './pages/Dashboard/homework/HomeWork';
+import HomeWork from './pages/Admin/Dashboard/homework/HomeWork';
 
-import Message from './pages/Dashboard/messaging/Message';
+import Message from './pages/Admin/Dashboard/messaging/Message';
 
-import FreeSMS from './pages/Dashboard/sms/FreeSMS';
+import FreeSMS from './pages/Admin/Dashboard/sms/FreeSMS';
 
-import LiveClass from './pages/Dashboard/live-class/LiveClass';
+import LiveClass from './pages/Admin/Dashboard/live-class/LiveClass';
 
-import SubjectChapters from './pages/Dashboard/question-paper/SubjectChapters';
-import QuestionBank from './pages/Dashboard/question-paper/QuestionBank';
-import CreateQuestion from './pages/Dashboard/question-paper/CreateQuestion';
+import SubjectChapters from './pages/Admin/Dashboard/question-paper/SubjectChapters';
+import QuestionBank from './pages/Admin/Dashboard/question-paper/QuestionBank';
+import CreateQuestion from './pages/Admin/Dashboard/question-paper/CreateQuestion';
 
-import CreateExam from './pages/Dashboard/exams/CreateExam';
-import ExamMarks from './pages/Dashboard/exams/ExamMarks';
-import ResultCard from './pages/Dashboard/exams/ResultCard';
+import CreateExam from './pages/Admin/Dashboard/exams/CreateExam';
+import ExamMarks from './pages/Admin/Dashboard/exams/ExamMarks';
+import ResultCard from './pages/Admin/Dashboard/exams/ResultCard';
 
-import ManageTest from './pages/Dashboard/class-tests/ManageTest';
-import TestResult from './pages/Dashboard/class-tests/TestResult';
+import ManageTest from './pages/Admin/Dashboard/class-tests/ManageTest';
+import TestResult from './pages/Admin/Dashboard/class-tests/TestResult';
 
-import StudentCard from './pages/Dashboard/reports/StudentReport';
-import StudentInfo from './pages/Dashboard/reports/StudentInfo';
-import ParentInfo from './pages/Dashboard/reports/ParentInfo';
+import StudentCard from './pages/Admin/Dashboard/reports/StudentReport';
+import StudentInfo from './pages/Admin/Dashboard/reports/StudentInfo';
+import ParentInfo from './pages/Admin/Dashboard/reports/ParentInfo';
 
-import GenerateCertificate from './pages/Dashboard/certificates/GenerateCertificate';
-import CertificateTemplates from './pages/Dashboard/certificates/CertificateTemplates';
+import GenerateCertificate from './pages/Admin/Dashboard/certificates/GenerateCertificate';
+import CertificateTemplates from './pages/Admin/Dashboard/certificates/CertificateTemplates';
 
-import Notifications from './pages/Dashboard/Notifications';
+import Notifications from './pages/Admin/Dashboard/Notifications';
 
-
+// Teacher Imports
+import TeacherLayout from './pages/Teacher/Layout/TeacherLayout';
+import TeacherHome from './pages/Teacher/Dashboard/Home';
+import TeacherStudentsAttendance from './pages/Teacher/Dashboard/attendance/StudentsAttendance';
+import TeacherClassWiseReport from './pages/Teacher/Dashboard/attendance/ClassWiseReport';
+import StudentsReportT from './pages/Teacher/Dashboard/attendance/StudentsReportT';
+import TeacherHomework from './pages/Teacher/Dashboard/homework/Homework';
+import MyTimetable from './pages/Teacher/Dashboard/timetable/MyTimetable';
+import RateBehaviours from './pages/Teacher/Dashboard/behaviour-skills/RateBehaviours';
+import RateSkills from './pages/Teacher/Dashboard/behaviour-skills/RateSkills';
+import TeacherMessaging from './pages/Teacher/Dashboard/messaging/Messaging';
+import TeacherLiveClass from './pages/Teacher/Dashboard/live-class/LiveClass';
+import TeacherSubjectChapters from './pages/Teacher/Dashboard/question-paper/SubjectChapters';
+import TeacherQuestionBank from './pages/Teacher/Dashboard/question-paper/QuestionBank';
+import TeacherCreateQuestion from './pages/Teacher/Dashboard/question-paper/CreateQuestion';
+import TeacherExamMarks from './pages/Teacher/Dashboard/exams/ExamMarks';
+import TeacherResultCard from './pages/Teacher/Dashboard/exams/ResultCard';
+import TeacherResultSheet from './pages/Teacher/Dashboard/exams/ResultSheet';
+import BlankAwardList from './pages/Teacher/Dashboard/exams/BlankAwardList';
+import ManageTestMarks from './pages/Teacher/Dashboard/class-tests/ManageTestMarks';
+import TeacherTestResult from './pages/Teacher/Dashboard/class-tests/TestResult';
+import StudentReportCard from './pages/Teacher/Dashboard/reports/StudentReportCard';
+import StudentMonthlyReport from './pages/Teacher/Dashboard/reports/StudentMonthlyReport';
+import TeacherAccountSettings from './pages/Teacher/Dashboard/settings/AccountSettings';
 
 // Protected Route Component
-const ProtectedRoute = ({ children }) => {
-  const user = localStorage.getItem('user');
-  return user ? children : <Navigate to="/login" />;
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const userStr = localStorage.getItem('user');
+  
+  if (!userStr) {
+    return <Navigate to="/login" />;
+  }
+  
+  const user = JSON.parse(userStr);
+  
+  // If allowedRoles is specified, check if user's role is allowed
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    // Redirect to appropriate dashboard based on user's role
+    if (user.role === 'teacher') {
+      return <Navigate to="/teacher/dashboard" />;
+    } else if (user.role === 'admin') {
+      return <Navigate to="/dashboard" />;
+    } else if (user.role === 'student') {
+      return <Navigate to="/student/dashboard" />;
+    } else if (user.role === 'parent') {
+      return <Navigate to="/parent/dashboard" />;
+    }
+  }
+  
+  return children;
+};
+
+// Smart Redirect Component - Redirects to appropriate dashboard based on user role
+const SmartRedirect = () => {
+  const userStr = localStorage.getItem('user');
+  
+  if (!userStr) {
+    return <Navigate to="/login" />;
+  }
+  
+  const user = JSON.parse(userStr);
+  
+  if (user.role === 'teacher') {
+    return <Navigate to="/teacher/dashboard" />;
+  } else if (user.role === 'admin') {
+    return <Navigate to="/dashboard" />;
+  } else if (user.role === 'student') {
+    return <Navigate to="/student/dashboard" />;
+  } else if (user.role === 'parent') {
+    return <Navigate to="/parent/dashboard" />;
+  }
+  
+  return <Navigate to="/login" />;
 };
 
 function App() {
@@ -107,11 +174,11 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         
-        {/* Protected Routes */}
+        {/* Admin Routes - Only accessible by admin role */}
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['admin']}>
               <DashboardLayout />
             </ProtectedRoute>
           }
@@ -224,13 +291,66 @@ function App() {
 
           {/* Notifications Route */}
           <Route path="notifications" element={<Notifications/>} />
+        </Route>
 
+        {/* Teacher Routes - Only accessible by teacher role */}
+        <Route
+          path="/teacher"
+          element={
+            <ProtectedRoute allowedRoles={['teacher']}>
+              <TeacherLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="dashboard" element={<TeacherHome />} />
           
+          {/* Attendance Routes */}
+          <Route path="attendance/students" element={<TeacherStudentsAttendance />} />
+          <Route path="attendance/class-report" element={<TeacherClassWiseReport />} />
+          <Route path="attendance/student-report" element={<StudentsReportT />} />
+          
+          {/* Homework Route */}
+          <Route path="homework" element={<TeacherHomework />} />
+          
+          {/* Timetable Route */}
+          <Route path="timetable" element={<MyTimetable />} />
+          
+          {/* Behaviour & Skills Routes */}
+          <Route path="behaviour-skills/rate-behaviours" element={<RateBehaviours />} />
+          <Route path="behaviour-skills/rate-skills" element={<RateSkills />} />
+          
+          {/* Messaging Route */}
+          <Route path="messaging" element={<TeacherMessaging />} />
+          
+          {/* Live Class Route */}
+          <Route path="live-class" element={<TeacherLiveClass />} />
+          
+          {/* Question Paper Routes */}
+          <Route path="question-paper/chapters" element={<TeacherSubjectChapters />} />
+          <Route path="question-paper/bank" element={<TeacherQuestionBank />} />
+          <Route path="question-paper/create" element={<TeacherCreateQuestion />} />
+          
+          {/* Exams Routes */}
+          <Route path="exams/marks" element={<TeacherExamMarks />} />
+          <Route path="exams/result-card" element={<TeacherResultCard />} />
+          <Route path="exams/result-sheet" element={<TeacherResultSheet />} />
+          <Route path="exams/award-list" element={<BlankAwardList />} />
+          
+          {/* Class Tests Routes */}
+          <Route path="class-tests/marks" element={<ManageTestMarks />} />
+          <Route path="class-tests/result" element={<TeacherTestResult />} />
+          
+          {/* Reports Routes */}
+          <Route path="reports/student-card" element={<StudentReportCard />} />
+          <Route path="reports/monthly-report" element={<StudentMonthlyReport />} />
+          
+          {/* Account Settings Route */}
+          <Route path="settings/account" element={<TeacherAccountSettings />} />
         </Route>
         
-        {/* Default Route */}
-        <Route path="/" element={<Navigate to="/login" />} />
-        <Route path="*" element={<Navigate to="/login" />} />
+        {/* Default Route - Smart redirect based on user role */}
+        <Route path="/" element={<SmartRedirect />} />
+        <Route path="*" element={<SmartRedirect />} />
       </Routes>
     </Router>
   );
