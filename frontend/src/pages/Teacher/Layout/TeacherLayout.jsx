@@ -281,16 +281,6 @@ const TeacherLayout = () => {
                     </div>
                     <button 
                       onClick={() => {
-                        navigate('/teacher/profile');
-                        setUserMenuOpen(false);
-                      }}
-                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-700 dark:text-gray-200"
-                    >
-                      <User className="w-4 h-4" />
-                      My Profile
-                    </button>
-                    <button 
-                      onClick={() => {
                         navigate('/teacher/settings/account');
                         setUserMenuOpen(false);
                       }}

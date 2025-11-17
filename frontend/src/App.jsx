@@ -115,6 +115,22 @@ import TeacherTestResult from './pages/Teacher/Dashboard/class-tests/TestResult'
 import StudentReportCard from './pages/Teacher/Dashboard/reports/StudentReportCard';
 import StudentMonthlyReport from './pages/Teacher/Dashboard/reports/StudentMonthlyReport';
 import TeacherAccountSettings from './pages/Teacher/Dashboard/settings/AccountSettings';
+import TeacherNotifications from './pages/Teacher/Dashboard/Notifications';
+
+// Student Imports
+import StudentLayout from './pages/Student/Layout/StudentLayout';
+import StudentDashboard from './pages/Student/Dashboard/Dashboard';
+import StudentAdmissionLetter from './pages/Student/Dashboard/AdmissionLetter';
+import FeeReceipt from './pages/Student/Dashboard/FeeReceipt';
+import StudentTimetable from './pages/Student/Dashboard/Timetable';
+import StudentReportCardPage from './pages/Student/Dashboard/ReportCard';
+import TestResults from './pages/Student/Dashboard/TestResults';
+import ExamResult from './pages/Student/Dashboard/ExamResult';
+import Assignments from './pages/Student/Dashboard/Assignments';
+import OnlineStore from './pages/Student/Dashboard/OnlineStore';
+import StudentMessaging from './pages/Student/Dashboard/Messaging';
+import StudentLiveClass from './pages/Student/Dashboard/LiveClass';
+import StudentAccountSettings from './pages/Student/Dashboard/AccountSettings';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -346,6 +362,32 @@ function App() {
           
           {/* Account Settings Route */}
           <Route path="settings/account" element={<TeacherAccountSettings />} />
+          
+          {/* Notifications Route */}
+          <Route path="notifications" element={<TeacherNotifications />} />
+        </Route>
+
+        {/* Student Routes - Only accessible by student role */}
+        <Route
+          path="/student"
+          element={
+            <ProtectedRoute allowedRoles={['student']}>
+              <StudentLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="dashboard" element={<StudentDashboard />} />
+          <Route path="admission-letter" element={<StudentAdmissionLetter />} />
+          <Route path="fee-receipt" element={<FeeReceipt />} />
+          <Route path="timetable" element={<StudentTimetable />} />
+          <Route path="report-card" element={<StudentReportCardPage />} />
+          <Route path="test-results" element={<TestResults />} />
+          <Route path="exam-result" element={<ExamResult />} />
+          <Route path="assignments" element={<Assignments />} />
+          <Route path="store" element={<OnlineStore />} />
+          <Route path="messaging" element={<StudentMessaging />} />
+          <Route path="live-class" element={<StudentLiveClass />} />
+          <Route path="settings" element={<StudentAccountSettings />} />
         </Route>
         
         {/* Default Route - Smart redirect based on user role */}
