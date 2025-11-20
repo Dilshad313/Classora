@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Upload,
   Globe,
@@ -9,6 +9,7 @@ import {
   Flag,
   Save,
 } from "lucide-react";
+import { getInstituteProfile, updateInstituteProfile } from "../../../services/adminSettings";
 
 export const InstituteProfileModal = ({ onClose }) => {
   const [formData, setFormData] = useState({
@@ -20,6 +21,37 @@ export const InstituteProfileModal = ({ onClose }) => {
     website: "",
     logo: null,
   });
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const data = await getInstituteProfile();
+        if (data) {
+          setFormData(prev => ({
+            ...prev,
+            instituteName: data.instituteName || "",
+            tagline: data.tagline || "",
+            phone: data.phone || "",
+            address: data.address || "",
+            country: data.country || "",
+            website: data.website || "",
+            logo: null,
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to load institute profile", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -30,9 +62,26 @@ export const InstituteProfileModal = ({ onClose }) => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert("Profile Updated Successfully!");
+    try {
+      setSaving(true);
+      setError("");
+      await updateInstituteProfile({
+        instituteName: formData.instituteName,
+        tagline: formData.tagline,
+        phone: formData.phone,
+        address: formData.address,
+        country: formData.country,
+        website: formData.website,
+      });
+      alert("Profile Updated Successfully!");
+    } catch (err) {
+      console.error("Failed to update profile", err);
+      setError(err.message || "Failed to update profile");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -65,6 +114,9 @@ export const InstituteProfileModal = ({ onClose }) => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-7">
+          {error && (
+            <p className="text-red-500 text-sm mb-2">{error}</p>
+          )}
           {/* Logo Upload */}
           <div className="space-y-3 pb-6 border-b border-gray-100 dark:border-gray-700">
             <label className="block font-semibold text-gray-800 dark:text-gray-200 text-base">

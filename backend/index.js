@@ -3,7 +3,8 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 
-const adminRoutes = require('./routes/adminRoutes');
+const adminRoutes = require('./routes/admin/adminRoutes');
+const adminSettingsRoutes = require('./routes/admin/adminSettingsRoutes');
 
 dotenv.config();
 
@@ -14,6 +15,7 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/classora';
 app.use(cors());
 app.use(express.json());
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/settings', adminSettingsRoutes);
 
 app.get('/', (req, res) => {
   res.json({ status: 'ok' });

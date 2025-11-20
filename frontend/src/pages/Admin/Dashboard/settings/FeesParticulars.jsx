@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Save, 
@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Home
 } from 'lucide-react';
+import { getFeesParticulars, updateFeesParticulars } from '../../../../services/adminSettings';
 
 export const FeesParticulars = () => {
   const navigate = useNavigate();
@@ -36,6 +37,25 @@ export const FeesParticulars = () => {
   const [errors, setErrors] = useState({});
   const [isModified, setIsModified] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [apiError, setApiError] = useState('');
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getFeesParticulars();
+        if (data) {
+          setFeeParticulars(prev => ({
+            ...prev,
+            ...data,
+          }));
+        }
+      } catch (err) {
+        console.error('Failed to load fee particulars', err);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleInputChange = (field, value) => {
     if (value && !/^\d*\.?\d*$/.test(value)) {
@@ -82,20 +102,15 @@ export const FeesParticulars = () => {
     }
 
     setIsSubmitting(true);
+    setApiError('');
     
     try {
-      const formattedData = {
-        ...feeParticulars,
-        timestamp: new Date().toISOString()
-      };
-
-      console.log('Fee particulars saved:', formattedData);
-      // Add your save logic here
-      
+      await updateFeesParticulars(feeParticulars);
       alert('Fee particulars saved successfully!');
       setIsModified(false);
     } catch (error) {
       console.error('Error saving fee particulars:', error);
+      setApiError(error.message || 'Failed to save fee particulars');
     } finally {
       setIsSubmitting(false);
     }
@@ -329,6 +344,9 @@ export const FeesParticulars = () => {
 
             {/* Action Buttons */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 space-y-4">
+              {apiError && (
+                <p className="text-red-500 text-sm text-center">{apiError}</p>
+              )}
               <button
                 onClick={handleSave}
                 disabled={isSubmitting || !isModified}
