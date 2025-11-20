@@ -14,11 +14,13 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+    if (apiError) setApiError('');
   };
 
   const validate = () => {
@@ -32,16 +34,38 @@ const Register = () => {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validate();
     if (Object.keys(newErrors).length === 0) {
-      localStorage.setItem('user', JSON.stringify({
-        email: formData.email,
-        role: 'admin',
-        name: formData.fullName
-      }));
-      navigate('/dashboard');
+      try {
+        setApiError('');
+        const response = await fetch('http://localhost:5000/api/admin/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            fullName: formData.fullName,
+            email: formData.email,
+            password: formData.password,
+            adminKey: formData.adminKey
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          setApiError(data.message || 'Registration failed');
+          return;
+        }
+
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('token', data.token);
+        navigate('/dashboard');
+      } catch (err) {
+        setApiError('Unable to connect to server');
+      }
     } else {
       setErrors(newErrors);
     }
@@ -102,6 +126,9 @@ const Register = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-8">
+              {apiError && (
+                <p className="text-red-400 text-sm text-center">{apiError}</p>
+              )}
               {/* Full Name */}
               <div className="space-y-3">
                 <div className="relative">

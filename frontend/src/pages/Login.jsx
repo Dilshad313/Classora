@@ -12,6 +12,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [hasAccount, setHasAccount] = useState(true);
+  const [apiError, setApiError] = useState('');
 
   useEffect(() => {
     const user = localStorage.getItem('user');
@@ -35,35 +36,44 @@ const Login = () => {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validate();
     if (Object.keys(newErrors).length === 0) {
-      localStorage.setItem('user', JSON.stringify({
-        email: formData.email,
-        role: formData.role,
-        name: formData.role === 'admin' ? 'System Administrator' :
-              formData.role === 'teacher' ? 'Mr. David Smith' :
-              formData.role === 'student' ? 'Emma Johnson' : 'Parent Guardian'
-      }));
+      try {
+        setApiError('');
+        const response = await fetch('http://localhost:5000/api/admin/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password
+          })
+        });
 
-      const routes = {
-        admin: '/dashboard',
-        teacher: '/teacher/dashboard',
-        student: '/student/dashboard',
-        parent: '/parent/dashboard'
-      };
-      navigate(routes[formData.role]);
+        const data = await response.json();
+
+        if (!response.ok) {
+          setApiError(data.message || 'Login failed');
+          return;
+        }
+
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('token', data.token);
+        setHasAccount(true);
+        navigate('/dashboard');
+      } catch (err) {
+        setApiError('Unable to connect to server');
+      }
     } else {
       setErrors(newErrors);
     }
   };
 
   const roles = [
-    { id: 'admin', label: 'Administrator', icon: Crown },
-    { id: 'teacher', label: 'Teacher', icon: BookOpen },
-    { id: 'student', label: 'Student', icon: UserRound },
-    { id: 'parent', label: 'Parent', icon: Users }
+    { id: 'admin', label: 'Administrator', icon: Crown }
   ];
 
   return (
@@ -109,6 +119,9 @@ const Login = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-8">
+              {apiError && (
+                <p className="text-red-400 text-sm text-center">{apiError}</p>
+              )}
               {/* Role Selection */}
               <div>
                 <label className="text-sm font-medium text-gray-300 mb-4 block">Select Role</label>
