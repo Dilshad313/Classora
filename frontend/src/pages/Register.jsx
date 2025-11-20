@@ -1,89 +1,46 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { UserPlus, Mail, Lock, User, Phone, Eye, EyeOff, GraduationCap, Building2 } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, Shield, Eye, EyeOff, GraduationCap } from 'lucide-react';
 
 const Register = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
-    phone: '',
-    role: 'student',
     password: '',
     confirmPassword: '',
-    schoolCode: '',
-    agreeToTerms: false
+    adminKey: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   const validate = () => {
     const newErrors = {};
-    
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Full name is required';
-    }
-    
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
-    }
-    
-    if (!formData.phone) {
-      newErrors.phone = 'Phone number is required';
-    } else if (!/^\d{10}$/.test(formData.phone.replace(/\D/g, ''))) {
-      newErrors.phone = 'Phone number must be 10 digits';
-    }
-    
-    if (!formData.schoolCode) {
-      newErrors.schoolCode = 'School code is required';
-    }
-    
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
-    }
-    
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-    
-    if (!formData.agreeToTerms) {
-      newErrors.agreeToTerms = 'You must agree to the terms and conditions';
-    }
-    
+    if (!formData.fullName.trim()) newErrors.fullName = 'Full name required';
+    if (!formData.email || !/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Valid email required';
+    if (!formData.password || formData.password.length < 8) newErrors.password = 'Password must be 8+ characters';
+    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
+    if (formData.adminKey !== 'CLASSORA2025') newErrors.adminKey = 'Invalid admin key';
+
     return newErrors;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     const newErrors = validate();
-    
     if (Object.keys(newErrors).length === 0) {
-      // Store user data in localStorage (mock registration)
       localStorage.setItem('user', JSON.stringify({
         email: formData.email,
-        role: formData.role,
-        name: formData.fullName,
-        phone: formData.phone
+        role: 'admin',
+        name: formData.fullName
       }));
-      
-      // Navigate to dashboard
       navigate('/dashboard');
     } else {
       setErrors(newErrors);
@@ -91,270 +48,164 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center p-4 py-12">
-      <div className="w-full max-w-6xl grid md:grid-cols-2 gap-8 items-center">
-        {/* Left Side - Branding */}
-        <div className="hidden md:block">
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-12 shadow-xl">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="bg-gradient-to-br from-primary-600 to-secondary-600 p-3 rounded-xl">
-                <GraduationCap className="w-10 h-10 text-white" />
+    <div className="min-h-screen bg-black text-white overflow-hidden relative">
+      <div className="absolute inset-0 opacity-50">
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+      </div>
+
+      <div className="absolute top-20 -left-40 w-96 h-96 bg-cyan-900 rounded-full filter blur-3xl opacity-30 animate-pulse"></div>
+      <div className="absolute bottom-20 -right-40 w-96 h-96 bg-emerald-900 rounded-full filter blur-3xl opacity-30 animate-pulse animation-delay-4000"></div>
+
+      <div className="relative z-10 min-h-screen flex items-center justify-center p-6">
+        <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-12 items-center">
+          {/* Left - Admin Only Notice */}
+          <div className="hidden lg:block space-y-12">
+            <div className="space-y-8">
+              <div className="flex items-center gap-4">
+                <div className="p-4 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20">
+                  <Shield className="w-12 h-12 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-5xl font-bold tracking-tight">Classora</h1>
+                  <p className="text-xl text-gray-400">Administrator Portal</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
-                  Classora
-                </h1>
-                <p className="text-gray-600 text-sm">School Management System</p>
+
+              <div className="space-y-6">
+                <h2 className="text-5xl font-bold leading-tight">
+                  Admin Registration<br />By Invitation Only
+                </h2>
+                <p className="text-xl text-gray-400 leading-relaxed">
+                  Only authorized administrators can create accounts. Teachers, students, and parents are registered through the admin panel.
+                </p>
               </div>
-            </div>
-            
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              Join Future Leaders Academy
-            </h2>
-            <p className="text-gray-600 mb-8">
-              Create your account and get started with the most comprehensive school management platform.
-            </p>
-            
-            <div className="space-y-6">
-              <div className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-xl p-6 border border-primary-200">
-                <h3 className="font-bold text-primary-900 mb-2">For Students & Parents</h3>
-                <ul className="space-y-2 text-sm text-primary-800">
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-primary-600 rounded-full"></div>
-                    Access grades and attendance
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-primary-600 rounded-full"></div>
-                    View homework and assignments
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-primary-600 rounded-full"></div>
-                    Communicate with teachers
-                  </li>
-                </ul>
-              </div>
-              
-              <div className="bg-gradient-to-br from-secondary-50 to-secondary-100 rounded-xl p-6 border border-secondary-200">
-                <h3 className="font-bold text-secondary-900 mb-2">For Teachers & Staff</h3>
-                <ul className="space-y-2 text-sm text-secondary-800">
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-secondary-600 rounded-full"></div>
-                    Manage classes and students
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-secondary-600 rounded-full"></div>
-                    Create and grade assignments
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-secondary-600 rounded-full"></div>
-                    Track attendance and performance
-                  </li>
+
+              <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-8">
+                <h3 className="text-2xl font-bold mb-4 flex items-center gap-3">
+                  <Shield className="w-8 h-8 text-emerald-400" />
+                  Secure & Restricted
+                </h3>
+                <ul className="space-y-3 text-gray-400">
+                  <li className="flex items-center gap-3">✓ Admin key required</li>
+                  <li className="flex items-center gap-3">✓ Encrypted credentials</li>
+                  <li className="flex items-center gap-3">✓ Audit trail enabled</li>
                 </ul>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Right Side - Register Form */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12">
-          <div className="md:hidden flex items-center gap-3 mb-8 justify-center">
-            <div className="bg-gradient-to-br from-primary-600 to-secondary-600 p-3 rounded-xl">
-              <GraduationCap className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
-              Classora
-            </h1>
-          </div>
-
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">Create Account</h2>
-            <p className="text-gray-600">Fill in your details to get started</p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Role Selection */}
-            <div>
-              <label className="label">I am a</label>
-              <div className="grid grid-cols-2 gap-3">
-                {['student', 'parent', 'teacher', 'admin'].map((role) => (
-                  <button
-                    key={role}
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, role }))}
-                    className={`p-3 rounded-lg border-2 transition-all font-medium capitalize ${
-                      formData.role === role
-                        ? 'border-primary-600 bg-primary-50 text-primary-700'
-                        : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                    }`}
-                  >
-                    {role}
-                  </button>
-                ))}
-              </div>
+          {/* Right - Register Form */}
+          <div className="backdrop-blur-2xl bg-white/5 rounded-3xl border border-white/10 shadow-2xl p-10 lg:p-12">
+            <div className="text-center mb-10">
+              <h2 className="text-4xl font-bold mb-2">Create Admin Account</h2>
+              <p className="text-gray-400">Restricted access • Invitation required</p>
             </div>
 
-            {/* Full Name */}
-            <div>
-              <label className="label">Full Name</label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  className={`input-field pl-11 ${errors.fullName ? 'border-red-500 focus:ring-red-500' : ''}`}
-                  placeholder="John Doe"
-                />
-              </div>
-              {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
-            </div>
-
-            {/* Email & Phone */}
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Email Address</label>
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Full Name */}
+              <div className="space-y-3">
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <User className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                  <input
+                    type="text"
+                    name="fullName"
+                    value={formData.fullName}
+                    onChange={handleChange}
+                    placeholder="Full Name"
+                    className="w-full pl-14 pr-5 py-5 bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl text-white placeholder-gray-500 focus:border-white/40 focus:outline-none focus:ring-4 focus:ring-white/10 transition-all"
+                  />
+                </div>
+                {errors.fullName && <p className="text-red-400 text-sm ml-2">{errors.fullName}</p>}
+              </div>
+
+              {/* Email */}
+              <div className="space-y-3">
+                <div className="relative">
+                  <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                   <input
                     type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className={`input-field pl-11 ${errors.email ? 'border-red-500 focus:ring-red-500' : ''}`}
-                    placeholder="john@example.com"
+                    placeholder="admin@futureleaders.edu"
+                    className="w-full pl-14 pr-5 py-5 bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl text-white placeholder-gray-500 focus:border-white/40 focus:outline-none focus:ring-4 focus:ring-white/10 transition-all"
                   />
                 </div>
-                {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                {errors.email && <p className="text-red-400 text-sm ml-2">{errors.email}</p>}
               </div>
 
-              <div>
-                <label className="label">Phone Number</label>
+              {/* Passwords */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <div className="relative">
+                    <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      placeholder="Password"
+                      className="w-full pl-14 pr-16 py-5 bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl text-white placeholder-gray-500 focus:border-white/40 focus:outline-none focus:ring-4 focus:ring-white/10 transition-all"
+                    />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  {errors.password && <p className="text-red-400 text-sm">{errors.password}</p>}
+                </div>
+
+                <div className="space-y-3">
+                  <div className="relative">
+                    <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      placeholder="Confirm Password"
+                      className="w-full pl-14 pr-16 py-5 bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl text-white placeholder-gray-500 focus:border-white/40 focus:outline-none focus:ring-4 focus:ring-white/10 transition-all"
+                    />
+                    <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
+                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  {errors.confirmPassword && <p className="text-red-400 text-sm">{errors.confirmPassword}</p>}
+                </div>
+              </div>
+
+              {/* Admin Key */}
+              <div className="space-y-3">
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Shield className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                   <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
+                    type="text"
+                    name="adminKey"
+                    value={formData.adminKey}
                     onChange={handleChange}
-                    className={`input-field pl-11 ${errors.phone ? 'border-red-500 focus:ring-red-500' : ''}`}
-                    placeholder="1234567890"
+                    placeholder="Admin Key (CLASSORA2025)"
+                    className="w-full pl-14 pr-5 py-5 bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl text-white placeholder-gray-500 focus:border-white/40 focus:outline-none focus:ring-4 focus:ring-white/10 transition-all"
                   />
                 </div>
-                {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
-              </div>
-            </div>
-
-            {/* School Code */}
-            <div>
-              <label className="label">School Code</label>
-              <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  name="schoolCode"
-                  value={formData.schoolCode}
-                  onChange={handleChange}
-                  className={`input-field pl-11 ${errors.schoolCode ? 'border-red-500 focus:ring-red-500' : ''}`}
-                  placeholder="FLA2024"
-                />
-              </div>
-              {errors.schoolCode && <p className="text-red-500 text-sm mt-1">{errors.schoolCode}</p>}
-              <p className="text-xs text-gray-500 mt-1">Contact your school administrator for the code</p>
-            </div>
-
-            {/* Password Fields */}
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className={`input-field pl-11 pr-11 ${errors.password ? 'border-red-500 focus:ring-red-500' : ''}`}
-                    placeholder="Min. 8 characters"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-                {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+                {errors.adminKey && <p className="text-red-400 text-sm ml-2">{errors.adminKey}</p>}
+                <p className="text-xs text-gray-500 ml-2">Contact your system provider for the admin key</p>
               </div>
 
-              <div>
-                <label className="label">Confirm Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    className={`input-field pl-11 pr-11 ${errors.confirmPassword ? 'border-red-500 focus:ring-red-500' : ''}`}
-                    placeholder="Re-enter password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-                {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
-              </div>
-            </div>
+              <button
+                type="submit"
+                className="w-full py-5 bg-gradient-to-r from-emerald-600 to-cyan-600 rounded-2xl font-semibold text-lg hover:from-emerald-500 hover:to-cyan-500 transition-all transform hover:scale-[1.02] shadow-2xl flex items-center justify-center gap-3"
+              >
+                <UserPlus className="w-5 h-5" />
+                Create Admin Account
+              </button>
 
-            {/* Terms and Conditions */}
-            <div>
-              <label className="flex items-start gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="agreeToTerms"
-                  checked={formData.agreeToTerms}
-                  onChange={handleChange}
-                  className={`w-4 h-4 mt-1 text-primary-600 border-gray-300 rounded focus:ring-primary-500 ${
-                    errors.agreeToTerms ? 'border-red-500' : ''
-                  }`}
-                />
-                <span className="text-sm text-gray-600">
-                  I agree to the{' '}
-                  <a href="#" className="text-primary-600 hover:text-primary-700 font-medium">
-                    Terms and Conditions
-                  </a>{' '}
-                  and{' '}
-                  <a href="#" className="text-primary-600 hover:text-primary-700 font-medium">
-                    Privacy Policy
-                  </a>
-                </span>
-              </label>
-              {errors.agreeToTerms && <p className="text-red-500 text-sm mt-1">{errors.agreeToTerms}</p>}
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-primary-600 to-secondary-600 text-white py-3 rounded-lg font-semibold hover:from-primary-700 hover:to-secondary-700 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
-            >
-              <UserPlus className="w-5 h-5" />
-              Create Account
-            </button>
-
-            {/* Login Link */}
-            <p className="text-center text-gray-600">
-              Already have an account?{' '}
-              <Link to="/login" className="text-primary-600 hover:text-primary-700 font-semibold">
-                Sign In
-              </Link>
-            </p>
-          </form>
+              <p className="text-center text-gray-400">
+                Already have access?{' '}
+                <Link to="/login" className="text-cyan-400 hover:text-cyan-300 font-medium">
+                  Sign In →
+                </Link>
+              </p>
+            </form>
+          </div>
         </div>
       </div>
     </div>
