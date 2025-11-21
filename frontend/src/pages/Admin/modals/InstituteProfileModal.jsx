@@ -9,6 +9,7 @@ import {
   Flag,
   Save,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import { getInstituteProfile, updateInstituteProfile } from "../../../services/adminSettings";
 
 export const InstituteProfileModal = ({ onClose }) => {
@@ -21,16 +22,19 @@ export const InstituteProfileModal = ({ onClose }) => {
     website: "",
     logo: null,
   });
+
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
 
+  // ==========================
+  // Fetch Profile
+  // ==========================
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setLoading(true);
-        setError("");
         const data = await getInstituteProfile();
+
         if (data) {
           setFormData(prev => ({
             ...prev,
@@ -40,11 +44,13 @@ export const InstituteProfileModal = ({ onClose }) => {
             address: data.address || "",
             country: data.country || "",
             website: data.website || "",
-            logo: null,
+            logo: data.logoUrl ? data.logoUrl : null, // FIX: use logoUrl from backend
           }));
+
+          toast.success("Profile loaded successfully");
         }
       } catch (err) {
-        console.error("Failed to load institute profile", err);
+        toast.error("Failed to load profile");
       } finally {
         setLoading(false);
       }
@@ -53,20 +59,35 @@ export const InstituteProfileModal = ({ onClose }) => {
     fetchProfile();
   }, []);
 
+  // ==========================
+  // Handle Form Changes
+  // ==========================
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (files) {
+      toast.success("Logo selected!");
       setFormData({ ...formData, [name]: files[0] });
     } else {
       setFormData({ ...formData, [name]: value });
     }
   };
 
+  // ==========================
+  // Submit Form
+  // ==========================
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!formData.instituteName || !formData.phone || !formData.address || !formData.country) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+
     try {
       setSaving(true);
-      setError("");
+
+      toast.loading("Updating profile...", { id: "updateProfile" });
+
       await updateInstituteProfile({
         instituteName: formData.instituteName,
         tagline: formData.tagline,
@@ -74,11 +95,13 @@ export const InstituteProfileModal = ({ onClose }) => {
         address: formData.address,
         country: formData.country,
         website: formData.website,
+        logo: formData.logo,
       });
-      alert("Profile Updated Successfully!");
+
+      toast.success("Profile Updated Successfully!", { id: "updateProfile" });
+
     } catch (err) {
-      console.error("Failed to update profile", err);
-      setError(err.message || "Failed to update profile");
+      toast.error(err.message || "Update failed!", { id: "updateProfile" });
     } finally {
       setSaving(false);
     }
@@ -114,9 +137,9 @@ export const InstituteProfileModal = ({ onClose }) => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-7">
-          {error && (
+          {/* {error && (
             <p className="text-red-500 text-sm mb-2">{error}</p>
-          )}
+          )} */}
           {/* Logo Upload */}
           <div className="space-y-3 pb-6 border-b border-gray-100 dark:border-gray-700">
             <label className="block font-semibold text-gray-800 dark:text-gray-200 text-base">
@@ -126,11 +149,19 @@ export const InstituteProfileModal = ({ onClose }) => {
               <div className="relative group">
                 <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600 shadow-md transition-all group-hover:border-blue-500 dark:group-hover:border-blue-400 group-hover:shadow-lg">
                   {formData.logo ? (
-                    <img
-                      src={URL.createObjectURL(formData.logo)}
-                      alt="Logo Preview"
-                      className="w-full h-full object-cover"
-                    />
+                    typeof formData.logo === "string" ? (
+                      <img
+                        src={formData.logo}
+                        alt="Logo Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <img
+                        src={URL.createObjectURL(formData.logo)}
+                        alt="Logo Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    )
                   ) : (
                     <Upload className="w-8 h-8 text-gray-400 dark:text-gray-500" />
                   )}
@@ -324,11 +355,19 @@ export const InstituteProfileModal = ({ onClose }) => {
           {/* Logo */}
           <div className="relative">
             {formData.logo ? (
-              <img
-                src={URL.createObjectURL(formData.logo)}
-                alt="Institute Logo"
-                className="w-28 h-28 rounded-2xl object-cover border-4 border-blue-100 dark:border-blue-900/50 shadow-xl ring-4 ring-blue-50 dark:ring-blue-900/20"
-              />
+              typeof formData.logo === "string" ? (
+                <img
+                  src={formData.logo}
+                  alt="Institute Logo"
+                  className="w-28 h-28 rounded-2xl object-cover border-4 border-blue-100 dark:border-blue-900/50 shadow-xl ring-4 ring-blue-50 dark:ring-blue-900/20"
+                />
+              ) : (
+                <img
+                  src={URL.createObjectURL(formData.logo)}
+                  alt="Institute Logo"
+                  className="w-28 h-28 rounded-2xl object-cover border-4 border-blue-100 dark:border-blue-900/50 shadow-xl ring-4 ring-blue-50 dark:ring-blue-900/20"
+                />
+              )
             ) : (
               <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 border-2 border-dashed border-gray-300 dark:border-gray-600 shadow-inner">
                 <Building2 className="w-10 h-10 mb-1" />

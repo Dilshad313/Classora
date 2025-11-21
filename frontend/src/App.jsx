@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from "react-hot-toast";
+
 import Login from './pages/Login';
 import Register from './pages/Register';
 import DashboardLayout from './pages/Admin/Layout/DashboardLayout';
@@ -184,6 +186,9 @@ const SmartRedirect = () => {
 
 function App() {
   return (
+    <>
+     <Toaster position="top-right" reverseOrder={false} />
+     
     <Router>
       <Routes>
         {/* Public Routes */}
@@ -395,6 +400,7 @@ function App() {
         <Route path="*" element={<SmartRedirect />} />
       </Routes>
     </Router>
+    </>
   );
 }
 
