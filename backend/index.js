@@ -5,6 +5,12 @@ const dotenv = require('dotenv');
 
 const adminRoutes = require('./routes/admin/adminRoutes');
 const adminSettingsRoutes = require('./routes/admin/adminSettingsRoutes');
+const classesRoutes = require('./routes/classesRoutes');
+const studentsRoutes = require('./routes/studentsRoutes');
+const employeesRoutes = require('./routes/employeesRoutes');
+const attendanceRoutes = require('./routes/attendanceRoutes');
+const feesRoutes = require('./routes/feesRoutes');
+const accountsRoutes = require('./routes/accountsRoutes');
 
 dotenv.config();
 
@@ -16,6 +22,12 @@ app.use(cors());
 app.use(express.json());
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/settings', adminSettingsRoutes);
+app.use('/api/classes', classesRoutes);
+app.use('/api/students', studentsRoutes);
+app.use('/api/employees', employeesRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/fees', feesRoutes);
+app.use('/api/accounts', accountsRoutes);
 
 app.get('/', (req, res) => {
   res.json({ status: 'ok' });
