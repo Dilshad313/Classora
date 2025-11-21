@@ -1,5 +1,3 @@
-const mongoose = require('mongoose');
-
 const bankSchema = new mongoose.Schema(
   {
     bankName: { type: String, required: true },
@@ -8,7 +6,8 @@ const bankSchema = new mongoose.Schema(
     accountNumber: { type: String, required: true },
     instructions: { type: String, trim: true },
     logoUrl: { type: String, trim: true },
-    loginRequired: { type: Boolean, default: false }
+    logoPublicId: { type: String, trim: true },
+    loginRequired: { type: Boolean, default: false },
   },
   { _id: false }
 );
@@ -16,7 +15,7 @@ const bankSchema = new mongoose.Schema(
 const accountInvoiceSchema = new mongoose.Schema(
   {
     admin: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', required: true },
-    banks: [bankSchema]
+    banks: [bankSchema],
   },
   { timestamps: true }
 );
