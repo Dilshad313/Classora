@@ -10,7 +10,6 @@ import {
   Save,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { getInstituteProfile, updateInstituteProfile } from "../../../services/adminSettings";
 
 export const InstituteProfileModal = ({ onClose }) => {
   const [formData, setFormData] = useState({

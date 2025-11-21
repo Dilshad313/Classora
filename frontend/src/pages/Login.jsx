@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogIn, Mail, Lock, Eye, EyeOff, GraduationCap, Crown, BookOpen, UserRound, Users, Shield } from 'lucide-react';
+import { LogIn, Mail, Lock, Eye, EyeOff, GraduationCap, Crown, Shield } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -39,14 +39,13 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validate();
+
     if (Object.keys(newErrors).length === 0) {
       try {
         setApiError('');
         const response = await fetch('http://localhost:5000/api/admin/login', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             email: formData.email,
             password: formData.password
@@ -64,7 +63,7 @@ const Login = () => {
         localStorage.setItem('token', data.token);
         setHasAccount(true);
         navigate('/dashboard');
-      } catch (err) {
+      } catch {
         setApiError('Unable to connect to server');
       }
     } else {
@@ -78,51 +77,48 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden relative">
+
       <div className="absolute inset-0 opacity-40">
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
       </div>
 
       <div className="absolute top-20 -left-40 w-96 h-96 bg-purple-900 rounded-full filter blur-3xl opacity-30 animate-pulse"></div>
-      <div className="absolute bottom-20 -right-40 w-96 h-96 bg-pink-900 rounded-full filter blur-3xl opacity-30 animate-pulse animation-delay-4000"></div>
+      <div className="absolute bottom-20 -right-40 w-96 h-96 bg-pink-900 rounded-full filter blur-3xl opacity-30 animate-pulse"></div>
 
       <div className="relative z-10 min-h-screen flex items-center justify-center p-6">
         <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left - Hero */}
-          <div className="hidden lg:block space-y-12">
-            <div className="space-y-8">
-              <div className="flex items-center gap-4">
-                <div className="p-4 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20">
-                  <GraduationCap className="w-12 h-12 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-5xl font-bold tracking-tight">Classora</h1>
-                  <p className="text-xl text-gray-400">Future Leaders Academy</p>
-                </div>
-              </div>
 
-              <div className="space-y-6">
-                <h2 className="text-5xl font-bold leading-tight">
-                  Next-Generation<br />School Management
-                </h2>
-                <p className="text-xl text-gray-400 leading-relaxed">
-                  Streamline administration, empower teachers, engage parents, and inspire students — all in one secure platform.
-                </p>
+          {/* left hero */}
+          <div className="hidden lg:block space-y-12">
+            <div className="flex items-center gap-4">
+              <div className="p-4 bg-white/10 rounded-2xl border border-white/20">
+                <GraduationCap className="w-12 h-12 text-white" />
               </div>
+              <div>
+                <h1 className="text-5xl font-bold tracking-tight">Classora</h1>
+                <p className="text-xl text-gray-400">Future Leaders Academy</p>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <h2 className="text-5xl font-bold leading-tight">Next-Generation<br/>School Management</h2>
+              <p className="text-xl text-gray-400">All-in-one system for admins, teachers, parents & students.</p>
             </div>
           </div>
 
-          {/* Right - Login Card */}
+          {/* right login */}
           <div className="backdrop-blur-2xl bg-white/5 rounded-3xl border border-white/10 shadow-2xl p-10 lg:p-12">
+
             <div className="text-center mb-10">
               <h2 className="text-4xl font-bold mb-2">Welcome Back</h2>
-              <p className="text-gray-400">Sign in to access your dashboard</p>
+              <p className="text-gray-400">Sign in to your dashboard</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-8">
-              {apiError && (
-                <p className="text-red-400 text-sm text-center">{apiError}</p>
-              )}
-              {/* Role Selection */}
+
+              {apiError && <p className="text-red-400 text-sm text-center">{apiError}</p>}
+
+              {/* role */}
               <div>
                 <label className="text-sm font-medium text-gray-300 mb-4 block">Select Role</label>
                 <div className="grid grid-cols-2 gap-4">
@@ -133,11 +129,11 @@ const Login = () => {
                         key={role.id}
                         type="button"
                         onClick={() => setFormData(prev => ({ ...prev, role: role.id }))}
-                        className={`py-6 rounded-2xl font-medium transition-all backdrop-blur-xl border flex flex-col items-center gap-2 ${
-                          formData.role === role.id
-                            ? 'bg-white/20 border-white/40 text-white shadow-xl'
-                            : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:border-white/20'
-                        }`}
+                        className={`py-6 rounded-2xl transition-all flex flex-col items-center gap-2 backdrop-blur-xl border
+                          ${formData.role === role.id
+                            ? 'bg-white/20 border-white/40 text-white'
+                            : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}
+                        `}
                       >
                         <Icon className="w-8 h-8" />
                         <span className="text-sm">{role.label}</span>
@@ -147,7 +143,7 @@ const Login = () => {
                 </div>
               </div>
 
-              {/* Email */}
+              {/* email */}
               <div className="space-y-3">
                 <div className="relative">
                   <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
@@ -157,15 +153,15 @@ const Login = () => {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="admin@futureleaders.edu"
-                    className={`w-full pl-14 pr-5 py-5 bg-white/5 border backdrop-blur-xl rounded-2xl text-white placeholder-gray-500 transition-all ${
-                      errors.email ? 'border-red-500/80' : 'border-white/10 focus:border-white/40'
-                    } focus:outline-none focus:ring-4 focus:ring-white/10`}
+                    className={`w-full pl-14 pr-5 py-5 rounded-2xl bg-white/5 border backdrop-blur-xl
+                      ${errors.email ? 'border-red-500/80' : 'border-white/10'}
+                    `}
                   />
                 </div>
                 {errors.email && <p className="text-red-400 text-sm ml-2">{errors.email}</p>}
               </div>
 
-              {/* Password */}
+              {/* password */}
               <div className="space-y-3">
                 <div className="relative">
                   <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
@@ -175,46 +171,41 @@ const Login = () => {
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="Enter your password"
-                    className={`w-full pl-14 pr-16 py-5 bg-white/5 border backdrop-blur-xl rounded-2xl text-white placeholder-gray-500 transition-all ${
-                      errors.password ? 'border-red-500/80' : 'border-white/10 focus:border-white/40'
-                    } focus:outline-none focus:ring-4 focus:ring-white/10`}
+                    className={`w-full pl-14 pr-16 py-5 rounded-2xl bg-white/5 border backdrop-blur-xl
+                      ${errors.password ? 'border-red-500/80' : 'border-white/10'}
+                    `}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500">
+                    {showPassword ? <EyeOff /> : <Eye />}
                   </button>
                 </div>
                 {errors.password && <p className="text-red-400 text-sm ml-2">{errors.password}</p>}
               </div>
 
+              {/* remember + forgot */}
               <div className="flex justify-between items-center text-sm">
                 <label className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" className="w-5 h-5 rounded bg-white/10 border-white/20 text-purple-500" />
+                  <input type="checkbox" className="w-5 h-5 rounded bg-white/10 border-white/20" />
                   <span className="text-gray-400">Remember me</span>
                 </label>
-                <Link to="/forgot-password" className="text-purple-400 hover:text-purple-300 font-medium">
-                  Forgot password?
-                </Link>
+                <Link to="/forgot-password" className="text-purple-400">Forgot password?</Link>
               </div>
 
+              {/* submit */}
               <button
                 type="submit"
-                className="w-full py-5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl font-semibold text-lg hover:from-purple-500 hover:to-pink-500 transition-all transform hover:scale-[1.02] shadow-2xl flex items-center justify-center gap-3"
+                className="w-full py-5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl font-semibold text-lg hover:scale-[1.02] flex items-center justify-center gap-3"
               >
-                <LogIn className="w-5 h-5" />
-                Sign In
+                <LogIn className="w-5 h-5" /> Sign In
               </button>
 
-              {/* Show Register Button Only If No Account Exists */}
+              {/* registration suggestion */}
               {!hasAccount && (
                 <div className="text-center pt-6 border-t border-white/10">
-                  <p className="text-gray-400 mb-4">No admin account detected</p>
+                  <p className="text-gray-400 mb-4">No admin account found</p>
                   <Link
                     to="/register"
-                    className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-emerald-600 to-cyan-600 rounded-2xl font-medium hover:from-emerald-500 hover:to-cyan-500 transition-all transform hover:scale-105 shadow-xl"
+                    className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-emerald-600 to-cyan-600 rounded-2xl font-medium hover:scale-105"
                   >
                     <Shield className="w-5 h-5" />
                     Create Admin Account
@@ -222,13 +213,9 @@ const Login = () => {
                 </div>
               )}
 
-              {hasAccount && (
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center">
-                  <p className="text-xs text-gray-500 font-medium">Demo • admin@futureleaders.edu / admin123</p>
-                </div>
-              )}
             </form>
           </div>
+
         </div>
       </div>
     </div>

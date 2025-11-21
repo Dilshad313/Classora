@@ -15,7 +15,6 @@ import {
   ChevronRight,
   Home
 } from 'lucide-react';
-import { getFeesParticulars, updateFeesParticulars } from '../../../../services/adminSettings';
 
 export const FeesParticulars = () => {
   const navigate = useNavigate();
