@@ -59,7 +59,8 @@ const Login = () => {
           return;
         }
 
-        localStorage.setItem('user', JSON.stringify(data.user));
+        // Ensure role is present in user object for sidebar filtering
+        localStorage.setItem('user', JSON.stringify({ ...data.user, role: data.user.role || 'admin' }));
         localStorage.setItem('token', data.token);
         setHasAccount(true);
         navigate('/dashboard');
@@ -173,7 +174,7 @@ const Login = () => {
                     placeholder="Enter your password"
                     className={`w-full pl-14 pr-16 py-5 rounded-2xl bg-white/5 border backdrop-blur-xl
                       ${errors.password ? 'border-red-500/80' : 'border-white/10'}
-                    `}
+                  `}
                   />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500">
                     {showPassword ? <EyeOff /> : <Eye />}

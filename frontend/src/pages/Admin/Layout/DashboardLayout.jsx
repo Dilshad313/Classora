@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { InstituteProfileModal } from '../modals/InstituteProfileModal';
+import { InstituteProfile } from '../Dashboard/settings/InstituteProfile';
 import {
   GraduationCap, LayoutDashboard, Users, BookOpen, Calendar, DollarSign,
   MessageSquare, Settings, LogOut, Menu, X, Bell, Search, ChevronDown,
