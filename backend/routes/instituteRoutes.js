@@ -1,31 +1,17 @@
 import express from 'express';
+const router = express.Router();
+
 import {
   getInstituteProfile,
   updateInstituteProfile,
   deleteInstituteLogo,
-  getAllProfiles  // Add this
 } from '../controllers/instituteController.js';
-import { validateInstituteProfile } from '../middleware/validation.js';
+
+import authenticateUser from '../middleware/auth.js';
 import { uploadMiddleware, handleMulterError } from '../middleware/upload.js';
 
-const router = express.Router();
-
-// GET institute profile (first one)
-router.get('/profile', getInstituteProfile);
-
-// GET all profiles (for debugging)
-router.get('/profiles', getAllProfiles);
-
-// UPDATE institute profile
-router.put(
-  '/profile',
-  uploadMiddleware,
-  handleMulterError,
-  validateInstituteProfile,
-  updateInstituteProfile
-);
-
-// DELETE institute logo
-router.delete('/profile/logo', deleteInstituteLogo);
+router.route('/profile').get(authenticateUser, getInstituteProfile);
+router.route('/profile').put(authenticateUser, uploadMiddleware, handleMulterError, updateInstituteProfile);
+router.route('/profile/logo').delete(authenticateUser, deleteInstituteLogo);
 
 export default router;

@@ -1,64 +1,72 @@
-import Admin from "../models/Admin.js";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import User from '../models/User.js';
+import Institute from '../models/Institute.js';
+import { StatusCodes } from 'http-status-codes';
+import { BadRequestError, UnauthenticatedError } from '../errors/index.js';
 
-const ADMIN_KEY = "CLASSORA2025";
+const register = async (req, res) => {
+  const { name, email, password, role, instituteName } = req.body;
 
-// REGISTER
-export const registerAdmin = async (req, res) => {
-  try {
-    const { fullName, email, password, adminKey } = req.body;
-
-    if (adminKey !== ADMIN_KEY) {
-      return res.status(400).json({ message: "Invalid admin key" });
-    }
-
-    const existing = await Admin.findOne({ email });
-    if (existing) return res.status(400).json({ message: "Email already exists" });
-
-    const hashed = await bcrypt.hash(password, 10);
-
-    const admin = await Admin.create({
-      fullName,
-      email,
-      password: hashed
-    });
-
-    const token = jwt.sign({ id: admin._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d"
-    });
-
-    res.status(201).json({
-      message: "Admin registered successfully",
-      user: admin,
-      token
-    });
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
+  if (!name || !email || !password || !role || !instituteName) {
+    throw new BadRequestError('Please provide all values');
   }
+
+  const userAlreadyExists = await User.findOne({ email });
+  if (userAlreadyExists) {
+    throw new BadRequestError('Email already in use');
+  }
+
+  const institute = await Institute.create({ name: instituteName });
+
+  const user = await User.create({ name, email, password, role, institute: institute._id });
+  const token = user.createJWT();
+  res.status(StatusCodes.CREATED).json({
+    user: {
+      email: user.email,
+      lastName: user.lastName,
+      location: user.location,
+      name: user.name,
+      role: user.role,
+    },
+    token,
+  });
 };
 
-// LOGIN
-export const loginAdmin = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    const admin = await Admin.findOne({ email });
-    if (!admin) return res.status(400).json({ message: "Invalid credentials" });
-
-    const match = await bcrypt.compare(password, admin.password);
-    if (!match) return res.status(400).json({ message: "Wrong password" });
-
-    const token = jwt.sign({ id: admin._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d"
-    });
-
-    res.json({
-      message: "Login successful",
-      user: admin,
-      token
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
+const login = async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    throw new BadRequestError('Please provide all values');
   }
+  const user = await User.findOne({ email }).select('+password');
+  if (!user) {
+    throw new UnauthenticatedError('Invalid Credentials');
+  }
+
+  const isPasswordCorrect = await user.comparePassword(password);
+  if (!isPasswordCorrect) {
+    throw new UnauthenticatedError('Invalid Credentials');
+  }
+  const token = user.createJWT();
+  user.password = undefined;
+  res.status(StatusCodes.OK).json({ user, token, location: user.location });
 };
+
+const updateUser = async (req, res) => {
+  const { email, name, lastName, location } = req.body;
+  if (!email || !name || !lastName || !location) {
+    throw new BadRequestError('Please provide all values');
+  }
+  const user = await User.findOne({ _id: req.user.userId });
+
+  user.email = email;
+  user.name = name;
+  user.lastName = lastName;
+  user.location = location;
+
+  await user.save();
+
+  const token = user.createJWT();
+
+  res.status(StatusCodes.OK).json({ user, token, location: user.location });
+};
+
+export { register, login, updateUser };

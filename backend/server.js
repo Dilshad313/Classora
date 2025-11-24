@@ -11,8 +11,12 @@ import rateLimit from 'express-rate-limit';
 import 'express-async-errors';
 
 // Import Routes
-import adminRoutes from './routes/authRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 import instituteRoutes from './routes/instituteRoutes.js';
+
+// middleware
+import notFoundMiddleware from './middleware/not-found.js';
+import errorHandlerMiddleware from './middleware/error-handler.js';
 
 const app = express();
 
@@ -50,7 +54,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Routes
-app.use("/api/admin", adminRoutes);
+app.use('/api/v1/auth', authRoutes);
 app.use("/api/institute", instituteRoutes);
 
 // Health Check Route
@@ -71,38 +75,8 @@ app.get("/api/test", (req, res) => {
   });
 });
 
-// 404 Handler
-app.use("*", (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: `Route ${req.originalUrl} not found`,
-  });
-});
-
-// Global Error Handler
-app.use((error, req, res, next) => {
-  console.error("Global Error Handler:", error);
-
-  if (error.name === "ValidationError") {
-    return res.status(400).json({
-      success: false,
-      message: "Validation Error",
-      errors: Object.values(error.errors).map((err) => err.message),
-    });
-  }
-
-  if (error.name === "CastError") {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid ID format",
-    });
-  }
-
-  res.status(error.statusCode || 500).json({
-    success: false,
-    message: error.message || "Internal Server Error",
-  });
-});
+app.use(notFoundMiddleware);
+app.use(errorHandlerMiddleware);
 
 // Database Connection
 const connectDB = async () => {
