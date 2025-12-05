@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Video,
@@ -14,48 +14,27 @@ import {
   Trash2,
   ExternalLink,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
+
+// API Service Import (create this file in services/meetingApi.js)
+import meetingApi from '../../../../services/meetingApi';
+// import classApi from '../../../../services/classApi';
+// import studentApi from '../../../../services/studentApi';
+// import { employeeApi } from '../../../../services/employeesApi';
 
 const LiveClass = () => {
   const navigate = useNavigate();
 
-  const [classes] = useState([
-    { id: 1, name: 'Grade 10 - A', students: 40 },
-    { id: 2, name: 'Grade 10 - B', students: 38 },
-    { id: 3, name: 'Grade 11 - A', students: 35 },
-    { id: 4, name: 'Grade 11 - B', students: 37 }
-  ]);
-
-  const [students] = useState([
-    { id: 1, name: 'Arun P', class: 'Grade 10 - A' },
-    { id: 2, name: 'Priya Sharma', class: 'Grade 10 - B' },
-    { id: 3, name: 'Rahul Kumar', class: 'Grade 11 - A' },
-    { id: 4, name: 'Sneha Patel', class: 'Grade 9 - A' }
-  ]);
-
-  const [teachers] = useState([
-    { id: 1, name: 'Dr. Sharma', subject: 'Mathematics' },
-    { id: 2, name: 'Prof. Kumar', subject: 'Physics' },
-    { id: 3, name: 'Ms. Patel', subject: 'Chemistry' },
-    { id: 4, name: 'Mr. Singh', subject: 'English' }
-  ]);
-
-  const [meetings, setMeetings] = useState([
-    {
-      id: 1,
-      title: 'Mathematics Class',
-      meetingId: 'MTH-2024-001',
-      meetingWith: 'Grade 10 - A',
-      duration: 60,
-      message: 'Today we will cover Chapter 5: Trigonometry',
-      scheduled: true,
-      scheduledDate: '2024-11-10',
-      scheduledTime: '10:00',
-      createdAt: new Date().toISOString()
-    }
-  ]);
-
+  // State for data
+  const [classes, setClasses] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [teachers, setTeachers] = useState([]);
+  const [meetings, setMeetings] = useState([]);
+  
+  // State for form
   const [meetingTitle, setMeetingTitle] = useState('');
   const [meetingId, setMeetingId] = useState('');
   const [meetingWith, setMeetingWith] = useState('');
@@ -65,17 +44,113 @@ const LiveClass = () => {
   const [scheduledTime, setScheduledTime] = useState('');
   const [duration, setDuration] = useState(60);
   const [message, setMessage] = useState('');
+  
+  // UI State
   const [showSuccess, setShowSuccess] = useState(false);
+  const [loading, setLoading] = useState({
+    meetings: false,
+    classes: false,
+    students: false,
+    teachers: false,
+    creating: false
+  });
+  const [error, setError] = useState('');
+
+  // Fetch initial data
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading({
+        meetings: true,
+        classes: true,
+        students: true,
+        teachers: true,
+        creating: false
+      });
+      setError('');
+
+      // Fetch all data in parallel
+      const [meetingsData, classesData, studentsData, teachersData] = await Promise.all([
+        meetingApi.getMeetings(),
+        getAvailableClasses(),
+        getAvailableStudents(),
+        getAvailableTeachers()
+      ]);
+
+      setMeetings(meetingsData?.data || []);
+      setClasses(classesData || []);
+      setStudents(studentsData || []);
+      setTeachers(teachersData || []);
+
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setError(`Failed to load data: ${error.message}`);
+      
+      // Try to fetch at least meetings if other calls fail
+      try {
+        const meetingsData = await meetingApi.getMeetings();
+        setMeetings(meetingsData?.data || []);
+      } catch (meetingsError) {
+        console.error('Could not fetch meetings:', meetingsError);
+      }
+    } finally {
+      setLoading({
+        meetings: false,
+        classes: false,
+        students: false,
+        teachers: false,
+        creating: false
+      });
+    }
+  };
+
+  // Helper functions to fetch available data
+  const getAvailableClasses = async () => {
+    try {
+      // Using existing classApi or create a new one
+      const response = await meetingApi.getAvailableClasses();
+      return response || [];
+    } catch (error) {
+      console.error('Error fetching classes:', error);
+      return [];
+    }
+  };
+
+  const getAvailableStudents = async () => {
+    try {
+      const response = await meetingApi.getAvailableStudents();
+      return response || [];
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      return [];
+    }
+  };
+
+  const getAvailableTeachers = async () => {
+    try {
+      const response = await meetingApi.getAvailableTeachers();
+      return response || [];
+    } catch (error) {
+      console.error('Error fetching teachers:', error);
+      return [];
+    }
+  };
 
   const generateMeetingId = () => {
     const prefix = meetingTitle.substring(0, 3).toUpperCase() || 'MTG';
     const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    return `${prefix}-${new Date().getFullYear()}-${random}`;
+    const generatedId = `${prefix}-${new Date().getFullYear()}-${random}`;
+    setMeetingId(generatedId);
+    return generatedId;
   };
 
-  const handleCreateMeeting = (e) => {
+  const handleCreateMeeting = async (e) => {
     e.preventDefault();
 
+    // Validation
     if (!meetingTitle.trim()) {
       alert('Please enter a meeting title');
       return;
@@ -96,44 +171,90 @@ const LiveClass = () => {
       return;
     }
 
-    const newMeeting = {
-      id: meetings.length + 1,
-      title: meetingTitle,
-      meetingId: meetingId || generateMeetingId(),
-      meetingWith: getMeetingWithLabel(),
-      duration: duration,
-      message: message,
-      scheduled: isScheduled,
-      scheduledDate: scheduledDate,
-      scheduledTime: scheduledTime,
-      createdAt: new Date().toISOString()
-    };
+    try {
+      setLoading(prev => ({ ...prev, creating: true }));
+      setError('');
 
-    setMeetings([newMeeting, ...meetings]);
-    setShowSuccess(true);
+      // Prepare meeting data for backend
+      const meetingData = {
+        title: meetingTitle,
+        meetingId: meetingId || generateMeetingId(),
+        meetingType: meetingWith,
+        meetingWith: getMeetingWithLabel(),
+        duration: duration,
+        message: message,
+        isScheduled: isScheduled,
+        scheduledDate: isScheduled ? scheduledDate : null,
+        scheduledTime: isScheduled ? scheduledTime : null,
+        specificClass: meetingWith === 'specificClass' ? selectedRecipient : null,
+        specificStudent: meetingWith === 'specificStudent' ? selectedRecipient : null,
+        specificTeacher: meetingWith === 'specificTeacher' ? selectedRecipient : null
+      };
 
-    setTimeout(() => {
-      setShowSuccess(false);
-      setMeetingTitle('');
-      setMeetingId('');
-      setMeetingWith('');
-      setSelectedRecipient('');
-      setIsScheduled(false);
-      setScheduledDate('');
-      setScheduledTime('');
-      setDuration(60);
-      setMessage('');
-    }, 2000);
-  };
+      console.log('Creating meeting with data:', meetingData);
 
-  const handleDeleteMeeting = (id) => {
-    if (window.confirm('Are you sure you want to delete this meeting?')) {
-      setMeetings(meetings.filter(meeting => meeting.id !== id));
+      // Call API to create meeting
+      const newMeeting = await meetingApi.createMeeting(meetingData);
+      
+      // Add to local state
+      setMeetings(prev => [newMeeting, ...prev]);
+      setShowSuccess(true);
+
+      // Reset form
+      setTimeout(() => {
+        setShowSuccess(false);
+        resetForm();
+      }, 2000);
+
+    } catch (error) {
+      console.error('Error creating meeting:', error);
+      setError(`Failed to create meeting: ${error.message}`);
+      alert(`Failed to create meeting: ${error.message}`);
+    } finally {
+      setLoading(prev => ({ ...prev, creating: false }));
     }
   };
 
-  const handleJoinRoom = (meeting) => {
-    alert(`Joining meeting: ${meeting.title}\nMeeting ID: ${meeting.meetingId}`);
+  const handleDeleteMeeting = async (id) => {
+    if (window.confirm('Are you sure you want to delete this meeting?')) {
+      try {
+        setLoading(prev => ({ ...prev, meetings: true }));
+        await meetingApi.deleteMeeting(id);
+        
+        // Remove from local state
+        setMeetings(prev => prev.filter(meeting => meeting._id !== id));
+        
+        alert('Meeting deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting meeting:', error);
+        alert(`Failed to delete meeting: ${error.message}`);
+      } finally {
+        setLoading(prev => ({ ...prev, meetings: false }));
+      }
+    }
+  };
+
+  const handleJoinRoom = async (meeting) => {
+    try {
+      const result = await meetingApi.joinMeeting(meeting._id);
+      
+      // Show meeting details (in real app, you would redirect to meeting URL)
+      alert(
+        `Joining Meeting:\n\n` +
+        `Title: ${meeting.title}\n` +
+        `Meeting ID: ${meeting.meetingId}\n` +
+        `Room: ${result.roomUrl || 'Not configured'}\n` +
+        `Password: ${result.meetingPassword || 'No password'}\n\n` +
+        `Note: This is a demo. In a real application, you would be redirected to the meeting room.`
+      );
+      
+      // For demo purposes, we'll just log the join
+      console.log('Joining meeting:', meeting.title, 'with details:', result);
+      
+    } catch (error) {
+      console.error('Error joining meeting:', error);
+      alert(`Failed to join meeting: ${error.message}`);
+    }
   };
 
   const getMeetingWithLabel = () => {
@@ -143,14 +264,29 @@ const LiveClass = () => {
       case 'allTeachers':
         return 'All Teachers';
       case 'specificClass':
-        return classes.find(c => c.id === parseInt(selectedRecipient))?.name || 'Select Class';
+        const selectedClass = classes.find(c => c._id === selectedRecipient);
+        return selectedClass ? `${selectedClass.name} - Section ${selectedClass.section}` : 'Select Class';
       case 'specificStudent':
-        return students.find(s => s.id === parseInt(selectedRecipient))?.name || 'Select Student';
+        const selectedStudent = students.find(s => s._id === selectedRecipient);
+        return selectedStudent ? `${selectedStudent.studentName} - ${selectedStudent.registrationNo}` : 'Select Student';
       case 'specificTeacher':
-        return teachers.find(t => t.id === parseInt(selectedRecipient))?.name || 'Select Teacher';
+        const selectedTeacher = teachers.find(t => t._id === selectedRecipient);
+        return selectedTeacher ? `${selectedTeacher.employeeName} - ${selectedTeacher.employeeRole}` : 'Select Teacher';
       default:
         return '';
     }
+  };
+
+  const resetForm = () => {
+    setMeetingTitle('');
+    setMeetingId('');
+    setMeetingWith('');
+    setSelectedRecipient('');
+    setIsScheduled(false);
+    setScheduledDate('');
+    setScheduledTime('');
+    setDuration(60);
+    setMessage('');
   };
 
   const getCurrentDateTime = () => {
@@ -172,6 +308,29 @@ const LiveClass = () => {
 
   const currentDateTime = getCurrentDateTime();
 
+  // Format meeting date for display
+  const formatMeetingDate = (dateString) => {
+    if (!dateString) return 'Not scheduled';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  // Get status color
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'scheduled': return 'bg-blue-100 text-blue-800';
+      case 'live': return 'bg-green-100 text-green-800';
+      case 'completed': return 'bg-gray-100 text-gray-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
@@ -191,15 +350,36 @@ const LiveClass = () => {
         </div>
 
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <Video className="w-6 h-6 text-white" />
-            </div>
-            <span>Live Class Management</span>
-          </h1>
-          <p className="text-gray-600 mt-2">Create and manage virtual classroom meetings</p>
+        <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center space-x-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <Video className="w-6 h-6 text-white" />
+              </div>
+              <span>Live Class Management</span>
+            </h1>
+            <p className="text-gray-600 mt-2">Create and manage virtual classroom meetings</p>
+          </div>
+          
+          <button
+            onClick={fetchData}
+            disabled={loading.meetings}
+            className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading.meetings ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl">
+            <div className="flex items-center space-x-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+              <p className="text-red-700">{error}</p>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Side - Create Meeting Form */}
@@ -227,6 +407,7 @@ const LiveClass = () => {
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                       placeholder="e.g., Mathematics Class - Chapter 5"
                       required
+                      disabled={loading.creating}
                     />
                   </div>
 
@@ -242,11 +423,13 @@ const LiveClass = () => {
                         onChange={(e) => setMeetingId(e.target.value)}
                         className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                         placeholder="Leave empty for auto-generation"
+                        disabled={loading.creating}
                       />
                       <button
                         type="button"
-                        onClick={() => setMeetingId(generateMeetingId())}
-                        className="px-4 py-2.5 bg-purple-100 text-purple-700 rounded-xl hover:bg-purple-200 transition-colors font-semibold"
+                        onClick={() => generateMeetingId()}
+                        className="px-4 py-2.5 bg-purple-100 text-purple-700 rounded-xl hover:bg-purple-200 transition-colors font-semibold disabled:opacity-50"
+                        disabled={loading.creating}
                       >
                         Generate
                       </button>
@@ -267,7 +450,8 @@ const LiveClass = () => {
                           setMeetingWith('allStudents');
                           setSelectedRecipient('');
                         }}
-                        className={`p-3 rounded-xl border-2 transition-all text-left ${
+                        disabled={loading.creating}
+                        className={`p-3 rounded-xl border-2 transition-all text-left disabled:opacity-50 ${
                           meetingWith === 'allStudents'
                             ? 'border-blue-500 bg-blue-50'
                             : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
@@ -292,7 +476,8 @@ const LiveClass = () => {
                           setMeetingWith('allTeachers');
                           setSelectedRecipient('');
                         }}
-                        className={`p-3 rounded-xl border-2 transition-all text-left ${
+                        disabled={loading.creating}
+                        className={`p-3 rounded-xl border-2 transition-all text-left disabled:opacity-50 ${
                           meetingWith === 'allTeachers'
                             ? 'border-green-500 bg-green-50'
                             : 'border-gray-200 hover:border-green-300 hover:bg-gray-50'
@@ -317,7 +502,8 @@ const LiveClass = () => {
                           setMeetingWith('specificStudent');
                           setSelectedRecipient('');
                         }}
-                        className={`p-3 rounded-xl border-2 transition-all text-left ${
+                        disabled={loading.creating}
+                        className={`p-3 rounded-xl border-2 transition-all text-left disabled:opacity-50 ${
                           meetingWith === 'specificStudent'
                             ? 'border-orange-500 bg-orange-50'
                             : 'border-gray-200 hover:border-orange-300 hover:bg-gray-50'
@@ -342,7 +528,8 @@ const LiveClass = () => {
                           setMeetingWith('specificClass');
                           setSelectedRecipient('');
                         }}
-                        className={`p-3 rounded-xl border-2 transition-all text-left ${
+                        disabled={loading.creating}
+                        className={`p-3 rounded-xl border-2 transition-all text-left disabled:opacity-50 ${
                           meetingWith === 'specificClass'
                             ? 'border-purple-500 bg-purple-50'
                             : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
@@ -367,7 +554,8 @@ const LiveClass = () => {
                           setMeetingWith('specificTeacher');
                           setSelectedRecipient('');
                         }}
-                        className={`p-3 rounded-xl border-2 transition-all text-left md:col-span-2 ${
+                        disabled={loading.creating}
+                        className={`p-3 rounded-xl border-2 transition-all text-left md:col-span-2 disabled:opacity-50 ${
                           meetingWith === 'specificTeacher'
                             ? 'border-indigo-500 bg-indigo-50'
                             : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'
@@ -393,23 +581,37 @@ const LiveClass = () => {
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Select {meetingWith === 'specificClass' ? 'Class' : meetingWith === 'specificStudent' ? 'Student' : 'Teacher'}
                       </label>
-                      <select
-                        value={selectedRecipient}
-                        onChange={(e) => setSelectedRecipient(e.target.value)}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                        required
-                      >
-                        <option value="">Choose...</option>
-                        {meetingWith === 'specificClass' && classes.map(cls => (
-                          <option key={cls.id} value={cls.id}>{cls.name} ({cls.students} students)</option>
-                        ))}
-                        {meetingWith === 'specificStudent' && students.map(student => (
-                          <option key={student.id} value={student.id}>{student.name} - {student.class}</option>
-                        ))}
-                        {meetingWith === 'specificTeacher' && teachers.map(teacher => (
-                          <option key={teacher.id} value={teacher.id}>{teacher.name} - {teacher.subject}</option>
-                        ))}
-                      </select>
+                      {loading.classes || loading.students || loading.teachers ? (
+                        <div className="w-full px-4 py-2.5 border border-gray-300 rounded-xl flex items-center justify-center">
+                          <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                          <span className="ml-2 text-gray-500">Loading...</span>
+                        </div>
+                      ) : (
+                        <select
+                          value={selectedRecipient}
+                          onChange={(e) => setSelectedRecipient(e.target.value)}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                          required
+                          disabled={loading.creating}
+                        >
+                          <option value="">Choose...</option>
+                          {meetingWith === 'specificClass' && classes.map(cls => (
+                            <option key={cls._id} value={cls._id}>
+                              {cls.name} - Section {cls.section} ({cls.studentCount || 0} students)
+                            </option>
+                          ))}
+                          {meetingWith === 'specificStudent' && students.map(student => (
+                            <option key={student._id} value={student._id}>
+                              {student.studentName} - {student.registrationNo} (Grade {student.selectClass})
+                            </option>
+                          ))}
+                          {meetingWith === 'specificTeacher' && teachers.map(teacher => (
+                            <option key={teacher._id} value={teacher._id}>
+                              {teacher.employeeName} - {teacher.employeeRole} ({teacher.department || 'No Department'})
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </div>
                   )}
 
@@ -422,6 +624,7 @@ const LiveClass = () => {
                       value={duration}
                       onChange={(e) => setDuration(parseInt(e.target.value))}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      disabled={loading.creating}
                     >
                       <option value={30}>30 minutes</option>
                       <option value={45}>45 minutes</option>
@@ -440,6 +643,7 @@ const LiveClass = () => {
                       checked={isScheduled}
                       onChange={(e) => setIsScheduled(e.target.checked)}
                       className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500 mt-0.5"
+                      disabled={loading.creating}
                     />
                     <label htmlFor="schedule" className="flex-1 cursor-pointer">
                       <span className="font-semibold text-gray-900 block">I want to schedule this meeting</span>
@@ -460,6 +664,8 @@ const LiveClass = () => {
                           onChange={(e) => setScheduledDate(e.target.value)}
                           className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                           required
+                          min={new Date().toISOString().split('T')[0]}
+                          disabled={loading.creating}
                         />
                       </div>
                       <div>
@@ -472,6 +678,7 @@ const LiveClass = () => {
                           onChange={(e) => setScheduledTime(e.target.value)}
                           className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                           required
+                          disabled={loading.creating}
                         />
                       </div>
                     </div>
@@ -487,6 +694,7 @@ const LiveClass = () => {
                       onChange={(e) => setMessage(e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 min-h-[100px] resize-y"
                       placeholder="Add any notes or agenda for the meeting..."
+                      disabled={loading.creating}
                     />
                   </div>
 
@@ -506,11 +714,20 @@ const LiveClass = () => {
                   {/* Create & Join Button */}
                   <button
                     type="submit"
-                    disabled={showSuccess}
+                    disabled={loading.creating}
                     className="w-full flex items-center justify-center space-x-2 px-6 py-4 bg-gradient-to-r from-purple-600 to-indigo-700 text-white rounded-xl hover:from-purple-700 hover:to-indigo-800 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Video className="w-6 h-6" />
-                    <span>Create & Join</span>
+                    {loading.creating ? (
+                      <>
+                        <Loader2 className="w-6 h-6 animate-spin" />
+                        <span>Creating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Video className="w-6 h-6" />
+                        <span>Create & Join</span>
+                      </>
+                    )}
                   </button>
                 </form>
               </div>
@@ -547,30 +764,50 @@ const LiveClass = () => {
             {/* Meetings Table */}
             <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
               <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50">
-                <h3 className="text-lg font-bold text-gray-900 flex items-center space-x-2">
-                  <Video className="w-5 h-5 text-purple-600" />
-                  <span>All Meetings</span>
-                </h3>
-                <p className="text-sm text-gray-600 mt-1">{meetings.length} active meeting(s)</p>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 flex items-center space-x-2">
+                      <Video className="w-5 h-5 text-purple-600" />
+                      <span>All Meetings</span>
+                    </h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {loading.meetings ? 'Loading...' : `${meetings.length} meeting(s)`}
+                    </p>
+                  </div>
+                  {loading.meetings && (
+                    <Loader2 className="w-5 h-5 animate-spin text-purple-600" />
+                  )}
+                </div>
               </div>
 
               <div className="max-h-[600px] overflow-y-auto">
-                {meetings.length > 0 ? (
+                {loading.meetings ? (
+                  <div className="p-8 text-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500">Loading meetings...</p>
+                  </div>
+                ) : meetings.length > 0 ? (
                   <div className="divide-y divide-gray-200">
                     {meetings.map((meeting) => (
-                      <div key={meeting.id} className="p-4 hover:bg-gray-50 transition-colors">
+                      <div key={meeting._id} className="p-4 hover:bg-gray-50 transition-colors">
                         <div className="space-y-3">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <h4 className="font-bold text-gray-900 mb-1">{meeting.title}</h4>
+                              <div className="flex items-center justify-between mb-1">
+                                <h4 className="font-bold text-gray-900">{meeting.title}</h4>
+                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(meeting.status)}`}>
+                                  {meeting.status}
+                                </span>
+                              </div>
                               <p className="text-xs text-gray-500 font-mono bg-gray-100 inline-block px-2 py-1 rounded">
                                 {meeting.meetingId}
                               </p>
                             </div>
                             <button
-                              onClick={() => handleDeleteMeeting(meeting.id)}
-                              className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                              onClick={() => handleDeleteMeeting(meeting._id)}
+                              className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors ml-2"
                               title="Delete meeting"
+                              disabled={loading.meetings}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -585,12 +822,18 @@ const LiveClass = () => {
                               <Clock className="w-4 h-4" />
                               <span>{meeting.duration} minutes</span>
                             </div>
-                            {meeting.scheduled && (
+                            {meeting.isScheduled && meeting.scheduledDate && (
                               <div className="flex items-center space-x-2 text-purple-600 font-semibold">
                                 <Calendar className="w-4 h-4" />
-                                <span>{meeting.scheduledDate} at {meeting.scheduledTime}</span>
+                                <span>
+                                  {formatMeetingDate(meeting.scheduledDate)} at {meeting.scheduledTime || 'TBA'}
+                                </span>
                               </div>
                             )}
+                            <div className="flex items-center space-x-2 text-gray-600">
+                              <Users className="w-4 h-4" />
+                              <span>{meeting.participantCount || 0} participants</span>
+                            </div>
                           </div>
 
                           {meeting.message && (
@@ -601,10 +844,14 @@ const LiveClass = () => {
 
                           <button
                             onClick={() => handleJoinRoom(meeting)}
-                            className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-700 text-white rounded-lg hover:from-purple-700 hover:to-indigo-800 transition-all shadow-md hover:shadow-lg font-semibold"
+                            className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-700 text-white rounded-lg hover:from-purple-700 hover:to-indigo-800 transition-all shadow-md hover:shadow-lg font-semibold disabled:opacity-50"
+                            disabled={meeting.status === 'completed' || meeting.status === 'cancelled'}
                           >
                             <ExternalLink className="w-4 h-4" />
-                            <span>Join Room</span>
+                            <span>
+                              {meeting.status === 'completed' ? 'Completed' : 
+                               meeting.status === 'cancelled' ? 'Cancelled' : 'Join Room'}
+                            </span>
                           </button>
                         </div>
                       </div>
@@ -614,6 +861,7 @@ const LiveClass = () => {
                   <div className="p-8 text-center">
                     <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                     <p className="text-gray-500">No meetings created yet</p>
+                    <p className="text-sm text-gray-400 mt-1">Create your first meeting to get started</p>
                   </div>
                 )}
               </div>
