@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { 
   FilePlus,
   Home,
@@ -8,18 +8,20 @@ import {
   BookOpen,
   FileText,
   Hash,
-  Loader2
+  Loader2,
+  ArrowLeft
 } from 'lucide-react';
 import {
-  createQuestion,
-  getDropdownData,
-  getQuestionById
+  getQuestionById,
+  updateQuestion,
+  getDropdownData
 } from '../../../../services/questionPaperApi';
 
-const CreateQuestion = () => {
+const EditQuestion = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [loadingData, setLoadingData] = useState(true);
+  const { id } = useParams();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [subjects, setSubjects] = useState([]);
   const [chapters, setChapters] = useState([]);
   const [questionTypes] = useState(['Very Short Answer', 'Short Answer', 'Long Answer', 'MCQ', 'True/False']);
@@ -45,20 +47,41 @@ const CreateQuestion = () => {
   const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
-    loadDropdownData();
-  }, []);
+    loadQuestionData();
+  }, [id]);
 
-  const loadDropdownData = async () => {
+  const loadQuestionData = async () => {
     try {
-      setLoadingData(true);
-      const data = await getDropdownData();
-      setSubjects(data.subjects);
-      setChapters(data.chapters);
+      setLoading(true);
+      
+      // Load question data
+      const question = await getQuestionById(id);
+      setFormData({
+        question: question.question,
+        questionType: question.questionType,
+        difficulty: question.difficulty,
+        marks: question.marks.toString(),
+        subject: question.subject?._id || question.subject,
+        chapter: question.chapter?._id || question.chapter,
+        option1: question.options?.option1 || '',
+        option2: question.options?.option2 || '',
+        option3: question.options?.option3 || '',
+        option4: question.options?.option4 || '',
+        correctAnswer: question.correctAnswer || '',
+        solution: question.solution || '',
+        hint: question.hint || ''
+      });
+
+      // Load dropdown data
+      const dropdownData = await getDropdownData();
+      setSubjects(dropdownData.subjects);
+      setChapters(dropdownData.chapters);
     } catch (error) {
-      console.error('Failed to load dropdown data:', error);
-      alert('Failed to load subjects and chapters. Please try again.');
+      console.error('Failed to load question:', error);
+      alert('Failed to load question data. Please try again.');
+      navigate('/dashboard/question-paper/bank');
     } finally {
-      setLoadingData(false);
+      setLoading(false);
     }
   };
 
@@ -109,7 +132,7 @@ const CreateQuestion = () => {
       return;
     }
 
-    setLoading(true);
+    setSaving(true);
 
     try {
       const questionData = {
@@ -131,37 +154,21 @@ const CreateQuestion = () => {
         questionData.correctAnswer = formData.correctAnswer;
       }
 
-      await createQuestion(questionData);
+      await updateQuestion(id, questionData);
       
       // Show success message
       setShowSuccess(true);
 
-      // Reset form after 2 seconds
+      // Redirect after 2 seconds
       setTimeout(() => {
-        setShowSuccess(false);
-        setFormData({
-          question: '',
-          questionType: '',
-          difficulty: '',
-          marks: '',
-          subject: '',
-          chapter: '',
-          option1: '',
-          option2: '',
-          option3: '',
-          option4: '',
-          correctAnswer: '',
-          solution: '',
-          hint: ''
-        });
-        setErrors({});
+        navigate('/dashboard/question-paper/bank');
       }, 2000);
 
     } catch (error) {
-      console.error('Error creating question:', error);
-      alert(error.message || 'Failed to create question. Please try again.');
+      console.error('Error updating question:', error);
+      alert(error.message || 'Failed to update question. Please try again.');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -175,12 +182,12 @@ const CreateQuestion = () => {
     return chapter ? chapter.title : '';
   };
 
-  if (loadingData) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading data...</p>
+          <p className="text-gray-600">Loading question data...</p>
         </div>
       </div>
     );
@@ -206,28 +213,39 @@ const CreateQuestion = () => {
             Question Paper
           </button>
           <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-900 font-semibold">Create Question</span>
+          <span className="text-gray-900 font-semibold">Edit Question</span>
         </div>
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <FilePlus className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center space-x-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <FilePlus className="w-6 h-6 text-white" />
+                </div>
+                <span>Edit Question</span>
+              </h1>
+              <p className="text-gray-600 mt-2">Update question details</p>
             </div>
-            <span>Create New Question</span>
-          </h1>
-          <p className="text-gray-600 mt-2">Add a new question to the question bank</p>
+            <button
+              onClick={() => navigate('/dashboard/question-paper/bank')}
+              className="flex items-center space-x-2 px-4 py-2.5 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-semibold"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span>Back to Bank</span>
+            </button>
+          </div>
         </div>
 
         {/* Form */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-          <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50">
+          <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-yellow-50 to-orange-50">
             <h2 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
-              <FileText className="w-6 h-6 text-green-600" />
-              <span>Question Details</span>
+              <FileText className="w-6 h-6 text-yellow-600" />
+              <span>Edit Question Details</span>
             </h2>
-            <p className="text-sm text-gray-600 mt-1">Fill in the information below</p>
+            <p className="text-sm text-gray-600 mt-1">Update the information below</p>
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -241,8 +259,8 @@ const CreateQuestion = () => {
                   name="subject"
                   value={formData.subject}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2.5 border ${errors.subject ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500`}
-                  disabled={loading}
+                  className={`w-full px-4 py-2.5 border ${errors.subject ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500`}
+                  disabled={saving}
                 >
                   <option value="">Select Subject</option>
                   {subjects.map(subject => (
@@ -264,8 +282,8 @@ const CreateQuestion = () => {
                   name="chapter"
                   value={formData.chapter}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2.5 border ${errors.chapter ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500`}
-                  disabled={!formData.subject || loading}
+                  className={`w-full px-4 py-2.5 border ${errors.chapter ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500`}
+                  disabled={!formData.subject || saving}
                 >
                   <option value="">Select Chapter</option>
                   {filteredChapters.map(chapter => (
@@ -290,8 +308,8 @@ const CreateQuestion = () => {
                   name="questionType"
                   value={formData.questionType}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2.5 border ${errors.questionType ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500`}
-                  disabled={loading}
+                  className={`w-full px-4 py-2.5 border ${errors.questionType ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500`}
+                  disabled={saving}
                 >
                   <option value="">Select Type</option>
                   {questionTypes.map(type => (
@@ -311,8 +329,8 @@ const CreateQuestion = () => {
                   name="difficulty"
                   value={formData.difficulty}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2.5 border ${errors.difficulty ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500`}
-                  disabled={loading}
+                  className={`w-full px-4 py-2.5 border ${errors.difficulty ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500`}
+                  disabled={saving}
                 >
                   <option value="">Select Difficulty</option>
                   {difficultyLevels.map(level => (
@@ -333,11 +351,11 @@ const CreateQuestion = () => {
                   name="marks"
                   value={formData.marks}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2.5 border ${errors.marks ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500`}
+                  className={`w-full px-4 py-2.5 border ${errors.marks ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500`}
                   placeholder="e.g., 5"
                   min="1"
                   max="100"
-                  disabled={loading}
+                  disabled={saving}
                 />
                 {errors.marks && (
                   <p className="mt-1 text-sm text-red-600">{errors.marks}</p>
@@ -354,9 +372,9 @@ const CreateQuestion = () => {
                 name="question"
                 value={formData.question}
                 onChange={handleChange}
-                className={`w-full px-4 py-3 border ${errors.question ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 min-h-[120px] resize-y`}
+                className={`w-full px-4 py-3 border ${errors.question ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 min-h-[120px] resize-y`}
                 placeholder="Enter the question here..."
-                disabled={loading}
+                disabled={saving}
               />
               {errors.question && (
                 <p className="mt-1 text-sm text-red-600">{errors.question}</p>
@@ -381,9 +399,9 @@ const CreateQuestion = () => {
                       name="option1"
                       value={formData.option1}
                       onChange={handleChange}
-                      className={`w-full px-4 py-2.5 border ${errors.option1 ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500`}
+                      className={`w-full px-4 py-2.5 border ${errors.option1 ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500`}
                       placeholder="Enter option 1"
-                      disabled={loading}
+                      disabled={saving}
                     />
                     {errors.option1 && (
                       <p className="mt-1 text-sm text-red-600">{errors.option1}</p>
@@ -399,9 +417,9 @@ const CreateQuestion = () => {
                       name="option2"
                       value={formData.option2}
                       onChange={handleChange}
-                      className={`w-full px-4 py-2.5 border ${errors.option2 ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500`}
+                      className={`w-full px-4 py-2.5 border ${errors.option2 ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500`}
                       placeholder="Enter option 2"
-                      disabled={loading}
+                      disabled={saving}
                     />
                     {errors.option2 && (
                       <p className="mt-1 text-sm text-red-600">{errors.option2}</p>
@@ -417,9 +435,9 @@ const CreateQuestion = () => {
                       name="option3"
                       value={formData.option3}
                       onChange={handleChange}
-                      className={`w-full px-4 py-2.5 border ${errors.option3 ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500`}
+                      className={`w-full px-4 py-2.5 border ${errors.option3 ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500`}
                       placeholder="Enter option 3"
-                      disabled={loading}
+                      disabled={saving}
                     />
                     {errors.option3 && (
                       <p className="mt-1 text-sm text-red-600">{errors.option3}</p>
@@ -435,9 +453,9 @@ const CreateQuestion = () => {
                       name="option4"
                       value={formData.option4}
                       onChange={handleChange}
-                      className={`w-full px-4 py-2.5 border ${errors.option4 ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500`}
+                      className={`w-full px-4 py-2.5 border ${errors.option4 ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500`}
                       placeholder="Enter option 4"
-                      disabled={loading}
+                      disabled={saving}
                     />
                     {errors.option4 && (
                       <p className="mt-1 text-sm text-red-600">{errors.option4}</p>
@@ -453,8 +471,8 @@ const CreateQuestion = () => {
                     name="correctAnswer"
                     value={formData.correctAnswer}
                     onChange={handleChange}
-                    className={`w-full px-4 py-2.5 border ${errors.correctAnswer ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500`}
-                    disabled={loading}
+                    className={`w-full px-4 py-2.5 border ${errors.correctAnswer ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500`}
+                    disabled={saving}
                   >
                     <option value="">Select Correct Answer</option>
                     <option value="1">Option 1</option>
@@ -479,9 +497,9 @@ const CreateQuestion = () => {
                   name="solution"
                   value={formData.solution}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 min-h-[100px] resize-y"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 min-h-[100px] resize-y"
                   placeholder="Enter the solution or answer..."
-                  disabled={loading}
+                  disabled={saving}
                 />
               </div>
 
@@ -493,18 +511,18 @@ const CreateQuestion = () => {
                   name="hint"
                   value={formData.hint}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 min-h-[100px] resize-y"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 min-h-[100px] resize-y"
                   placeholder="Enter a hint for students..."
-                  disabled={loading}
+                  disabled={saving}
                 />
               </div>
             </div>
 
             {/* Preview Box */}
             {(formData.subject || formData.chapter || formData.questionType) && (
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
+              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-6">
                 <h3 className="font-bold text-gray-900 mb-4 flex items-center space-x-2">
-                  <BookOpen className="w-5 h-5 text-green-600" />
+                  <BookOpen className="w-5 h-5 text-yellow-600" />
                   <span>Question Preview</span>
                 </h3>
                 <div className="space-y-2 text-sm">
@@ -534,8 +552,8 @@ const CreateQuestion = () => {
                   <CheckCircle2 className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="font-semibold text-green-900">Question Created Successfully!</p>
-                  <p className="text-sm text-green-700">The question has been added to the question bank.</p>
+                  <p className="font-semibold text-green-900">Question Updated Successfully!</p>
+                  <p className="text-sm text-green-700">Redirecting to question bank...</p>
                 </div>
               </div>
             )}
@@ -546,22 +564,22 @@ const CreateQuestion = () => {
                 type="button"
                 onClick={() => navigate('/dashboard/question-paper/bank')}
                 className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={loading}
+                disabled={saving}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={loading || showSuccess}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-700 text-white rounded-xl hover:from-green-700 hover:to-emerald-800 transition-all shadow-lg hover:shadow-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                disabled={saving || showSuccess}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-yellow-600 to-orange-700 text-white rounded-xl hover:from-yellow-700 hover:to-orange-800 transition-all shadow-lg hover:shadow-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
-                {loading ? (
+                {saving ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Creating...
+                    Updating...
                   </>
                 ) : (
-                  'Create Question'
+                  'Update Question'
                 )}
               </button>
             </div>
@@ -572,4 +590,4 @@ const CreateQuestion = () => {
   );
 };
 
-export default CreateQuestion;
+export default EditQuestion;

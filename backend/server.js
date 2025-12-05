@@ -34,6 +34,7 @@ import homeworkRoutes from './routes/homeworkRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
 import smsRoutes from './routes/smsRoutes.js';
 import meetingRoutes from './routes/meetingRoutes.js';
+import questionPaperRoutes from './routes/questionPaperRoutes.js';
 
 import { requestLogger, errorLogger } from './middleware/logging.js';
 
@@ -99,6 +100,7 @@ app.use("/api/homework", homeworkRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/sms", smsRoutes);
 app.use("/api/meetings", meetingRoutes);
+app.use("/api/question-paper", questionPaperRoutes);
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({
