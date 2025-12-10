@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ClipboardCheck,
@@ -11,97 +11,157 @@ import {
   Calendar,
   Edit2,
   Trash2,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
+import { 
+  getDropdownData, 
+  createClassTest, 
+  updateClassTest, 
+  deleteClassTest,
+  getClassTestById,
+  getClassTests
+} from '../../../../services/classTestApi';
 
 const ManageTest = () => {
   const navigate = useNavigate();
 
-  // Sample data
-  const [classes] = useState([
-    { id: 1, name: 'Grade 10', section: 'A' },
-    { id: 2, name: 'Grade 10', section: 'B' },
-    { id: 3, name: 'Grade 11', section: 'A' },
-    { id: 4, name: 'Grade 9', section: 'A' }
-  ]);
-
-  const [subjectsData] = useState({
-    1: [
-      { id: 1, name: 'Mathematics' },
-      { id: 2, name: 'Physics' },
-      { id: 3, name: 'Chemistry' },
-      { id: 4, name: 'English' }
-    ],
-    2: [
-      { id: 1, name: 'Mathematics' },
-      { id: 2, name: 'Physics' },
-      { id: 5, name: 'Biology' },
-      { id: 4, name: 'English' }
-    ],
-    3: [
-      { id: 1, name: 'Mathematics' },
-      { id: 2, name: 'Physics' },
-      { id: 3, name: 'Chemistry' },
-      { id: 6, name: 'Computer Science' }
-    ],
-    4: [
-      { id: 1, name: 'Mathematics' },
-      { id: 7, name: 'Science' },
-      { id: 8, name: 'Social Studies' },
-      { id: 4, name: 'English' }
-    ]
-  });
-
-  const [studentsData] = useState({
-    1: [
-      { id: 1, name: 'Arun P', rollNo: '001' },
-      { id: 2, name: 'Priya Sharma', rollNo: '002' },
-      { id: 3, name: 'Rahul Kumar', rollNo: '003' },
-      { id: 4, name: 'Sneha Patel', rollNo: '004' },
-      { id: 5, name: 'Vikram Singh', rollNo: '005' }
-    ],
-    2: [
-      { id: 6, name: 'Anjali Verma', rollNo: '001' },
-      { id: 7, name: 'Rohan Gupta', rollNo: '002' },
-      { id: 8, name: 'Kavya Reddy', rollNo: '003' },
-      { id: 9, name: 'Arjun Nair', rollNo: '004' }
-    ],
-    3: [
-      { id: 10, name: 'Meera Shah', rollNo: '001' },
-      { id: 11, name: 'Karan Mehta', rollNo: '002' },
-      { id: 12, name: 'Divya Iyer', rollNo: '003' }
-    ],
-    4: [
-      { id: 13, name: 'Ravi Kumar', rollNo: '001' },
-      { id: 14, name: 'Sita Devi', rollNo: '002' },
-      { id: 15, name: 'Amit Joshi', rollNo: '003' },
-      { id: 16, name: 'Pooja Rao', rollNo: '004' }
-    ]
-  });
-
-  // State management
+  // State for dropdown data
+  const [classes, setClasses] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [students, setStudents] = useState([]);
+  
+  // State for form data
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
   const [testDate, setTestDate] = useState('');
   const [totalMarks, setTotalMarks] = useState('');
-  const [marks, setMarks] = useState({});
+  const [testName, setTestName] = useState('');
+  const [testType, setTestType] = useState('unit');
+  
+  // State for student marks
+  const [marks, setMarks] = useState([]);
+  
+  // UI state
   const [showSuccess, setShowSuccess] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [existingTestId, setExistingTestId] = useState(null);
+  const [error, setError] = useState('');
 
-  // Get available subjects for selected class
-  const availableSubjects = selectedClass ? subjectsData[selectedClass] || [] : [];
-  
-  // Get students for selected class
-  const students = selectedClass ? studentsData[selectedClass] || [] : [];
+  // Load classes on component mount
+  useEffect(() => {
+    fetchClasses();
+  }, []);
 
-  const getClassName = (classId) => {
-    const cls = classes.find(c => c.id === parseInt(classId));
-    return cls ? `${cls.name} - ${cls.section}` : '';
+  // Fetch classes and their data
+  const fetchClasses = async () => {
+    try {
+      setLoading(true);
+      const data = await getDropdownData();
+      setClasses(data.classes || []);
+    } catch (err) {
+      setError('Failed to load classes');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const getSubjectName = (subjectId) => {
-    const subject = availableSubjects.find(s => s.id === parseInt(subjectId));
+  // When class changes, fetch subjects and students
+  useEffect(() => {
+    if (selectedClass) {
+      fetchClassData(selectedClass);
+    } else {
+      setSubjects([]);
+      setStudents([]);
+      setMarks([]);
+    }
+  }, [selectedClass]);
+
+  // When subject, date, and marks are set, check for existing test
+  useEffect(() => {
+    if (selectedClass && selectedSubject && testDate && totalMarks) {
+      checkExistingTest();
+    }
+  }, [selectedClass, selectedSubject, testDate, totalMarks]);
+
+  const fetchClassData = async (classId) => {
+    try {
+      setLoading(true);
+      const data = await getDropdownData(classId);
+      setSubjects(data.subjects || []);
+      setStudents(data.students || []);
+      
+      // Initialize marks for each student
+      const initialMarks = data.students.map(student => ({
+        studentId: student._id,
+        studentName: student.studentName,
+        rollNo: student.rollNumber || student.registrationNo || '',
+        obtainedMarks: ''
+      }));
+      setMarks(initialMarks);
+    } catch (err) {
+      setError('Failed to load class data');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkExistingTest = async () => {
+    try {
+      setLoading(true);
+      // Check if test already exists for this class, subject, and date
+      const filters = {
+        classId: selectedClass,
+        subject: selectedSubject,
+        startDate: testDate,
+        endDate: testDate
+      };
+      
+      const response = await getClassTests(filters);
+      
+      if (response.data && response.data.length > 0) {
+        const existingTest = response.data[0];
+        setExistingTestId(existingTest._id);
+        
+        // Load existing marks
+        const updatedMarks = marks.map(mark => {
+          const existingMark = existingTest.studentMarks?.find(
+            sm => sm.studentId === mark.studentId
+          );
+          return {
+            ...mark,
+            obtainedMarks: existingMark ? existingMark.obtainedMarks : ''
+          };
+        });
+        
+        setMarks(updatedMarks);
+        setTestName(existingTest.testName || `Test - ${new Date(testDate).toLocaleDateString()}`);
+        setTestType(existingTest.testType || 'unit');
+        setIsSaved(true);
+        setIsEditing(false);
+      } else {
+        setExistingTestId(null);
+        setTestName(`Test - ${new Date(testDate).toLocaleDateString()}`);
+        setIsSaved(false);
+      }
+    } catch (err) {
+      console.error('Error checking existing test:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getClassName = () => {
+    const cls = classes.find(c => c._id === selectedClass);
+    return cls ? `${cls.className} - Section ${cls.section}` : '';
+  };
+
+  const getSubjectName = () => {
+    const subject = subjects.find(s => s._id === selectedSubject);
     return subject ? subject.name : '';
   };
 
@@ -110,65 +170,137 @@ const ManageTest = () => {
     setSelectedSubject('');
     setTestDate('');
     setTotalMarks('');
-    setMarks({});
+    setTestName('');
+    setMarks([]);
+    setExistingTestId(null);
     setIsSaved(false);
     setIsEditing(false);
+    setError('');
   };
 
   const handleSubjectChange = (e) => {
     setSelectedSubject(e.target.value);
     setTestDate('');
     setTotalMarks('');
-    setMarks({});
+    setTestName('');
+    setMarks(students.map(student => ({
+      studentId: student._id,
+      studentName: student.studentName,
+      rollNo: student.rollNumber || student.registrationNo || '',
+      obtainedMarks: ''
+    })));
+    setExistingTestId(null);
     setIsSaved(false);
     setIsEditing(false);
   };
 
   const handleTestDateChange = (e) => {
     setTestDate(e.target.value);
-    setTotalMarks('');
-    setMarks({});
-    setIsSaved(false);
-    setIsEditing(false);
+    setTestName(`Test - ${new Date(e.target.value).toLocaleDateString()}`);
   };
 
   const handleTotalMarksChange = (e) => {
-    setTotalMarks(e.target.value);
-    setMarks({});
-    setIsSaved(false);
+    const value = e.target.value;
+    setTotalMarks(value);
+    
+    // Validate existing marks if total marks changed
+    if (value) {
+      const maxMarks = parseFloat(value);
+      const updatedMarks = marks.map(mark => {
+        if (mark.obtainedMarks && parseFloat(mark.obtainedMarks) > maxMarks) {
+          return { ...mark, obtainedMarks: maxMarks };
+        }
+        return mark;
+      });
+      setMarks(updatedMarks);
+    }
   };
 
   const handleMarkChange = (studentId, value) => {
     const numValue = value === '' ? '' : parseFloat(value);
     
     // Validate marks
-    if (numValue !== '' && (numValue < 0 || numValue > parseFloat(totalMarks))) {
-      return;
+    if (numValue !== '' && totalMarks) {
+      const maxMarks = parseFloat(totalMarks);
+      if (numValue < 0 || numValue > maxMarks) {
+        return;
+      }
     }
 
-    setMarks(prev => ({
-      ...prev,
-      [studentId]: value
-    }));
+    setMarks(prev => 
+      prev.map(mark => 
+        mark.studentId === studentId 
+          ? { ...mark, obtainedMarks: value }
+          : mark
+      )
+    );
   };
 
-  const handleSaveMarks = () => {
-    // Validate that at least some marks are entered
-    const hasMarks = Object.values(marks).some(mark => mark !== '' && mark !== undefined);
-    
-    if (!hasMarks) {
-      alert('Please enter at least some marks before saving');
-      return;
+  const handleSaveMarks = async () => {
+    try {
+      // Validate that all required fields are filled
+      if (!selectedClass || !selectedSubject || !testDate || !totalMarks) {
+        setError('Please fill all required fields');
+        return;
+      }
+
+      // Validate that at least some marks are entered
+      const hasMarks = marks.some(mark => mark.obtainedMarks !== '' && mark.obtainedMarks !== undefined);
+      
+      if (!hasMarks) {
+        setError('Please enter at least some marks before saving');
+        return;
+      }
+
+      setLoading(true);
+      setError('');
+
+      // Prepare student marks data
+      const studentMarks = marks
+        .filter(mark => mark.obtainedMarks !== '' && mark.obtainedMarks !== undefined)
+        .map(mark => ({
+          studentId: mark.studentId,
+          studentName: mark.studentName,
+          rollNo: mark.rollNo,
+          obtainedMarks: parseFloat(mark.obtainedMarks)
+        }));
+
+      const testData = {
+        testName: testName.trim() || `Test - ${new Date(testDate).toLocaleDateString()}`,
+        testType,
+        testDate,
+        totalMarks: parseFloat(totalMarks),
+        classId: selectedClass,
+        subjectName: getSubjectName(),
+        subjectId: selectedSubject,
+        studentMarks,
+        isPublished: false
+      };
+
+      let savedTest;
+      if (existingTestId) {
+        // Update existing test
+        savedTest = await updateClassTest(existingTestId, testData);
+      } else {
+        // Create new test
+        savedTest = await createClassTest(testData);
+        setExistingTestId(savedTest._id);
+      }
+
+      // Show success message
+      setShowSuccess(true);
+      setIsSaved(true);
+      setIsEditing(false);
+
+      setTimeout(() => {
+        setShowSuccess(false);
+      }, 3000);
+    } catch (err) {
+      setError(err.message || 'Failed to save test marks');
+      console.error('Save error:', err);
+    } finally {
+      setLoading(false);
     }
-
-    // Show success message
-    setShowSuccess(true);
-    setIsSaved(true);
-    setIsEditing(false);
-
-    setTimeout(() => {
-      setShowSuccess(false);
-    }, 3000);
   };
 
   const handleUpdate = () => {
@@ -176,12 +308,27 @@ const ManageTest = () => {
     setIsSaved(false);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
+    if (!existingTestId) return;
+    
     if (window.confirm('Are you sure you want to delete these test marks? This action cannot be undone.')) {
-      setMarks({});
-      setIsSaved(false);
-      setIsEditing(false);
-      setShowSuccess(false);
+      try {
+        setLoading(true);
+        await deleteClassTest(existingTestId);
+        
+        // Reset form
+        setMarks(marks.map(mark => ({ ...mark, obtainedMarks: '' })));
+        setExistingTestId(null);
+        setIsSaved(false);
+        setIsEditing(false);
+        setShowSuccess(false);
+        setError('');
+      } catch (err) {
+        setError('Failed to delete test marks');
+        console.error('Delete error:', err);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -216,6 +363,14 @@ const ManageTest = () => {
           <p className="text-gray-600 dark:text-gray-400 mt-2">Add, update, or delete test marks for students</p>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex items-center space-x-3 animate-fade-in">
+            <AlertCircle className="w-5 h-5 text-red-500" />
+            <p className="text-red-700 dark:text-red-300">{error}</p>
+          </div>
+        )}
+
         {/* Success Message */}
         {showSuccess && (
           <div className="mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 flex items-center space-x-3 animate-fade-in">
@@ -225,6 +380,16 @@ const ManageTest = () => {
             <div>
               <p className="font-semibold text-green-900 dark:text-green-100">Test Marks Saved Successfully!</p>
               <p className="text-sm text-green-700 dark:text-green-300">All marks have been updated in the system.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Loading Overlay */}
+        {loading && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 flex flex-col items-center space-y-4">
+              <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
+              <p className="text-gray-700 dark:text-gray-300">Processing...</p>
             </div>
           </div>
         )}
@@ -250,11 +415,12 @@ const ManageTest = () => {
                   value={selectedClass}
                   onChange={handleClassChange}
                   className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  disabled={loading}
                 >
                   <option value="">Choose Class...</option>
                   {classes.map(cls => (
-                    <option key={cls.id} value={cls.id}>
-                      {cls.name} - {cls.section}
+                    <option key={cls._id} value={cls._id}>
+                      {cls.className} - Section {cls.section}
                     </option>
                   ))}
                 </select>
@@ -269,11 +435,11 @@ const ManageTest = () => {
                   value={selectedSubject}
                   onChange={handleSubjectChange}
                   className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  disabled={!selectedClass}
+                  disabled={!selectedClass || loading}
                 >
                   <option value="">Choose Subject...</option>
-                  {availableSubjects.map(subject => (
-                    <option key={subject.id} value={subject.id}>
+                  {subjects.map(subject => (
+                    <option key={subject._id} value={subject._id}>
                       {subject.name}
                     </option>
                   ))}
@@ -292,7 +458,7 @@ const ManageTest = () => {
                     value={testDate}
                     onChange={handleTestDateChange}
                     className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                    disabled={!selectedSubject}
+                    disabled={!selectedSubject || loading}
                   />
                 </div>
               </div>
@@ -309,8 +475,43 @@ const ManageTest = () => {
                   className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   placeholder="Enter total marks"
                   min="1"
-                  disabled={!testDate}
+                  step="0.5"
+                  disabled={!testDate || loading}
                 />
+              </div>
+
+              {/* Test Name */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  Test Name
+                </label>
+                <input
+                  type="text"
+                  value={testName}
+                  onChange={(e) => setTestName(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  placeholder="Enter test name"
+                  disabled={loading}
+                />
+              </div>
+
+              {/* Test Type */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  Test Type
+                </label>
+                <select
+                  value={testType}
+                  onChange={(e) => setTestType(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  disabled={loading}
+                >
+                  <option value="unit">Unit Test</option>
+                  <option value="mid-term">Mid Term</option>
+                  <option value="final">Final Term</option>
+                  <option value="quiz">Quiz</option>
+                  <option value="assignment">Assignment</option>
+                </select>
               </div>
             </div>
           </div>
@@ -327,7 +528,7 @@ const ManageTest = () => {
                     <span>Add/Update Test Marks</span>
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    {getClassName(selectedClass)} - {getSubjectName(selectedSubject)} - {new Date(testDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    {getClassName()} - {getSubjectName()} - {new Date(testDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                   </p>
                 </div>
                 <div className="text-right">
@@ -343,6 +544,7 @@ const ManageTest = () => {
                   <tr>
                     <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 dark:text-gray-100">ID</th>
                     <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 dark:text-gray-100">Student Name</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 dark:text-gray-100">Roll No</th>
                     <th className="px-6 py-4 text-center text-sm font-bold text-gray-900 dark:text-gray-100">
                       Obtained Marks
                       <div className="text-xs font-normal text-gray-500 dark:text-gray-400 mt-1">(Out of {totalMarks})</div>
@@ -351,8 +553,8 @@ const ManageTest = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {students.length > 0 ? (
-                    students.map((student, index) => (
-                      <tr key={student.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    marks.map((mark, index) => (
+                      <tr key={mark.studentId} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                         <td className="px-6 py-4">
                           <span className="inline-flex items-center justify-center w-10 h-10 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-lg font-bold">
                             {index + 1}
@@ -360,22 +562,24 @@ const ManageTest = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div>
-                            <p className="font-semibold text-gray-900 dark:text-gray-100">{student.name}</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Roll No: {student.rollNo}</p>
+                            <p className="font-semibold text-gray-900 dark:text-gray-100">{mark.studentName}</p>
                           </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{mark.rollNo}</p>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex justify-center">
                             <input
                               type="number"
-                              value={marks[student.id] || ''}
-                              onChange={(e) => handleMarkChange(student.id, e.target.value)}
+                              value={mark.obtainedMarks}
+                              onChange={(e) => handleMarkChange(mark.studentId, e.target.value)}
                               className="w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-center bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                               placeholder="0"
                               min="0"
                               max={totalMarks}
                               step="0.5"
-                              disabled={isSaved && !isEditing}
+                              disabled={(isSaved && !isEditing) || loading}
                             />
                           </div>
                         </td>
@@ -383,7 +587,7 @@ const ManageTest = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="3" className="px-6 py-12 text-center">
+                      <td colSpan="4" className="px-6 py-12 text-center">
                         <Users className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
                         <p className="text-gray-500 dark:text-gray-400">No students found in this class</p>
                       </td>
@@ -401,14 +605,20 @@ const ManageTest = () => {
                     <div className="text-sm text-gray-600 dark:text-gray-400">
                       <p className="font-semibold">Note:</p>
                       <p>• Enter marks between 0 and {totalMarks}</p>
-                      <p>• Leave blank if marks are not available</p>
+                      <p>• Leave blank if student was absent</p>
+                      <p>• Marks can be entered with decimals (e.g., 85.5)</p>
                     </div>
                     <button
                       onClick={handleSaveMarks}
-                      className="flex items-center space-x-2 px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-700 text-white rounded-xl hover:from-purple-700 hover:to-indigo-800 transition-all shadow-lg hover:shadow-xl font-semibold"
+                      disabled={loading}
+                      className="flex items-center space-x-2 px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-700 text-white rounded-xl hover:from-purple-700 hover:to-indigo-800 transition-all shadow-lg hover:shadow-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Save className="w-5 h-5" />
-                      <span>Save Test Marks</span>
+                      {loading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Save className="w-5 h-5" />
+                      )}
+                      <span>{loading ? 'Saving...' : 'Save Test Marks'}</span>
                     </button>
                   </div>
                 ) : (
@@ -419,20 +629,24 @@ const ManageTest = () => {
                       </div>
                       <div>
                         <p className="font-semibold text-gray-900 dark:text-gray-100">Marks Saved</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">You can update or delete these marks</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {existingTestId ? 'Test marks are saved in the database' : 'You can update or delete these marks'}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">
                       <button
                         onClick={handleUpdate}
-                        className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-700 text-white rounded-xl hover:from-blue-700 hover:to-cyan-800 transition-all shadow-lg hover:shadow-xl font-semibold"
+                        disabled={loading}
+                        className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-700 text-white rounded-xl hover:from-blue-700 hover:to-cyan-800 transition-all shadow-lg hover:shadow-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Edit2 className="w-5 h-5" />
                         <span>Update</span>
                       </button>
                       <button
                         onClick={handleDelete}
-                        className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all shadow-lg hover:shadow-xl font-semibold"
+                        disabled={loading}
+                        className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all shadow-lg hover:shadow-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Trash2 className="w-5 h-5" />
                         <span>Delete</span>
@@ -450,7 +664,9 @@ const ManageTest = () => {
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
             <ClipboardCheck className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Complete Test Details</h3>
-            <p className="text-gray-500 dark:text-gray-400">Please fill in all the required fields above to start entering test marks</p>
+            <p className="text-gray-500 dark:text-gray-400">
+              Please fill in all the required fields above to start entering test marks
+            </p>
           </div>
         )}
       </div>
