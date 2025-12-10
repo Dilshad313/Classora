@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
+import {
   Award,
   Home,
   ChevronRight,
@@ -17,6 +17,7 @@ import { toast } from 'react-hot-toast';
 import * as resultCardsAPI from '../../../../services/resultCardsApi.js';
 import * as examAPI from '../../../../services/examsApi.js';
 import * as studentAPI from '../../../../services/studentApi.js';
+import * as classAPI from '../../../../services/classApi.js'; // Import class API
 
 const ResultCard = () => {
   const navigate = useNavigate();
@@ -24,6 +25,8 @@ const ResultCard = () => {
 
   const [exams, setExams] = useState([]);
   const [students, setStudents] = useState([]);
+  const [allClasses, setAllClasses] = useState([]); // Store all classes
+  const [classFilteredStudents, setClassFilteredStudents] = useState([]); // Store students filtered by class
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -34,7 +37,7 @@ const ResultCard = () => {
     resultType: 'school',
     selectedExam: '',
     selectedClass: '',
-    searchTerm: ''
+    selectedStudentId: ''
   });
 
   // Fetch dropdown data on component mount
@@ -51,10 +54,16 @@ const ResultCard = () => {
         setExams(examsResult.data);
       }
 
-      // Fetch students (for school-wide search)
-      const studentsResult = await studentAPI.getStudents();
+      // Fetch all students
+      const studentsResult = await studentAPI.getStudents({ limit: 0 }); // Fetch all students
       if (studentsResult.success) {
-        setStudents(studentsResult.data);
+        setStudents(studentsResult.data.students);
+      }
+
+      // Fetch all classes
+      const classesResult = await classAPI.getAllClasses();
+      if (classesResult.success) {
+        setAllClasses(classesResult.data);
       }
     } catch (error) {
       toast.error('Failed to load data');
@@ -67,29 +76,66 @@ const ResultCard = () => {
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({
       ...prev,
-      [key]: value
+      [key]: value,
+      selectedStudentId: (key === 'selectedClass' || key === 'resultType') ? '' : prev.selectedStudentId
     }));
 
-    // Reset student selection when filters change
-    if (key !== 'searchTerm') {
-      setSelectedStudent(null);
-      setGeneratedResult(null);
+    setSelectedStudent(null);
+    setGeneratedResult(null);
+  };
+
+  // Handler for class selection change (class-wise mode)
+  const handleClassChange = (e) => {
+    const selectedClassValue = e.target.value;
+    setFilters(prev => ({
+      ...prev,
+      selectedClass: selectedClassValue,
+      selectedStudentId: '' // Clear selected student when class changes
+    }));
+
+    setSelectedStudent(null);
+    setGeneratedResult(null);
+
+    // Filter students by the selected class
+    if (selectedClassValue) {
+      // Fetch students for the selected class
+      fetchStudentsByClass(selectedClassValue);
+    } else {
+      setClassFilteredStudents([]);
     }
   };
 
-  const filteredStudents = students.filter(student => {
+  // Update classFilteredStudents when filters change
+  useEffect(() => {
     if (filters.resultType === 'class' && filters.selectedClass) {
-      return student.selectClass === filters.selectedClass &&
-             (student.studentName.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-              student.registrationNo.includes(filters.searchTerm));
+      if (!classFilteredStudents.length) { // Avoid re-fetching if already populated
+        fetchStudentsByClass(filters.selectedClass);
+      }
+    } else {
+      setClassFilteredStudents([]);
     }
-    return student.studentName.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-           student.registrationNo.includes(filters.searchTerm);
-  });
+  }, [filters.resultType, filters.selectedClass, students]);
 
-  const handleStudentSelect = (student) => {
-    setSelectedStudent(student);
-    setGeneratedResult(null);
+  const handleStudentChange = (e) => {
+    const selectedStudentId = e.target.value;
+    setFilters(prev => ({
+      ...prev,
+      selectedStudentId: selectedStudentId
+    }));
+
+    if (selectedStudentId) {
+      let student;
+      if (filters.resultType === 'class' && filters.selectedClass) {
+        student = classFilteredStudents.find(s => s._id === selectedStudentId);
+      } else {
+        student = students.find(s => s._id === selectedStudentId);
+      }
+      setSelectedStudent(student);
+      setGeneratedResult(null);
+    } else {
+      setSelectedStudent(null);
+      setGeneratedResult(null);
+    }
   };
 
   const handleGenerateResult = async () => {
@@ -98,18 +144,18 @@ const ResultCard = () => {
       return;
     }
 
-    if (!selectedStudent) {
-      toast.error('Please search and select a student');
+    if (!filters.selectedStudentId) {
+      toast.error('Please select a student');
       return;
     }
 
     setGenerating(true);
     try {
-      const result = await resultCardsAPI.generateResultCard(selectedStudent._id, filters.selectedExam);
+      const result = await resultCardsAPI.generateResultCard(filters.selectedStudentId, filters.selectedExam);
       if (result.success) {
         setGeneratedResult(result.data);
         toast.success('Result card generated successfully!');
-        
+
         // Scroll to result card
         setTimeout(() => {
           resultCardRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -122,6 +168,27 @@ const ResultCard = () => {
       console.error('Generate result error:', error);
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const fetchStudentsByClass = async (classId) => {
+    if (!classId) {
+      setClassFilteredStudents([]);
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await studentAPI.getStudents({ class: classId, limit: 0 });
+      if (result.success) {
+        setClassFilteredStudents(result.data.students);
+      } else {
+        toast.error(result.message || 'Failed to fetch students for this class');
+      }
+    } catch (error) {
+      toast.error('An error occurred while fetching students');
+      console.error('Fetch students by class error:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -264,50 +331,40 @@ const ResultCard = () => {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Select Class <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={filters.selectedClass}
-                    onChange={(e) => handleFilterChange('selectedClass', e.target.value)}
+                    onChange={handleClassChange}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                    placeholder="Enter class name..."
-                  />
+                    disabled={loading}
+                  >
+                    <option value="">Choose Class...</option>
+                    {allClasses.map(cls => (
+                      <option key={cls._id} value={cls.className}>
+                        {cls.className} - {cls.section}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               )}
 
-              {/* Search Student */}
+              {/* Select Student */}
               <div className={filters.resultType === 'school' ? 'md:col-span-2' : ''}>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Search Student <span className="text-red-500">*</span>
+                  Select Student <span className="text-red-500">*</span>
                 </label>
-                <div className="relative">
-                  <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    value={filters.searchTerm}
-                    onChange={(e) => handleFilterChange('searchTerm', e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                    placeholder="Search by name or registration number..."
-                    disabled={loading}
-                  />
-                  
-                  {/* Search Results Dropdown */}
-                  {filters.searchTerm && !selectedStudent && filteredStudents.length > 0 && (
-                    <div className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                      {filteredStudents.map(student => (
-                        <button
-                          key={student._id}
-                          onClick={() => handleStudentSelect(student)}
-                          className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
-                        >
-                          <p className="font-semibold text-gray-900">{student.studentName}</p>
-                          <p className="text-sm text-gray-600">
-                            Reg No: {student.registrationNo} | Class: {student.selectClass} - {student.section}
-                          </p>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <select
+                  value={filters.selectedStudentId}
+                  onChange={handleStudentChange}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                  disabled={loading || (!filters.selectedClass && filters.resultType === 'class')}
+                >
+                  <option value="">Choose Student...</option>
+                  {(filters.resultType === 'class' && filters.selectedClass ? classFilteredStudents : students).map(student => (
+                    <option key={student._id} value={student._id}>
+                      {student.studentName} (Reg: {student.registrationNo})
+                    </option>
+                  ))}
+                </select>
                 {selectedStudent && (
                   <p className="mt-2 text-sm text-green-600 font-semibold">
                     ✓ Selected: {selectedStudent.studentName} (Reg No: {selectedStudent.registrationNo})

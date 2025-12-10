@@ -16,6 +16,7 @@ import { toast } from 'react-hot-toast';
 import * as examMarksAPI from '../../../../services/examMarksApi.js';
 import * as examAPI from '../../../../services/examsApi.js';
 import * as classAPI from '../../../../services/classApi.js';
+import * as studentAPI from '../../../../services/studentApi.js';
 
 const ExamMarks = () => {
   const navigate = useNavigate();
@@ -69,22 +70,65 @@ const ExamMarks = () => {
     setSelectedClass(classId);
     setMarksData(null);
     setErrors({});
-
-    if (selectedExam && classId) {
-      await fetchMarks(selectedExam, classId);
-    }
   };
+
+  // Fetch marks when both exam and class are selected
+  useEffect(() => {
+    if (selectedExam && selectedClass) {
+      fetchMarks(selectedExam, selectedClass);
+    }
+  }, [selectedExam, selectedClass]);
 
   const fetchMarks = async (examId, classId) => {
     setLoading(true);
     try {
-      const result = await examMarksAPI.getExamMarksByClass(examId, classId);
-      if (result.success) {
-        setMarksData(result.data);
+            const [studentsResult, marksResult] = await Promise.all([
+        studentAPI.getStudents({ class: classId, limit: 0 }), // 0 limit to get all
+        examMarksAPI.getExamMarksByClass(examId, classId)
+      ]);
+
+      if (studentsResult.success && marksResult.success) {
+        const students = studentsResult.data.students;
+        const marksData = marksResult.data;
+
+        // Create a map of marks for quick lookup
+        const marksMap = new Map();
+        marksData.students.forEach(student => {
+          marksMap.set(student.student._id, student);
+        });
+
+        // Combine students with their marks
+        const combinedStudents = students.map(student => {
+          const studentMarks = marksMap.get(student._id);
+          if (studentMarks) {
+            return studentMarks;
+          }
+          // If no marks exist, create a default structure
+          return {
+            student: {
+              _id: student._id,
+              name: student.name,
+              rollNumber: student.rollNumber,
+              registrationNo: student.registrationNo
+            },
+            marks: {},
+            total: 0,
+            percentage: 0
+          };
+        });
+
+        setMarksData({
+          ...marksData,
+          students: combinedStudents
+        });
+
       } else {
-        toast.error(result.message || 'Failed to fetch marks');
+        setMarksData(null);
+        if (!studentsResult.success) toast.error(studentsResult.message || 'Failed to fetch students');
+        if (!marksResult.success) toast.error(marksResult.message || 'Failed to fetch marks');
       }
     } catch (error) {
+      setMarksData(null); // Clear any existing data on error
       toast.error('An error occurred while fetching marks');
       console.error('Fetch marks error:', error);
     } finally {

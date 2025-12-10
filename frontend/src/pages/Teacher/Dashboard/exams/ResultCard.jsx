@@ -1,23 +1,29 @@
-import React, { useState } from 'react';
-import { 
-  IdCard, 
-  Download, 
-  Search, 
-  Award, 
-  TrendingUp, 
-  BarChart3, 
-  PieChart, 
-  User, 
-  Users, 
-  Calendar, 
+import React, { useState, useEffect } from 'react';
+import {
+  IdCard,
+  Download,
+  Search,
+  Award,
+  TrendingUp,
+  BarChart3,
+  PieChart,
+  User,
+  Users,
+  Calendar,
   BookOpen,
   Printer,
   Eye,
   Star,
   Trophy,
   Target,
-  CheckCircle2
+  CheckCircle2,
+  Loader2
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import * as resultCardsAPI from '../../../../services/resultCardsApi.js';
+import * as examAPI from '../../../../services/examsApi.js';
+import * as studentAPI from '../../../../services/studentApi.js';
+import * as classAPI from '../../../../services/classApi.js'; // Import class API
 
 const ResultCard = () => {
   const [selectedExam, setSelectedExam] = useState('');
@@ -26,127 +32,153 @@ const ResultCard = () => {
   const [resultType, setResultType] = useState('student'); // 'student' or 'class'
   const [showResults, setShowResults] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [exams, setExams] = useState([]);
+  const [allClasses, setAllClasses] = useState([]);
+  const [allStudents, setAllStudents] = useState([]);
+  const [filteredStudents, setFilteredStudents] = useState([]);
+  const [selectedStudentObj, setSelectedStudentObj] = useState(null);
+  const [generatedResult, setGeneratedResult] = useState(null);
 
-  const exams = [
-    { id: 'mid-term', name: 'Mid-term Examination', date: '2024-11-15' },
-    { id: 'final', name: 'Final Examination', date: '2024-12-20' },
-    { id: 'unit-test-1', name: 'Unit Test 1', date: '2024-10-10' }
-  ];
+  // Fetch dropdown data on component mount
+  useEffect(() => {
+    fetchDropdownData();
+  }, []);
 
-  const classes = [
-    { id: '10-A', name: 'Class 10-A', students: 35 },
-    { id: '10-B', name: 'Class 10-B', students: 32 },
-    { id: '9-A', name: 'Class 9-A', students: 30 }
-  ];
+  const fetchDropdownData = async () => {
+    setLoading(true);
+    try {
+      // Fetch exams
+      const examsResult = await examAPI.getExamDropdown();
+      if (examsResult.success) {
+        setExams(examsResult.data);
+      }
 
-  const students = [
-    {
-      id: 1,
-      name: 'Arun Kumar',
-      rollNo: '001',
-      class: '10-A',
-      subjects: {
-        mathematics: { marks: 92, maxMarks: 100 },
-        english: { marks: 85, maxMarks: 100 },
-        science: { marks: 88, maxMarks: 100 },
-        'social-studies': { marks: 90, maxMarks: 100 },
-        hindi: { marks: 87, maxMarks: 100 }
-      },
-      totalMarks: 442,
-      maxTotalMarks: 500,
-      percentage: 88.4,
-      grade: 'A+',
-      rank: 1,
-      attendance: 95
-    },
-    {
-      id: 2,
-      name: 'Priya Sharma',
-      rollNo: '002',
-      class: '10-A',
-      subjects: {
-        mathematics: { marks: 88, maxMarks: 100 },
-        english: { marks: 92, maxMarks: 100 },
-        science: { marks: 85, maxMarks: 100 },
-        'social-studies': { marks: 89, maxMarks: 100 },
-        hindi: { marks: 91, maxMarks: 100 }
-      },
-      totalMarks: 445,
-      maxTotalMarks: 500,
-      percentage: 89.0,
-      grade: 'A+',
-      rank: 2,
-      attendance: 98
+      // Fetch all students
+      const studentsResult = await studentAPI.getStudents();
+      if (studentsResult.success) {
+        setAllStudents(studentsResult.data);
+      }
+
+      // Fetch all classes
+      const classesResult = await classAPI.getAllClasses();
+      if (classesResult.success) {
+        setAllClasses(classesResult.data);
+      }
+    } catch (error) {
+      toast.error('Failed to load data');
+      console.error('Fetch dropdown error:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const filteredStudents = students.filter(student => {
-    // For student-wise search, filter by name and optionally by class
+  // Filter students based on result type and search term
+  useEffect(() => {
     if (resultType === 'student') {
-      const matchesName = student.name.toLowerCase().includes(searchStudent.toLowerCase());
-      const matchesClass = !selectedClass || student.class === selectedClass;
-      return matchesName && matchesClass;
+      // For student-wise search, filter by name and optionally by class
+      const filtered = allStudents.filter(student => {
+        const matchesName = student.studentName.toLowerCase().includes(searchStudent.toLowerCase()) ||
+                           student.registrationNo.toLowerCase().includes(searchStudent.toLowerCase());
+        const matchesClass = !selectedClass || student.selectClass === selectedClass;
+        return matchesName && matchesClass;
+      });
+      setFilteredStudents(filtered);
+    } else {
+      // For class-wise results, filter by class only
+      const filtered = allStudents.filter(student => student.selectClass === selectedClass);
+      setFilteredStudents(filtered);
     }
-    // For class-wise results, filter by class only
-    return student.class === selectedClass;
-  });
+  }, [resultType, searchStudent, selectedClass, allStudents]);
 
-  const handleGenerateResults = () => {
-    if (!selectedExam || (resultType === 'student' && !searchStudent) || (resultType === 'class' && !selectedClass)) {
-      alert('Please fill in all required fields');
+  const handleGenerateResults = async () => {
+    if (!selectedExam || (resultType === 'class' && !selectedClass)) {
+      toast.error('Please select exam and class');
       return;
     }
-    setShowResults(true);
+
+    if (resultType === 'student' && !searchStudent) {
+      toast.error('Please search for a student');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (resultType === 'student' && filteredStudents.length > 0) {
+        // For student-wise, get the first matching student
+        const student = filteredStudents[0]; // For demo, taking the first filtered student
+        const result = await resultCardsAPI.generateResultCard(student._id, selectedExam);
+        if (result.success) {
+          setGeneratedResult(result.data);
+          setSelectedStudentObj(student);
+          setShowResults(true);
+          toast.success('Result card generated successfully!');
+        } else {
+          toast.error(result.message || 'Failed to generate result card');
+        }
+      } else if (resultType === 'class') {
+        // For class-wise, show class results
+        setShowResults(true);
+        toast.success(`Results for class ${selectedClass} loaded!`);
+      }
+    } catch (error) {
+      toast.error('An error occurred while generating result');
+      console.error('Generate result error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDownloadStudent = (student) => {
     const studentData = {
-      examName: exams.find(e => e.id === selectedExam)?.name,
-      studentName: student.name,
-      rollNo: student.rollNo,
-      class: student.class,
-      subjects: student.subjects,
-      totalMarks: student.totalMarks,
-      maxTotalMarks: student.maxTotalMarks,
-      percentage: student.percentage,
-      grade: student.grade,
-      rank: student.rank,
-      attendance: student.attendance,
+      examName: exams.find(e => e._id === selectedExam)?.label || 'Unknown Exam',
+      studentName: student.studentName,
+      rollNo: student.rollNumber,
+      class: student.selectClass,
+      subjects: generatedResult?.subjects || [],
+      totalMarks: generatedResult?.totalObtained || 0,
+      maxTotalMarks: generatedResult?.totalMaxMarks || 0,
+      percentage: generatedResult?.overallPercentage || 0,
+      grade: generatedResult?.overallGrade || 'N/A',
+      rank: 'N/A',
+      attendance: 'N/A',
       generatedAt: new Date().toISOString()
     };
 
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(studentData, null, 2));
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", `result-card-${student.name.replace(/\s+/g, '-')}-${Date.now()}.json`);
+    downloadAnchorNode.setAttribute("download", `result-card-${student.studentName.replace(/\s+/g, '-')}-${Date.now()}.json`);
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
   };
 
   const handleDownloadAllClass = () => {
-    const classStudents = students.filter(s => s.class === selectedClass);
+    const classStudents = filteredStudents; // Use filtered students which are already class filtered
     const classData = {
-      examName: exams.find(e => e.id === selectedExam)?.name,
-      className: classes.find(c => c.id === selectedClass)?.name,
+      examName: exams.find(e => e._id === selectedExam)?.label || 'Unknown Exam',
+      className: selectedClass,
       totalStudents: classStudents.length,
       students: classStudents.map(student => ({
-        name: student.name,
-        rollNo: student.rollNo,
-        subjects: student.subjects,
-        totalMarks: student.totalMarks,
-        maxTotalMarks: student.maxTotalMarks,
-        percentage: student.percentage,
-        grade: student.grade,
-        rank: student.rank,
-        attendance: student.attendance
+        name: student.studentName,
+        rollNo: student.rollNumber,
+        class: student.selectClass,
+        subjects: generatedResult?.subjects || [],
+        totalMarks: generatedResult?.totalObtained || 0,
+        maxTotalMarks: generatedResult?.totalMaxMarks || 0,
+        percentage: generatedResult?.overallPercentage || 0,
+        grade: generatedResult?.overallGrade || 'N/A',
+        rank: 'N/A',
+        attendance: 'N/A'
       })),
       classStatistics: {
-        averagePercentage: (classStudents.reduce((sum, s) => sum + s.percentage, 0) / classStudents.length).toFixed(2),
-        highestScore: Math.max(...classStudents.map(s => s.percentage)),
-        lowestScore: Math.min(...classStudents.map(s => s.percentage)),
-        passCount: classStudents.filter(s => s.percentage >= 40).length,
-        failCount: classStudents.filter(s => s.percentage < 40).length
+        averagePercentage: classStudents.length > 0 ?
+          (classStudents.reduce((sum, s) => sum + (generatedResult?.overallPercentage || 0), 0) / classStudents.length).toFixed(2) : '0.00',
+        highestScore: classStudents.length > 0 ? Math.max(...classStudents.map(s => generatedResult?.overallPercentage || 0)) : 0,
+        lowestScore: classStudents.length > 0 ? Math.min(...classStudents.map(s => generatedResult?.overallPercentage || 0)) : 0,
+        passCount: classStudents.filter(s => (generatedResult?.overallPercentage || 0) >= 40).length,
+        failCount: classStudents.filter(s => (generatedResult?.overallPercentage || 0) < 40).length
       },
       generatedAt: new Date().toISOString()
     };
@@ -154,7 +186,7 @@ const ResultCard = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(classData, null, 2));
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", `class-results-${selectedClass}-${Date.now()}.json`);
+    downloadAnchorNode.setAttribute("download", `class-results-${selectedClass.replace(/\s+/g, '-')}-${Date.now()}.json`);
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
@@ -268,7 +300,7 @@ const ResultCard = () => {
                   >
                     <option value="">Select an exam</option>
                     {exams.map(exam => (
-                      <option key={exam.id} value={exam.id}>{exam.name}</option>
+                      <option key={exam._id} value={exam._id}>{exam.label}</option>
                     ))}
                   </select>
                 </div>
@@ -284,8 +316,8 @@ const ResultCard = () => {
                       className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-500/20 dark:focus:ring-purple-400/20 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all duration-200"
                     >
                       <option value="">Select a class</option>
-                      {classes.map(cls => (
-                        <option key={cls.id} value={cls.id}>{cls.name}</option>
+                      {allClasses.map(cls => (
+                        <option key={cls._id} value={cls.className}>{cls.className} - {cls.section}</option>
                       ))}
                     </select>
                   </div>
@@ -316,13 +348,13 @@ const ResultCard = () => {
                         <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-2xl z-[9999] max-h-80 overflow-y-auto"
                              style={{ boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
                           {(() => {
-                            const matchingStudents = searchStudent 
-                              ? students.filter(student => 
-                                  student.name.toLowerCase().includes(searchStudent.toLowerCase()) ||
-                                  student.rollNo.toLowerCase().includes(searchStudent.toLowerCase())
+                            const matchingStudents = searchStudent
+                              ? filteredStudents.filter(student =>
+                                  student.studentName.toLowerCase().includes(searchStudent.toLowerCase()) ||
+                                  student.registrationNo.toLowerCase().includes(searchStudent.toLowerCase())
                                 )
-                              : students;
-                            
+                              : filteredStudents;
+
                             if (matchingStudents.length === 0) {
                               return (
                                 <div className="px-4 py-3 text-gray-500 dark:text-gray-400 text-center">
@@ -333,12 +365,12 @@ const ResultCard = () => {
                                 </div>
                               );
                             }
-                            
+
                             return (
                               <>
                                 <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-600">
                                   <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                                    {searchStudent 
+                                    {searchStudent
                                       ? `${matchingStudents.length} Student${matchingStudents.length !== 1 ? 's' : ''} Found`
                                       : `All Students (${matchingStudents.length})`
                                     }
@@ -346,24 +378,25 @@ const ResultCard = () => {
                                 </div>
                                 {matchingStudents.map(student => (
                                   <button
-                                    key={student.id}
+                                    key={student._id}
                                     onMouseDown={(e) => {
                                       e.preventDefault();
-                                      setSearchStudent(student.name);
+                                      setSearchStudent(student.studentName);
+                                      setSelectedStudentObj(student);
                                       setShowSuggestions(false);
                                     }}
                                     className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center justify-between border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors cursor-pointer"
                                   >
                                     <div className="flex items-center gap-3">
                                       <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                                        {student.name.charAt(0)}
+                                        {student.studentName.charAt(0)}
                                       </div>
                                       <div>
                                         <div className="text-gray-900 dark:text-gray-100 font-medium">
-                                          {student.name}
+                                          {student.studentName}
                                         </div>
                                         <div className="text-xs text-gray-500 dark:text-gray-400">
-                                          Class {student.class} • Roll No: {student.rollNo}
+                                          Class {student.selectClass} • Roll No: {student.rollNumber || 'N/A'}
                                         </div>
                                       </div>
                                     </div>
