@@ -79,8 +79,13 @@ app.options('*', cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+import dashboardRoutes from './routes/dashboardRoutes.js';
+
+// ... existing imports ...
+
 // Routes
 app.use("/api/admin", adminRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/institute", instituteRoutes);
 app.use("/api/fee-structure", feeStructureRoutes);
 app.use("/api/bank-accounts", bankAccountRoutes);

@@ -1,6 +1,6 @@
 // pages/NewClasses.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, 
@@ -25,12 +25,56 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { createClass, uploadClassMaterial } from '../../../../services/classApi';
+import { getEmployees } from '../../../../services/employeesApi';
 
 const NewClasses = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('basic');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  
+  // Check for teachers on mount
+  useEffect(() => {
+    const checkTeachers = async () => {
+      try {
+        const result = await getEmployees(); // Fetch all employees
+        const employees = result.data || [];
+        // Assuming 'teacher' role or just any employee for now based on "0 Teachers!" message
+        // Better to check if any exist. 
+        // If the system distinguishes roles, we might want to filter.
+        // But for now, if count is 0, show toast.
+        
+        if (employees.length === 0) {
+          toast((t) => (
+            <div className="flex flex-col gap-2 items-center">
+              <span className="font-medium text-center">
+                0 Teachers! Please add a Teacher first.
+              </span>
+              <button
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  navigate('/dashboard/employee/add-new');
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
+              >
+                Ok, Add Teacher
+              </button>
+            </div>
+          ), {
+            duration: 6000,
+            position: 'top-center',
+            style: {
+              minWidth: '300px',
+            },
+          });
+        }
+      } catch (error) {
+        console.error('Failed to check teachers:', error);
+      }
+    };
+
+    checkTeachers();
+  }, [navigate]);
   
   const [formData, setFormData] = useState({
     // Basic Information

@@ -1,10 +1,56 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Users, DollarSign, Calendar, UserCheck, UserX, UserPlus, ArrowUpRight, ArrowDownRight, ChevronLeft, ChevronRight, TrendingUp, Briefcase, Settings } from 'lucide-react';
+import { getDashboardStats } from '../../../services/dashboardApi';
+import toast from 'react-hot-toast';
 
 const Home = () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  
+  // Dashboard Data State
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    totalEmployees: 0,
+    totalRevenue: 0,
+    totalProfit: 0,
+    todayAbsentStudents: 0,
+    todayPresentEmployees: 0,
+    todayPresentStudents: 0, 
+    newAdmissions: 0,
+    estimatedFee: 0,
+    collectedFee: 0,
+    incomeStats: [],
+    studentStats: []
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        const data = await getDashboardStats();
+        if (data) {
+          setStats(data);
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+        toast.error('Failed to load dashboard statistics');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  // Format currency
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD', // Default to USD for now, could be dynamic
+      minimumFractionDigits: 0
+    }).format(amount || 0);
+  };
 
   // Get calendar data
   const getDaysInMonth = (date) => {
@@ -29,12 +75,12 @@ const Home = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
   };
 
-  // Top Stats Cards
+  // Derived Stats for UI
   const topStats = [
     {
       title: 'Total Students',
-      value: '1,245',
-      change: '+12%',
+      value: stats.totalStudents.toLocaleString(),
+      change: '+0%', // Placeholder for change
       icon: Users,
       color: 'from-blue-500 to-blue-600',
       bgColor: 'bg-blue-50 dark:bg-blue-900/20',
@@ -42,8 +88,8 @@ const Home = () => {
     },
     {
       title: 'Total Employees',
-      value: '87',
-      change: '+3%',
+      value: stats.totalEmployees.toLocaleString(),
+      change: '+0%',
       icon: Briefcase,
       color: 'from-purple-500 to-purple-600',
       bgColor: 'bg-purple-50 dark:bg-purple-900/20',
@@ -51,8 +97,8 @@ const Home = () => {
     },
     {
       title: 'Total Revenue',
-      value: '$125,450',
-      change: '+18%',
+      value: formatCurrency(stats.totalRevenue),
+      change: '+0%',
       icon: DollarSign,
       color: 'from-green-500 to-green-600',
       bgColor: 'bg-green-50 dark:bg-green-900/20',
@@ -60,8 +106,8 @@ const Home = () => {
     },
     {
       title: 'Total Profit',
-      value: '$45,280',
-      change: '+15.3%',
+      value: formatCurrency(stats.totalProfit),
+      change: '+0%',
       icon: TrendingUp,
       color: 'from-orange-500 to-orange-600',
       bgColor: 'bg-orange-50 dark:bg-orange-900/20',
@@ -69,12 +115,11 @@ const Home = () => {
     },
   ];
 
-  // Center Statistics
   const centerStats = [
     {
       title: 'Statistics for Income',
-      value: '$125,450',
-      change: '+18.5%',
+      value: formatCurrency(stats.totalRevenue), // Showing total revenue
+      change: '+0%',
       trend: 'up',
       icon: DollarSign,
       bgColor: 'bg-green-50 dark:bg-green-900/20',
@@ -83,8 +128,8 @@ const Home = () => {
     },
     {
       title: 'Statistics for Student',
-      value: '1,245',
-      change: '+12.3%',
+      value: stats.totalStudents.toLocaleString(),
+      change: '+0%',
       trend: 'up',
       icon: Users,
       bgColor: 'bg-blue-50 dark:bg-blue-900/20',
@@ -93,8 +138,8 @@ const Home = () => {
     },
     {
       title: 'Today Absent Students',
-      value: '23',
-      change: '-5.2%',
+      value: stats.todayAbsentStudents.toLocaleString(),
+      change: '0%',
       trend: 'down',
       icon: UserX,
       bgColor: 'bg-red-50 dark:bg-red-900/20',
@@ -103,8 +148,8 @@ const Home = () => {
     },
     {
       title: 'Today Present Employees',
-      value: '82',
-      change: '+2.1%',
+      value: stats.todayPresentEmployees.toLocaleString(),
+      change: '0%',
       trend: 'up',
       icon: UserCheck,
       bgColor: 'bg-purple-50 dark:bg-purple-900/20',
@@ -113,8 +158,8 @@ const Home = () => {
     },
     {
       title: 'New Admissions',
-      value: '45',
-      change: '+28.4%',
+      value: stats.newAdmissions.toLocaleString(),
+      change: 'This Month',
       trend: 'up',
       icon: UserPlus,
       bgColor: 'bg-orange-50 dark:bg-orange-900/20',
@@ -122,6 +167,28 @@ const Home = () => {
       iconBg: 'bg-orange-500'
     },
   ];
+
+  // Calculations for Side Panel
+  const pendingFee = Math.max(0, stats.estimatedFee - stats.collectedFee);
+  const collectedPercentage = stats.estimatedFee > 0 ? Math.round((stats.collectedFee / stats.estimatedFee) * 100) : 0;
+  const pendingPercentage = stats.estimatedFee > 0 ? Math.round((pendingFee / stats.estimatedFee) * 100) : 0;
+  
+  // Attendance and other percentages
+  const presentStudentPercentage = stats.totalStudents > 0 
+    ? ((stats.todayPresentStudents / stats.totalStudents) * 100).toFixed(1) 
+    : 0;
+  
+  const presentEmployeePercentage = stats.totalEmployees > 0 
+    ? ((stats.todayPresentEmployees / stats.totalEmployees) * 100).toFixed(1) 
+    : 0;
+
+  if (loading) {
+     return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+     );
+  }
 
   return (
     <div className="space-y-6">
@@ -178,7 +245,7 @@ const Home = () => {
                   </span>
                 </div>
                 
-                {/* Mini Bar Chart */}
+                {/* Mini Bar Chart - Visual Only for now */}
                 <div className="space-y-2 mt-4">
                   <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
                     <span>Progress</span>
@@ -216,16 +283,16 @@ const Home = () => {
               <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">Estimated Fee This Month</h3>
               <DollarSign className="w-6 h-6 text-primary-600 dark:text-primary-400" />
             </div>
-            <p className="text-4xl font-bold text-primary-600 dark:text-primary-400 mb-2">$45,280</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Expected from 1,245 students</p>
+            <p className="text-4xl font-bold text-primary-600 dark:text-primary-400 mb-2">{formatCurrency(stats.estimatedFee)}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Expected from {stats.totalStudents} students</p>
             <div className="mt-4 pt-4 border-t border-primary-200 dark:border-primary-800">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600 dark:text-gray-400">Collected</span>
-                <span className="font-semibold text-green-600 dark:text-green-400">$32,150 (71%)</span>
+                <span className="font-semibold text-green-600 dark:text-green-400">{formatCurrency(stats.collectedFee)} ({collectedPercentage}%)</span>
               </div>
               <div className="flex justify-between text-sm mt-2">
                 <span className="text-gray-600 dark:text-gray-400">Pending</span>
-                <span className="font-semibold text-orange-600 dark:text-orange-400">$13,130 (29%)</span>
+                <span className="font-semibold text-orange-600 dark:text-orange-400">{formatCurrency(pendingFee)} ({pendingPercentage}%)</span>
               </div>
             </div>
           </div>
@@ -238,36 +305,36 @@ const Home = () => {
             <div className="mb-4">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Today Present Students</span>
-                <span className="text-sm font-bold text-blue-600 dark:text-blue-400">94.5%</span>
+                <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{presentStudentPercentage}%</span>
               </div>
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                <div className="bg-blue-500 h-2.5 rounded-full" style={{ width: '94.5%' }}></div>
+                <div className="bg-blue-500 h-2.5 rounded-full" style={{ width: `${Math.min(100, presentStudentPercentage)}%` }}></div>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">1,177 out of 1,245 students</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{stats.todayPresentStudents} out of {stats.totalStudents} students</p>
             </div>
 
             {/* Today Present Employees */}
             <div className="mb-4">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Today Present Employees</span>
-                <span className="text-sm font-bold text-purple-600 dark:text-purple-400">94.3%</span>
+                <span className="text-sm font-bold text-purple-600 dark:text-purple-400">{presentEmployeePercentage}%</span>
               </div>
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                <div className="bg-purple-500 h-2.5 rounded-full" style={{ width: '94.3%' }}></div>
+                <div className="bg-purple-500 h-2.5 rounded-full" style={{ width: `${Math.min(100, presentEmployeePercentage)}%` }}></div>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">82 out of 87 employees</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{stats.todayPresentEmployees} out of {stats.totalEmployees} employees</p>
             </div>
 
             {/* This Month Fee Collection */}
             <div>
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">This Month Fee Collection</span>
-                <span className="text-sm font-bold text-green-600 dark:text-green-400">71.0%</span>
+                <span className="text-sm font-bold text-green-600 dark:text-green-400">{collectedPercentage}%</span>
               </div>
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                <div className="bg-green-500 h-2.5 rounded-full" style={{ width: '71%' }}></div>
+                <div className="bg-green-500 h-2.5 rounded-full" style={{ width: `${Math.min(100, collectedPercentage)}%` }}></div>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">$32,150 out of $45,280</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{formatCurrency(stats.collectedFee)} out of {formatCurrency(stats.estimatedFee)}</p>
             </div>
           </div>
 
