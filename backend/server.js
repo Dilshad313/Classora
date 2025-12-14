@@ -38,6 +38,7 @@ import questionPaperRoutes from './routes/questionPaperRoutes.js';
 import examRoutes from './routes/examRoutes.js';
 import classTestRoutes from './routes/classTestRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
+import certificateRoutes from './routes/certificateRoutes.js';
 
 
 import { requestLogger, errorLogger } from './middleware/logging.js';
@@ -113,6 +114,7 @@ app.use("/api/question-paper", questionPaperRoutes);
 app.use("/api/exams", examRoutes);
 app.use("/api/class-tests", classTestRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/certificates", certificateRoutes);
 
 
 app.get("/api/health", (req, res) => {
