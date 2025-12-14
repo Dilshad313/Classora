@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { getInstituteProfile } from '../../../services/instituteApi';
+import { globalSearch } from '../../../services/searchApi';
 import {
   GraduationCap, LayoutDashboard, Users, BookOpen, Calendar, DollarSign,
   MessageSquare, Settings, LogOut, Menu, X, Bell, Search, ChevronDown,
@@ -31,6 +32,52 @@ const DashboardLayout = () => {
     tagline: 'Future Leaders Academy',
     logoUrl: null
   });
+
+  // Search State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState({ students: [], employees: [], classes: [], subjects: [] });
+  const [showResults, setShowResults] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Handle Search
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (searchQuery.trim().length >= 2) {
+        setLoading(true);
+        setShowResults(true);
+        try {
+          const results = await globalSearch(searchQuery);
+          setSearchResults(results);
+        } catch (error) {
+          console.error('Search error:', error);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setShowResults(false);
+        setSearchResults({ students: [], employees: [], classes: [], subjects: [] });
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const handleSearchResultClick = (link) => {
+    navigate(link);
+    setShowResults(false);
+    setSearchQuery('');
+  };
+
+  // Close search when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.relative.w-full')) {
+        setShowResults(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   console.log('Current user role:', user.role); // Debug line
@@ -510,16 +557,121 @@ const DashboardLayout = () => {
             </div>
 
             {/* Center Section - Search */}
-            <div className="hidden md:flex flex-1 max-w-md mx-8">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
-                <input
-                  type="text"
-                  placeholder="Search students, classes, staff..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
-                />
-              </div>
-            </div>
+            <div className="hidden md:flex flex-1 max-w-md mx-8 relative z-50">
+               <div className="relative w-full">
+                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
+                 <input
+                   type="text"
+                   value={searchQuery}
+                   onChange={(e) => setSearchQuery(e.target.value)}
+                   placeholder="Search students, classes, staff..."
+                   className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                 />
+                 
+                 {/* Search Results Dropdown */}
+                 {showResults && (
+                   <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 max-h-96 overflow-y-auto">
+                     {loading ? (
+                       <div className="p-4 text-center text-gray-500 dark:text-gray-400">Loading...</div>
+                     ) : (
+                       Object.keys(searchResults).every(key => searchResults[key].length === 0) ? (
+                         <div className="p-4 text-center text-gray-500 dark:text-gray-400">No results found</div>
+                       ) : (
+                         <div className="py-2">
+                           {/* Students */}
+                           {searchResults.students?.length > 0 && (
+                             <div className="px-2">
+                               <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-2 py-1">Students</h3>
+                               {searchResults.students.map(item => (
+                                 <button
+                                   key={item.id}
+                                   onClick={() => handleSearchResultClick(item.link)}
+                                   className="w-full text-left px-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg flex items-center gap-3 group"
+                                 >
+                                   <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-600 dark:text-primary-400">
+                                     <User className="w-4 h-4" />
+                                   </div>
+                                   <div>
+                                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-primary-600 dark:group-hover:text-primary-400">{item.title}</p>
+                                     <p className="text-xs text-gray-500 dark:text-gray-400">{item.subtitle}</p>
+                                   </div>
+                                 </button>
+                               ))}
+                             </div>
+                           )}
+ 
+                           {/* Employees */}
+                           {searchResults.employees?.length > 0 && (
+                             <div className="px-2 mt-2">
+                               <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-2 py-1">Staff</h3>
+                               {searchResults.employees.map(item => (
+                                 <button
+                                   key={item.id}
+                                   onClick={() => handleSearchResultClick(item.link)}
+                                   className="w-full text-left px-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg flex items-center gap-3 group"
+                                 >
+                                   <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                                     <Briefcase className="w-4 h-4" />
+                                   </div>
+                                   <div>
+                                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-purple-600 dark:group-hover:text-purple-400">{item.title}</p>
+                                     <p className="text-xs text-gray-500 dark:text-gray-400">{item.subtitle}</p>
+                                   </div>
+                                 </button>
+                               ))}
+                             </div>
+                           )}
+ 
+                           {/* Classes */}
+                           {searchResults.classes?.length > 0 && (
+                             <div className="px-2 mt-2">
+                               <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-2 py-1">Classes</h3>
+                               {searchResults.classes.map(item => (
+                                 <button
+                                   key={item.id}
+                                   onClick={() => handleSearchResultClick(item.link)}
+                                   className="w-full text-left px-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg flex items-center gap-3 group"
+                                 >
+                                   <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400">
+                                     <School className="w-4 h-4" />
+                                   </div>
+                                   <div>
+                                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-orange-600 dark:group-hover:text-orange-400">{item.title}</p>
+                                     <p className="text-xs text-gray-500 dark:text-gray-400">{item.subtitle}</p>
+                                   </div>
+                                 </button>
+                               ))}
+                             </div>
+                           )}
+ 
+                           {/* Subjects */}
+                           {searchResults.subjects?.length > 0 && (
+                             <div className="px-2 mt-2">
+                               <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-2 py-1">Subjects</h3>
+                               {searchResults.subjects.map(item => (
+                                 <button
+                                   key={item.id}
+                                   onClick={() => handleSearchResultClick(item.link)}
+                                   className="w-full text-left px-2 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg flex items-center gap-3 group"
+                                 >
+                                   <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400">
+                                     <BookMarked className="w-4 h-4" />
+                                   </div>
+                                   <div>
+                                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-green-600 dark:group-hover:text-green-400">{item.title}</p>
+                                     <p className="text-xs text-gray-500 dark:text-gray-400">{item.subtitle}</p>
+                                   </div>
+                                 </button>
+                               ))}
+                             </div>
+                           )}
+                         </div>
+                       )
+                     )}
+                   </div>
+                 )}
+               </div>
+             </div>
 
             {/* Right Section */}
             <div className="flex items-center gap-3">

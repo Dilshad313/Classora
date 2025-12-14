@@ -1,7 +1,7 @@
 // pages/AllClasses.jsx
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -34,10 +34,14 @@ import {
 
 const AllClasses = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get('search') || '';
+  });
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedClasses, setSelectedClasses] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);

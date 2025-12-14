@@ -39,7 +39,7 @@ import examRoutes from './routes/examRoutes.js';
 import classTestRoutes from './routes/classTestRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import certificateRoutes from './routes/certificateRoutes.js';
-
+import searchRoutes from './routes/searchRoutes.js';
 
 import { requestLogger, errorLogger } from './middleware/logging.js';
 
@@ -115,7 +115,7 @@ app.use("/api/exams", examRoutes);
 app.use("/api/class-tests", classTestRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/certificates", certificateRoutes);
-
+app.use("/api/search", searchRoutes);
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({
