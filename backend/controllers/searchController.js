@@ -17,73 +17,74 @@ export const globalSearch = async (req, res) => {
     }
 
     const regex = new RegExp(q, 'i'); // Case-insensitive regex
+    const userId = req.user.id; // Admin ID for createdBy checks
 
     // Parallel execution of search queries
     const [students, employees, classes, subjects] = await Promise.all([
       // Search Students
       Student.find({
         $or: [
-          { firstName: regex },
-          { lastName: regex },
-          { admissionNo: regex },
-          { rollNo: regex }
-        ],
-        instituteId: req.user.instituteId // Ensure institute isolation
-      }).limit(5).select('firstName lastName admissionNo class section rollNo studentId photo'),
+          { studentName: regex },
+          { registrationNo: regex },
+          { admissionNumber: regex },
+          { rollNumber: regex }
+        ]
+        // Note: Student model does not have instituteId or createdBy
+      }).limit(5).select('studentName registrationNo selectClass section rollNumber picture admissionNumber'),
 
       // Search Employees
       Employee.find({
         $or: [
-          { firstName: regex },
-          { lastName: regex },
+          { employeeName: regex },
           { employeeId: regex },
-          { designation: regex }
-        ],
-        instituteId: req.user.instituteId
-      }).limit(5).select('firstName lastName employeeId designation photo'),
+          { emailAddress: regex },
+          { employeeRole: regex }
+        ]
+        // Note: Employee model does not have instituteId or createdBy
+      }).limit(5).select('employeeName employeeId employeeRole picture designation'),
 
       // Search Classes
       ClassModel.find({
         className: regex,
-        instituteId: req.user.instituteId
-      }).limit(5).select('className section roomNo'),
+        createdBy: userId
+      }).limit(5).select('className section room'),
 
       // Search Subjects
       Subject.find({
-        subjectName: regex,
-        instituteId: req.user.instituteId
-      }).limit(5).select('subjectName subjectCode type')
+        name: regex,
+        createdBy: userId
+      }).limit(5).select('name code department')
     ]);
 
     // Format results
     const results = {
       students: students.map(s => ({
         id: s._id,
-        title: `${s.firstName} ${s.lastName}`,
-        subtitle: `Class: ${s.class?.className || 'N/A'} - ${s.section || ''} | Roll No: ${s.rollNo || 'N/A'}`,
+        title: s.studentName,
+        subtitle: `Class: ${s.selectClass || 'N/A'} - ${s.section || 'A'} | Roll: ${s.rollNumber || 'N/A'}`,
         type: 'student',
-        image: s.photo,
-        link: `/dashboard/students/all?search=${s.admissionNo}` // Link to student details
+        image: s.picture?.url, // Use picture.url
+        link: `/dashboard/students/all?search=${s.registrationNo || s.admissionNumber}`
       })),
       employees: employees.map(e => ({
         id: e._id,
-        title: `${e.firstName} ${e.lastName}`,
-        subtitle: `${e.designation} | ID: ${e.employeeId}`,
+        title: e.employeeName,
+        subtitle: `${e.employeeRole} | ID: ${e.employeeId}`,
         type: 'employee',
-        image: e.photo,
+        image: e.picture?.url,
         link: `/dashboard/employee/all?search=${e.employeeId}`
       })),
       classes: classes.map(c => ({
         id: c._id,
         title: `${c.className} ${c.section ? `- ${c.section}` : ''}`,
-        subtitle: `Room: ${c.roomNo || 'N/A'}`,
+        subtitle: `Room: ${c.room || 'N/A'}`,
         type: 'class',
         link: '/dashboard/classes/all' 
       })),
       subjects: subjects.map(s => ({
         id: s._id,
-        title: `${s.subjectName}`,
-        subtitle: `${s.subjectCode ? `Code: ${s.subjectCode}` : ''} | ${s.type}`,
+        title: s.name,
+        subtitle: `${s.code ? `Code: ${s.code}` : ''} | ${s.department || ''}`,
         type: 'subject',
         link: '/dashboard/subjects/classes'
       }))
