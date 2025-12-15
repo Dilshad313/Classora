@@ -40,8 +40,11 @@ import classTestRoutes from './routes/classTestRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import certificateRoutes from './routes/certificateRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
+import userNotificationRoutes from './routes/userNotificationRoutes.js';
 
 import { requestLogger, errorLogger } from './middleware/logging.js';
+import notificationScheduler from './utils/notificationScheduler.js';
 
 const app = express();
 
@@ -116,6 +119,8 @@ app.use("/api/class-tests", classTestRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/certificates", certificateRoutes);
 app.use("/api/search", searchRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/user-notifications", userNotificationRoutes);
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({
@@ -179,6 +184,10 @@ const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   await connectDB();
+  
+  // Start notification scheduler
+  notificationScheduler.start();
+  
   app.listen(PORT, () => {
     console.log(`✅ Server running on port ${PORT}`);
   });
