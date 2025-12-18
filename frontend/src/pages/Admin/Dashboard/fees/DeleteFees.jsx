@@ -113,16 +113,16 @@ const DeleteFees = () => {
   const uniqueClasses = [...new Set(payments.map(p => p.class))];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6 transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center gap-2 mb-6 text-sm">
-          <button onClick={() => navigate('/dashboard')} className="flex items-center gap-1.5 text-gray-600 hover:text-blue-600 transition-colors font-medium">
+          <button onClick={() => navigate('/dashboard')} className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
             <Home className="w-4 h-4" /><span>Dashboard</span>
           </button>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-blue-600 font-semibold">Fees</span>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-900 font-semibold">Delete Fees</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-blue-600 dark:text-blue-400 font-semibold">Fees</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-gray-900 dark:text-gray-100 font-semibold">Delete Fees</span>
         </div>
 
         <div className="mb-8">
@@ -131,118 +131,118 @@ const DeleteFees = () => {
               <Trash2 className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Delete Fee Records</h1>
-              <p className="text-gray-600 mt-1">View and manage completed payment records</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Delete Fee Records</h1>
+              <p className="text-gray-600 dark:text-gray-300 mt-1">View and manage completed payment records</p>
             </div>
           </div>
         </div>
 
         {loading && (
           <div className="flex items-center justify-center py-8">
-            <Loader className="w-8 h-8 animate-spin text-red-600" />
-            <span className="ml-2 text-gray-600">Loading payments...</span>
+            <Loader className="w-8 h-8 animate-spin text-red-600 dark:text-red-400" />
+            <span className="ml-2 text-gray-600 dark:text-gray-400">Loading payments...</span>
           </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <FileText className="w-6 h-6 text-blue-600" />
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900">{stats.totalRecords}</div>
-                <div className="text-sm text-gray-600">Total Records</div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalRecords}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Total Records</div>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-green-600" />
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900">₹{stats.totalAmount.toLocaleString()}</div>
-                <div className="text-sm text-gray-600">Total Amount</div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">₹{stats.totalAmount.toLocaleString()}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Total Amount</div>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-orange-600" />
+              <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-orange-600 dark:text-orange-400" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900">{selectedPayments.length}</div>
-                <div className="text-sm text-gray-600">Selected</div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">{selectedPayments.length}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Selected</div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 mb-6 transition-colors duration-300">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="lg:col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 <Search className="w-4 h-4 inline mr-2" />Search
               </label>
               <div className="relative">
-                <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                 <input 
                   type="text" 
                   value={searchQuery} 
                   onChange={(e) => setSearchQuery(e.target.value)} 
                   placeholder="Search by name, receipt no, registration no..." 
-                  className="w-full pl-11 pr-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500" 
+                  className="w-full pl-11 pr-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors" 
                 />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 <Calendar className="w-4 h-4 inline mr-2" />Month
               </label>
               <input 
                 type="month" 
                 value={filterMonth} 
                 onChange={(e) => setFilterMonth(e.target.value)} 
-                className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500" 
+                className="w-full px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors" 
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 <GraduationCap className="w-4 h-4 inline mr-2" />Class
               </label>
               <select 
                 value={filterClass} 
                 onChange={(e) => setFilterClass(e.target.value)} 
-                className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
               >
-                <option value="">All Classes</option>
-                {uniqueClasses.map(cls => <option key={cls} value={cls}>{cls}</option>)}
+                <option value="" className="dark:bg-gray-800">All Classes</option>
+                {uniqueClasses.map(cls => <option key={cls} value={cls} className="dark:bg-gray-800">{cls}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 <CreditCard className="w-4 h-4 inline mr-2" />Payment
               </label>
               <select 
                 value={filterPaymentMethod} 
                 onChange={(e) => setFilterPaymentMethod(e.target.value)} 
-                className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
               >
-                <option value="">All Methods</option>
-                <option value="cash">Cash</option>
-                <option value="online">Online</option>
-                <option value="cheque">Cheque</option>
-                <option value="card">Card</option>
-                <option value="upi">UPI</option>
+                <option value="" className="dark:bg-gray-800">All Methods</option>
+                <option value="cash" className="dark:bg-gray-800">Cash</option>
+                <option value="online" className="dark:bg-gray-800">Online</option>
+                <option value="cheque" className="dark:bg-gray-800">Cheque</option>
+                <option value="card" className="dark:bg-gray-800">Card</option>
+                <option value="upi" className="dark:bg-gray-800">UPI</option>
               </select>
             </div>
           </div>
-          <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-200">
+          <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button 
               onClick={() => { setSearchQuery(''); setFilterMonth(''); setFilterClass(''); setFilterPaymentMethod(''); }} 
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-all"
+              className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-all"
             >
               Clear Filters
             </button>
@@ -253,7 +253,7 @@ const DeleteFees = () => {
               className={`px-5 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
                 selectedPayments.length > 0 
                   ? 'bg-red-600 hover:bg-red-700 text-white shadow-md hover:shadow-lg' 
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
               }`}
             >
               <Trash2 className="w-4 h-4" />Delete Selected ({selectedPayments.length})
@@ -261,7 +261,7 @@ const DeleteFees = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-300">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gradient-to-r from-red-600 to-rose-600 text-white">
@@ -284,57 +284,57 @@ const DeleteFees = () => {
                   <th className="px-4 py-4 text-center font-bold">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {payments.map((payment) => (
-                  <tr key={payment._id} className="hover:bg-red-50 transition-colors">
+                  <tr key={payment._id} className="hover:bg-red-50 dark:hover:bg-gray-700 transition-colors">
                     <td className="px-4 py-4">
                       <input 
                         type="checkbox" 
                         checked={selectedPayments.includes(payment._id)} 
                         onChange={() => handleSelectPayment(payment._id)} 
-                        className="w-4 h-4 rounded border-gray-300" 
+                        className="w-4 h-4 rounded border-gray-300 dark:border-gray-600" 
                       />
                     </td>
                     <td className="px-4 py-4">
-                      <span className="font-semibold text-gray-900">{payment.receiptNo}</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{payment.receiptNo}</span>
                     </td>
                     <td className="px-4 py-4">
-                      <div className="font-semibold text-gray-900">{payment.studentName}</div>
-                      <div className="text-sm text-gray-600">{payment.registrationNo}</div>
+                      <div className="font-semibold text-gray-900 dark:text-white">{payment.studentName}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{payment.registrationNo}</div>
                     </td>
                     <td className="px-4 py-4">
-                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                      <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium">
                         {payment.class}
                       </span>
                     </td>
-                    <td className="px-4 py-4 text-gray-700">{payment.guardianName}</td>
+                    <td className="px-4 py-4 text-gray-700 dark:text-gray-300">{payment.guardianName}</td>
                     <td className="px-4 py-4 text-right">
-                      <span className="text-green-600 font-bold text-lg">₹{payment.amount.toLocaleString()}</span>
+                      <span className="text-green-600 dark:text-green-400 font-bold text-lg">₹{payment.amount.toLocaleString()}</span>
                     </td>
                     <td className="px-4 py-4">
-                      <div className="flex items-center gap-2 text-gray-700">
+                      <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                         <Calendar className="w-4 h-4" />
                         {new Date(payment.paymentDate).toLocaleDateString('en-GB')}
                       </div>
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
-                        <CreditCard className="w-4 h-4 text-gray-600" />
-                        <span className="text-gray-700 font-medium capitalize">{payment.depositType}</span>
+                        <CreditCard className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                        <span className="text-gray-700 dark:text-gray-300 font-medium capitalize">{payment.depositType}</span>
                       </div>
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center justify-center gap-2">
                         <button 
                           onClick={() => handleViewDetails(payment)} 
-                          className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-all" 
+                          className="p-2 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 rounded-lg transition-all" 
                           title="View Details"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
                         <button 
                           onClick={() => handleDeleteClick(payment)} 
-                          className="p-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-all" 
+                          className="p-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-800 text-red-700 dark:text-red-300 rounded-lg transition-all" 
                           title="Delete"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -348,43 +348,43 @@ const DeleteFees = () => {
           </div>
           {payments.length === 0 && !loading && (
             <div className="text-center py-12">
-              <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 text-lg font-semibold">No payment records found</p>
-              <p className="text-gray-500 text-sm mt-2">Try adjusting your search or filters</p>
+              <FileText className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+              <p className="text-gray-600 dark:text-gray-300 text-lg font-semibold">No payment records found</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">Try adjusting your search or filters</p>
             </div>
           )}
         </div>
 
         {showDeleteModal && paymentToDelete && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-slideUp">
+          <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6 animate-slideUp transition-colors duration-300">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
                 </div>
-                <h2 className="text-xl font-bold text-gray-900">Confirm Delete</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Confirm Delete</h2>
               </div>
-              <p className="text-gray-600 mb-6">Are you sure you want to delete this payment record? This action cannot be undone.</p>
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+              <p className="text-gray-600 dark:text-gray-400 mb-6">Are you sure you want to delete this payment record? This action cannot be undone.</p>
+              <div className="bg-red-50 dark:bg-gray-900 border border-red-200 dark:border-gray-700 rounded-xl p-4 mb-6">
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <span className="text-gray-600">Receipt No:</span>
-                    <div className="font-semibold text-gray-900">{paymentToDelete.receiptNo}</div>
+                    <span className="text-gray-600 dark:text-gray-400">Receipt No:</span>
+                    <div className="font-semibold text-gray-900 dark:text-white">{paymentToDelete.receiptNo}</div>
                   </div>
                   <div>
-                    <span className="text-gray-600">Amount:</span>
-                    <div className="font-semibold text-red-600">₹{paymentToDelete.amount.toLocaleString()}</div>
+                    <span className="text-gray-600 dark:text-gray-400">Amount:</span>
+                    <div className="font-semibold text-red-600 dark:text-red-400">₹{paymentToDelete.amount.toLocaleString()}</div>
                   </div>
                   <div className="col-span-2">
-                    <span className="text-gray-600">Student:</span>
-                    <div className="font-semibold text-gray-900">{paymentToDelete.studentName}</div>
+                    <span className="text-gray-600 dark:text-gray-400">Student:</span>
+                    <div className="font-semibold text-gray-900 dark:text-white">{paymentToDelete.studentName}</div>
                   </div>
                 </div>
               </div>
               <div className="flex gap-3">
                 <button 
                   onClick={() => { setShowDeleteModal(false); setPaymentToDelete(null); }} 
-                  className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition-all"
+                  className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-semibold transition-all"
                 >
                   Cancel
                 </button>
@@ -400,81 +400,81 @@ const DeleteFees = () => {
         )}
 
         {showDetailsModal && selectedPaymentDetails && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 animate-slideUp max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full p-6 animate-slideUp max-h-[90vh] overflow-y-auto transition-colors duration-300">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Payment Details</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Payment Details</h2>
                 <button 
                   onClick={() => setShowDetailsModal(false)} 
-                  className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-all"
+                  className="w-8 h-8 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg flex items-center justify-center transition-all"
                 >
                   ✕
                 </button>
               </div>
               <div className="space-y-6">
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 border border-blue-200 dark:border-gray-700 rounded-xl p-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <span className="text-sm text-gray-600">Receipt Number</span>
-                      <div className="font-bold text-gray-900 text-lg">{selectedPaymentDetails.receiptNo}</div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Receipt Number</span>
+                      <div className="font-bold text-gray-900 dark:text-white text-lg">{selectedPaymentDetails.receiptNo}</div>
                     </div>
                     <div>
-                      <span className="text-sm text-gray-600">Payment Date</span>
-                      <div className="font-bold text-gray-900 text-lg">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Payment Date</span>
+                      <div className="font-bold text-gray-900 dark:text-white text-lg">
                         {new Date(selectedPaymentDetails.paymentDate).toLocaleDateString('en-GB')}
                       </div>
                     </div>
                   </div>
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                    <User className="w-5 h-5 text-blue-600" />Student Information
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                    <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />Student Information
                   </h3>
-                  <div className="grid grid-cols-2 gap-4 bg-gray-50 rounded-xl p-4">
+                  <div className="grid grid-cols-2 gap-4 bg-gray-50 dark:bg-gray-900 rounded-xl p-4">
                     <div>
-                      <span className="text-sm text-gray-600">Student Name</span>
-                      <div className="font-semibold text-gray-900">{selectedPaymentDetails.studentName}</div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Student Name</span>
+                      <div className="font-semibold text-gray-900 dark:text-white">{selectedPaymentDetails.studentName}</div>
                     </div>
                     <div>
-                      <span className="text-sm text-gray-600">Registration No</span>
-                      <div className="font-semibold text-gray-900">{selectedPaymentDetails.registrationNo}</div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Registration No</span>
+                      <div className="font-semibold text-gray-900 dark:text-white">{selectedPaymentDetails.registrationNo}</div>
                     </div>
                     <div>
-                      <span className="text-sm text-gray-600">Class</span>
-                      <div className="font-semibold text-gray-900">{selectedPaymentDetails.class}</div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Class</span>
+                      <div className="font-semibold text-gray-900 dark:text-white">{selectedPaymentDetails.class}</div>
                     </div>
                     <div>
-                      <span className="text-sm text-gray-600">Guardian Name</span>
-                      <div className="font-semibold text-gray-900">{selectedPaymentDetails.guardianName}</div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Guardian Name</span>
+                      <div className="font-semibold text-gray-900 dark:text-white">{selectedPaymentDetails.guardianName}</div>
                     </div>
                   </div>
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-green-600" />Fee Particulars
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-green-600 dark:text-green-400" />Fee Particulars
                   </h3>
-                  <div className="border border-gray-200 rounded-xl overflow-hidden">
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
                     <table className="w-full">
-                      <thead className="bg-gray-100">
+                      <thead className="bg-gray-100 dark:bg-gray-900">
                         <tr>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Particular</th>
-                          <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Amount</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Particular</th>
+                          <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">Amount</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-200">
+                      <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                         {selectedPaymentDetails.particulars.map((particular, index) => (
                           <tr key={index}>
-                            <td className="px-4 py-3 text-gray-900">{particular.particular}</td>
-                            <td className="px-4 py-3 text-right font-semibold text-gray-900">
+                            <td className="px-4 py-3 text-gray-900 dark:text-white">{particular.particular}</td>
+                            <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-white">
                               ₹{particular.amount.toLocaleString()}
                             </td>
                           </tr>
                         ))}
                       </tbody>
-                      <tfoot className="bg-green-50 border-t-2 border-green-200">
+                      <tfoot className="bg-green-50 dark:bg-gray-900 border-t-2 border-green-200 dark:border-gray-700">
                         <tr>
-                          <td className="px-4 py-3 font-bold text-gray-900">Total Amount</td>
-                          <td className="px-4 py-3 text-right font-bold text-green-600 text-lg">
+                          <td className="px-4 py-3 font-bold text-gray-900 dark:text-white">Total Amount</td>
+                          <td className="px-4 py-3 text-right font-bold text-green-600 dark:text-green-400 text-lg">
                             ₹{selectedPaymentDetails.amount.toLocaleString()}
                           </td>
                         </tr>
@@ -483,23 +483,23 @@ const DeleteFees = () => {
                   </div>
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                    <CreditCard className="w-5 h-5 text-purple-600" />Payment Information
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-purple-600 dark:text-purple-400" />Payment Information
                   </h3>
-                  <div className="grid grid-cols-2 gap-4 bg-purple-50 rounded-xl p-4">
+                  <div className="grid grid-cols-2 gap-4 bg-purple-50 dark:bg-gray-900 rounded-xl p-4">
                     <div>
-                      <span className="text-sm text-gray-600">Payment Method</span>
-                      <div className="font-semibold text-gray-900 capitalize">{selectedPaymentDetails.depositType}</div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Payment Method</span>
+                      <div className="font-semibold text-gray-900 dark:text-white capitalize">{selectedPaymentDetails.depositType}</div>
                     </div>
                     <div>
-                      <span className="text-sm text-gray-600">Fee Month</span>
-                      <div className="font-semibold text-gray-900">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Fee Month</span>
+                      <div className="font-semibold text-gray-900 dark:text-white">
                         {new Date(selectedPaymentDetails.feeMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                       </div>
                     </div>
                     <div>
-                      <span className="text-sm text-gray-600">Status</span>
-                      <div className="font-semibold text-green-600 flex items-center gap-1">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Status</span>
+                      <div className="font-semibold text-green-600 dark:text-green-400 flex items-center gap-1">
                         <CheckCircle className="w-4 h-4" />Completed
                       </div>
                     </div>

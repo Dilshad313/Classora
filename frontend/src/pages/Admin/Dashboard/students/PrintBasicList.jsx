@@ -142,33 +142,33 @@ const PrintBasicList = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6 transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb Navigation */}
         <div className="flex items-center gap-2 mb-6 text-sm print:hidden">
           <button 
             onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-1.5 text-gray-600 hover:text-blue-600 transition-colors font-medium"
+            className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
           >
             <Home className="w-4 h-4" />
             <span>Dashboard</span>
           </button>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-blue-600 font-semibold">Students</span>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-900 font-semibold">Print Basic List</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-blue-600 dark:text-blue-400 font-semibold">Students</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-gray-900 dark:text-gray-100 font-semibold">Print Basic List</span>
         </div>
 
         {/* Header */}
         <div className="mb-8 print:hidden">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Print Basic List</h1>
-              <p className="text-gray-600 mt-1">View and export student information</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Print Basic List</h1>
+              <p className="text-gray-600 dark:text-gray-300 mt-1">View and export student information</p>
             </div>
             <button
               onClick={handleRefresh}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all font-medium"
+              className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-600 transition-all font-medium"
             >
               <RefreshCw className="w-4 h-4" />
               <span>Refresh</span>
@@ -177,20 +177,20 @@ const PrintBasicList = () => {
         </div>
 
         {/* Filter and Export Section */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6 print:hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 mb-6 print:hidden transition-colors duration-300">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             {/* Class Filter */}
             <div className="flex items-center gap-3">
-              <Filter className="w-5 h-5 text-gray-600" />
-              <label className="text-sm font-semibold text-gray-700">Filter by Class:</label>
+              <Filter className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Filter by Class:</label>
               <select
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
-                className="px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 font-medium min-w-[200px]"
+                className="px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 font-medium min-w-[200px] transition-colors"
               >
-                <option value="all">All Classes</option>
+                <option value="all" className="dark:bg-gray-800">All Classes</option>
                 {classes.map((cls) => (
-                  <option key={cls} value={cls}>Grade {cls}</option>
+                  <option key={cls} value={cls} className="dark:bg-gray-800">Grade {cls}</option>
                 ))}
               </select>
             </div>
@@ -199,35 +199,35 @@ const PrintBasicList = () => {
             <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={handleCopy}
-                className="flex items-center gap-2 px-4 py-2.5 bg-gray-600 hover:bg-gray-700 text-white rounded-xl transition-all font-medium shadow-lg hover:shadow-xl"
+                className="flex items-center gap-2 px-4 py-2.5 bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 text-white rounded-xl transition-all font-medium shadow-lg hover:shadow-xl"
               >
                 <Copy className="w-4 h-4" />
                 <span>Copy</span>
               </button>
               <button
                 onClick={handleCSV}
-                className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all font-medium shadow-lg hover:shadow-xl"
+                className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white rounded-xl transition-all font-medium shadow-lg hover:shadow-xl"
               >
                 <FileText className="w-4 h-4" />
                 <span>CSV</span>
               </button>
               <button
                 onClick={handleExcel}
-                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all font-medium shadow-lg hover:shadow-xl"
+                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white rounded-xl transition-all font-medium shadow-lg hover:shadow-xl"
               >
                 <FileSpreadsheet className="w-4 h-4" />
                 <span>Excel</span>
               </button>
               <button
                 onClick={handlePDF}
-                className="flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all font-medium shadow-lg hover:shadow-xl"
+                className="flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 text-white rounded-xl transition-all font-medium shadow-lg hover:shadow-xl"
               >
                 <Download className="w-4 h-4" />
                 <span>PDF</span>
               </button>
               <button
                 onClick={handlePrint}
-                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all font-medium shadow-lg hover:shadow-xl"
+                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-xl transition-all font-medium shadow-lg hover:shadow-xl"
               >
                 <Printer className="w-4 h-4" />
                 <span>Print</span>
@@ -239,18 +239,18 @@ const PrintBasicList = () => {
         {/* Loading State */}
         {loading && (
           <div className="flex justify-center items-center py-12">
-            <Loader className="w-8 h-8 text-blue-600 animate-spin" />
+            <Loader className="w-8 h-8 text-blue-600 dark:text-blue-400 animate-spin" />
           </div>
         )}
 
         {/* Students Table */}
         {!loading && (
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-300">
             {/* Table Header - Print Only */}
-            <div className="hidden print:block p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">CLASSORA INSTITUTE</h2>
-              <h3 className="text-xl font-semibold text-gray-700 text-center mb-1">Student Basic List</h3>
-              <p className="text-sm text-gray-600 text-center">
+            <div className="hidden print:block p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-2">CLASSORA INSTITUTE</h2>
+              <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 text-center mb-1">Student Basic List</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
                 {selectedClass === 'all' ? 'All Classes' : `Grade ${selectedClass}`} - Generated on {new Date().toLocaleDateString()}
               </p>
             </div>
@@ -267,32 +267,36 @@ const PrintBasicList = () => {
                     <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider">Phone Number</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {students.length > 0 ? (
                     students.map((student, index) => (
                       <tr 
                         key={student._id} 
-                        className={`hover:bg-blue-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
+                        className={`hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors ${
+                          index % 2 === 0 
+                            ? 'bg-white dark:bg-gray-800' 
+                            : 'bg-gray-50 dark:bg-gray-900'
+                        }`}
                       >
-                        <td className="px-6 py-4 text-sm font-semibold text-gray-900">{student.registrationNo}</td>
-                        <td className="px-6 py-4 text-sm font-medium text-gray-900">{student.studentName}</td>
-                        <td className="px-6 py-4 text-sm text-gray-700">{student.fatherName || 'N/A'}</td>
-                        <td className="px-6 py-4 text-sm font-medium text-gray-900">Grade {student.selectClass} - {student.section}</td>
+                        <td className="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white">{student.registrationNo}</td>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{student.studentName}</td>
+                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{student.fatherName || 'N/A'}</td>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">Grade {student.selectClass} - {student.section}</td>
                         <td className="px-6 py-4 text-sm">
-                          <span className={`font-bold ${(student.feeRemaining || 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          <span className={`font-bold ${(student.feeRemaining || 0) > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
                             ₹{(student.feeRemaining || 0).toLocaleString()}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-700 font-mono">{student.mobileNo || 'N/A'}</td>
+                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 font-mono">{student.mobileNo || 'N/A'}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
                       <td colSpan="6" className="px-6 py-12 text-center">
                         <div className="flex flex-col items-center justify-center">
-                          <Users className="w-16 h-16 text-gray-400 mb-4" />
-                          <p className="text-lg font-semibold text-gray-900 mb-1">No students found</p>
-                          <p className="text-sm text-gray-600">Try selecting a different class</p>
+                          <Users className="w-16 h-16 text-gray-400 dark:text-gray-500 mb-4" />
+                          <p className="text-lg font-semibold text-gray-900 dark:text-white mb-1">No students found</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Try selecting a different class</p>
                         </div>
                       </td>
                     </tr>
@@ -303,13 +307,13 @@ const PrintBasicList = () => {
 
             {/* Table Footer with Summary */}
             {students.length > 0 && (
-              <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+              <div className="bg-gray-50 dark:bg-gray-900 px-6 py-4 border-t border-gray-200 dark:border-gray-700 transition-colors duration-300">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  <p className="text-sm font-semibold text-gray-700">
-                    Total Students: <span className="text-blue-600 text-lg">{summary.totalStudents}</span>
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    Total Students: <span className="text-blue-600 dark:text-blue-400 text-lg">{summary.totalStudents}</span>
                   </p>
-                  <p className="text-sm font-semibold text-gray-700">
-                    Total Fee Remaining: <span className="text-red-600 text-lg">
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    Total Fee Remaining: <span className="text-red-600 dark:text-red-400 text-lg">
                       ₹{summary.totalFeeRemaining.toLocaleString()}
                     </span>
                   </p>

@@ -232,21 +232,21 @@ const FeesPaidSlip = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6 transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb Navigation */}
         <div className="flex items-center gap-2 mb-6 text-sm">
           <button 
             onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-1.5 text-gray-600 hover:text-blue-600 transition-colors font-medium"
+            className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
           >
             <Home className="w-4 h-4" />
             <span>Dashboard</span>
           </button>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-blue-600 font-semibold">Fees</span>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-900 font-semibold">Fees Paid Slip</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-blue-600 dark:text-blue-400 font-semibold">Fees</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-gray-900 dark:text-gray-100 font-semibold">Fees Paid Slip</span>
         </div>
 
         {/* Header */}
@@ -256,23 +256,23 @@ const FeesPaidSlip = () => {
               <FileText className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Fees Paid Slip</h1>
-              <p className="text-gray-600 mt-1">View and print student fee payment records</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Fees Paid Slip</h1>
+              <p className="text-gray-600 dark:text-gray-300 mt-1">View and print student fee payment records</p>
             </div>
           </div>
         </div>
 
         {/* Search Section */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <Search className="w-6 h-6 text-blue-600" />
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-8 mb-6 transition-colors duration-300">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+            <Search className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             Search Fee Records
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             {/* Fees Month */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 <Calendar className="w-4 h-4 inline mr-2" />
                 Fees Month <span className="text-red-500">*</span>
               </label>
@@ -280,37 +280,37 @@ const FeesPaidSlip = () => {
                 type="month"
                 value={feesMonth}
                 onChange={(e) => setFeesMonth(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               />
             </div>
 
             {/* Search Student */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 <User className="w-4 h-4 inline mr-2" />
                 Search Student <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <Search className="w-5 h-5 absolute left-3 top-3 text-gray-400 z-10" />
+                <Search className="w-5 h-5 absolute left-3 top-3 text-gray-400 dark:text-gray-500 z-10" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   placeholder="Search by name or registration number..."
-                  className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 />
                 
                 {/* Suggestions Dropdown */}
                 {showSuggestions && getSuggestions().length > 0 && (
-                  <div className="absolute z-20 w-full mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                  <div className="absolute z-20 w-full mt-2 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-60 overflow-y-auto">
                     {getSuggestions().map(student => (
                       <button
                         key={student._id}
                         onClick={() => handleSelectStudent(student)}
-                        className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0"
+                        className="w-full px-4 py-3 text-left hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0"
                       >
-                        <div className="font-semibold text-gray-900">{student.studentName}</div>
-                        <div className="text-sm text-gray-600">
+                        <div className="font-semibold text-gray-900 dark:text-white">{student.studentName}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
                           Reg No: {student.registrationNo} • {student.class}
                         </div>
                       </button>
@@ -320,9 +320,9 @@ const FeesPaidSlip = () => {
               </div>
               
               {selectedStudent && (
-                <div className="mt-3 p-3 bg-blue-50 border-2 border-blue-200 rounded-xl flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-blue-600" />
-                  <span className="text-blue-800 font-semibold">Selected: {selectedStudent.studentName}</span>
+                <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-700 rounded-xl flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <span className="text-blue-800 dark:text-blue-300 font-semibold">Selected: {selectedStudent.studentName}</span>
                 </div>
               )}
             </div>
@@ -343,27 +343,27 @@ const FeesPaidSlip = () => {
 
         {loading && (
           <div className="flex items-center justify-center py-8">
-            <Loader className="w-8 h-8 animate-spin text-blue-600" />
-            <span className="ml-2 text-gray-600">Searching records...</span>
+            <Loader className="w-8 h-8 animate-spin text-blue-600 dark:text-blue-400" />
+            <span className="ml-2 text-gray-600 dark:text-gray-400">Searching records...</span>
           </div>
         )}
 
         {/* Results Section */}
         {searchClicked && !loading && (
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <FileText className="w-6 h-6 text-blue-600" />
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-8 transition-colors duration-300">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+              <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               Fee Records
             </h2>
 
             {feeRecords.length === 0 ? (
               /* No Records Found */
               <div className="text-center py-16">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
-                  <AlertCircle className="w-10 h-10 text-gray-400" />
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full mb-4">
+                  <AlertCircle className="w-10 h-10 text-gray-400 dark:text-gray-500" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">No Fees Record</h3>
-                <p className="text-gray-600">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">No Fees Record</h3>
+                <p className="text-gray-600 dark:text-gray-400">
                   No fee payment records found for {selectedStudent?.studentName} in{' '}
                   {new Date(feesMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                 </p>
@@ -372,39 +372,39 @@ const FeesPaidSlip = () => {
               /* Display Records */
               <div className="space-y-6">
                 {feeRecords.map((record) => (
-                  <div key={record._id} className="border-2 border-gray-200 rounded-xl p-6 hover:border-blue-300 transition-all">
+                  <div key={record._id} className="border-2 border-gray-200 dark:border-gray-700 p-6 hover:border-blue-300 dark:hover:border-blue-500 transition-all rounded-xl">
                     {/* Record Header */}
-                    <div className="flex justify-between items-start mb-6 pb-4 border-b border-gray-200">
+                    <div className="flex justify-between items-start mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
                         <div>
-                          <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-1">
                             <Hash className="w-4 h-4" />
                             Receipt No
                           </div>
-                          <div className="font-bold text-gray-900 text-sm">{record.receiptNo}</div>
+                          <div className="font-bold text-gray-900 dark:text-white text-sm">{record.receiptNo}</div>
                         </div>
                         <div>
-                          <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-1">
                             <Calendar className="w-4 h-4" />
                             Payment Date
                           </div>
-                          <div className="font-bold text-gray-900">
+                          <div className="font-bold text-gray-900 dark:text-white">
                             {new Date(record.paymentDate).toLocaleDateString()}
                           </div>
                         </div>
                         <div>
-                          <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-1">
                             <DollarSign className="w-4 h-4" />
                             Amount Paid
                           </div>
-                          <div className="font-bold text-green-600 text-lg">₹{record.amount.toFixed(2)}</div>
+                          <div className="font-bold text-green-600 dark:text-green-400 text-lg">₹{record.amount.toFixed(2)}</div>
                         </div>
                         <div>
-                          <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-1">
                             <FileText className="w-4 h-4" />
                             Payment Method
                           </div>
-                          <div className="font-bold text-gray-900 capitalize">{record.depositType}</div>
+                          <div className="font-bold text-gray-900 dark:text-white capitalize">{record.depositType}</div>
                         </div>
                       </div>
                       <button
@@ -417,41 +417,41 @@ const FeesPaidSlip = () => {
                     </div>
 
                     {/* Student Details */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-blue-50 rounded-xl">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-blue-50 dark:bg-gray-900 rounded-xl">
                       <div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-1">
                           <Hash className="w-4 h-4" />
                           Registration No
                         </div>
-                        <div className="font-bold text-gray-900">{selectedStudent.registrationNo}</div>
+                        <div className="font-bold text-gray-900 dark:text-white">{selectedStudent.registrationNo}</div>
                       </div>
                       <div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-1">
                           <User className="w-4 h-4" />
                           Student Name
                         </div>
-                        <div className="font-bold text-gray-900">{selectedStudent.studentName}</div>
+                        <div className="font-bold text-gray-900 dark:text-white">{selectedStudent.studentName}</div>
                       </div>
                       <div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-1">
                           <UserCircle className="w-4 h-4" />
                           Guardian Name
                         </div>
-                        <div className="font-bold text-gray-900">{selectedStudent.guardianName}</div>
+                        <div className="font-bold text-gray-900 dark:text-white">{selectedStudent.guardianName}</div>
                       </div>
                       <div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-1">
                           <GraduationCap className="w-4 h-4" />
                           Class
                         </div>
-                        <div className="font-bold text-gray-900">{selectedStudent.class}</div>
+                        <div className="font-bold text-gray-900 dark:text-white">{selectedStudent.class}</div>
                       </div>
                     </div>
 
                     {/* Fee Particulars */}
                     <div>
-                      <h3 className="text-lg font-bold text-gray-900 mb-3">Fee Breakdown</h3>
-                      <div className="overflow-x-auto rounded-lg border border-gray-200">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">Fee Breakdown</h3>
+                      <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
                         <table className="w-full">
                           <thead className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
                             <tr>
@@ -460,21 +460,21 @@ const FeesPaidSlip = () => {
                               <th className="px-4 py-3 text-right font-bold">Amount</th>
                             </tr>
                           </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
+                          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             {record.particulars.map((item, index) => (
-                              <tr key={index} className="hover:bg-blue-50 transition-colors">
-                                <td className="px-4 py-3 text-gray-700 font-medium">{index + 1}</td>
-                                <td className="px-4 py-3 text-gray-900 font-semibold">{item.particular}</td>
-                                <td className="px-4 py-3 text-right text-gray-900 font-semibold">₹{item.amount.toFixed(2)}</td>
+                              <tr key={index} className="hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">
+                                <td className="px-4 py-3 text-gray-700 dark:text-gray-300 font-medium">{index + 1}</td>
+                                <td className="px-4 py-3 text-gray-900 dark:text-white font-semibold">{item.particular}</td>
+                                <td className="px-4 py-3 text-right text-gray-900 dark:text-white font-semibold">₹{item.amount.toFixed(2)}</td>
                               </tr>
                             ))}
                           </tbody>
-                          <tfoot className="bg-blue-100 border-t-2 border-blue-300">
+                          <tfoot className="bg-blue-100 dark:bg-gray-900 border-t-2 border-blue-300 dark:border-gray-700">
                             <tr>
-                              <td colSpan="2" className="px-4 py-4 text-left font-bold text-gray-900 text-lg">
+                              <td colSpan="2" className="px-4 py-4 text-left font-bold text-gray-900 dark:text-white text-lg">
                                 Total Amount Paid
                               </td>
-                              <td className="px-4 py-4 text-right font-bold text-blue-600 text-xl">
+                              <td className="px-4 py-4 text-right font-bold text-blue-600 dark:text-blue-400 text-xl">
                                 ₹{record.amount.toFixed(2)}
                               </td>
                             </tr>

@@ -131,28 +131,27 @@ const FeesDefaulters = () => {
     }
     
     const selectedStudents = defaulters.filter(d => selectedDefaulters.includes(d._id));
-    // You can pass the selected students to CollectFees via state or context
     navigate('/dashboard/fees/collect-fees', { 
       state: { selectedDefaulters: selectedStudents }
     });
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6 transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb Navigation */}
         <div className="flex items-center gap-2 mb-6 text-sm no-print">
           <button 
             onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-1.5 text-gray-600 hover:text-blue-600 transition-colors font-medium"
+            className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
           >
             <Home className="w-4 h-4" />
             <span>Dashboard</span>
           </button>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-blue-600 font-semibold">Fees</span>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-900 font-semibold">Fees Defaulters</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-blue-600 dark:text-blue-400 font-semibold">Fees</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-gray-900 dark:text-gray-100 font-semibold">Fees Defaulters</span>
         </div>
 
         {/* Header */}
@@ -162,18 +161,18 @@ const FeesDefaulters = () => {
               <AlertTriangle className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Fees Defaulters</h1>
-              <p className="text-gray-600 mt-1">View and manage students with pending fee payments</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Fees Defaulters</h1>
+              <p className="text-gray-600 dark:text-gray-300 mt-1">View and manage students with pending fee payments</p>
             </div>
           </div>
         </div>
 
         {/* Fees Month Selection */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6 no-print">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Select Fees Month</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 mb-6 no-print transition-colors duration-300">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Select Fees Month</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 <Calendar className="w-4 h-4 inline mr-2" />
                 Fees Month <span className="text-red-500">*</span>
               </label>
@@ -181,7 +180,7 @@ const FeesDefaulters = () => {
                 type="month"
                 value={feesMonth}
                 onChange={(e) => setFeesMonth(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
               />
             </div>
             <div className="flex items-end gap-4">
@@ -211,24 +210,24 @@ const FeesDefaulters = () => {
 
         {loading && (
           <div className="flex items-center justify-center py-8">
-            <Loader className="w-8 h-8 animate-spin text-red-600" />
-            <span className="ml-2 text-gray-600">Loading defaulters...</span>
+            <Loader className="w-8 h-8 animate-spin text-red-600 dark:text-red-400" />
+            <span className="ml-2 text-gray-600 dark:text-gray-400">Loading defaulters...</span>
           </div>
         )}
 
         {feesMonth && defaulters.length > 0 && (
           <>
             {/* Action Bar */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6 no-print">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 mb-6 no-print transition-colors duration-300">
               <div className="flex flex-wrap items-center gap-4">
                 {/* View Mode Toggle */}
-                <div className="flex items-center gap-2 border-2 border-gray-300 rounded-xl p-1">
+                <div className="flex items-center gap-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl p-1">
                   <button
                     onClick={() => setViewMode('table')}
                     className={`px-4 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
                       viewMode === 'table'
                         ? 'bg-red-600 text-white shadow-md'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                     }`}
                   >
                     <List className="w-4 h-4" />
@@ -239,7 +238,7 @@ const FeesDefaulters = () => {
                     className={`px-4 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
                       viewMode === 'large'
                         ? 'bg-red-600 text-white shadow-md'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                     }`}
                   >
                     <Grid3x3 className="w-4 h-4" />
@@ -250,13 +249,13 @@ const FeesDefaulters = () => {
                 {/* Search */}
                 <div className="flex-1 min-w-[250px]">
                   <div className="relative">
-                    <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search by name, registration no, guardian, class, or phone..."
-                      className="w-full pl-11 pr-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      className="w-full pl-11 pr-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
                     />
                   </div>
                 </div>
@@ -268,7 +267,7 @@ const FeesDefaulters = () => {
                   className={`px-5 py-2.5 rounded-xl font-semibold transition-all flex items-center gap-2 ${
                     selectedDefaulters.length > 0
                       ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                   }`}
                 >
                   <Mail className="w-4 h-4" />
@@ -277,39 +276,39 @@ const FeesDefaulters = () => {
               </div>
 
               {/* Export Buttons */}
-              <div className="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t border-gray-200">
-                <span className="text-sm font-semibold text-gray-700">Export:</span>
+              <div className="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Export:</span>
                 <button
                   onClick={handleCopy}
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-all flex items-center gap-2"
+                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-all flex items-center gap-2"
                 >
                   <Copy className="w-4 h-4" />
                   Copy
                 </button>
                 <button
                   onClick={handleExportCSV}
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-all flex items-center gap-2"
+                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-all flex items-center gap-2"
                 >
                   <FileText className="w-4 h-4" />
                   CSV
                 </button>
                 <button
                   onClick={handleExportExcel}
-                  className="px-4 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg font-medium transition-all flex items-center gap-2"
+                  className="px-4 py-2 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-800 text-green-700 dark:text-green-300 rounded-lg font-medium transition-all flex items-center gap-2"
                 >
                   <FileSpreadsheet className="w-4 h-4" />
                   Excel
                 </button>
                 <button
                   onClick={handleExportPDF}
-                  className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-medium transition-all flex items-center gap-2"
+                  className="px-4 py-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-800 text-red-700 dark:text-red-300 rounded-lg font-medium transition-all flex items-center gap-2"
                 >
                   <Download className="w-4 h-4" />
                   PDF
                 </button>
                 <button
                   onClick={handlePrint}
-                  className="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-medium transition-all flex items-center gap-2"
+                  className="px-4 py-2 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 rounded-lg font-medium transition-all flex items-center gap-2"
                 >
                   <Printer className="w-4 h-4" />
                   Print
@@ -319,7 +318,7 @@ const FeesDefaulters = () => {
 
             {/* Table View */}
             {viewMode === 'table' && (
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-300">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gradient-to-r from-red-600 to-orange-600 text-white">
@@ -342,40 +341,40 @@ const FeesDefaulters = () => {
                         <th className="px-4 py-4 text-center font-bold">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                       {filteredDefaulters.map((defaulter, index) => (
-                        <tr key={defaulter._id} className="hover:bg-red-50 transition-colors">
+                        <tr key={defaulter._id} className="hover:bg-red-50 dark:hover:bg-gray-700 transition-colors">
                           <td className="px-4 py-4">
                             <input
                               type="checkbox"
                               checked={selectedDefaulters.includes(defaulter._id)}
                               onChange={() => handleSelectDefaulter(defaulter._id)}
-                              className="w-4 h-4 rounded border-gray-300"
+                              className="w-4 h-4 rounded border-gray-300 dark:border-gray-600"
                             />
                           </td>
-                          <td className="px-4 py-4 text-gray-700 font-medium">{index + 1}</td>
+                          <td className="px-4 py-4 text-gray-700 dark:text-gray-300 font-medium">{index + 1}</td>
                           <td className="px-4 py-4">
                             <img
                               src={defaulter.photo?.url || `https://ui-avatars.com/api/?name=${encodeURIComponent(defaulter.studentName)}&background=4F46E5&color=fff`}
                               alt={defaulter.studentName}
-                              className="w-10 h-10 rounded-full border-2 border-red-200"
+                              className="w-10 h-10 rounded-full border-2 border-red-200 dark:border-red-700"
                             />
                           </td>
                           <td className="px-4 py-4">
-                            <div className="font-semibold text-gray-900">{defaulter.studentName}</div>
-                            <div className="text-sm text-gray-600">{defaulter.registrationNo}</div>
+                            <div className="font-semibold text-gray-900 dark:text-white">{defaulter.studentName}</div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">{defaulter.registrationNo}</div>
                           </td>
-                          <td className="px-4 py-4 text-gray-700">{defaulter.guardianName}</td>
+                          <td className="px-4 py-4 text-gray-700 dark:text-gray-300">{defaulter.guardianName}</td>
                           <td className="px-4 py-4">
-                            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                            <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium">
                               {defaulter.class}
                             </span>
                           </td>
                           <td className="px-4 py-4 text-right">
-                            <span className="text-red-600 font-bold text-lg">₹{defaulter.payable?.toFixed(2) || '0.00'}</span>
+                            <span className="text-red-600 dark:text-red-400 font-bold text-lg">₹{defaulter.payable?.toFixed(2) || '0.00'}</span>
                           </td>
                           <td className="px-4 py-4">
-                            <div className="flex items-center gap-2 text-gray-700">
+                            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                               <Phone className="w-4 h-4" />
                               {defaulter.mobileNo || 'N/A'}
                             </div>
@@ -384,14 +383,14 @@ const FeesDefaulters = () => {
                             <div className="flex items-center justify-center gap-2">
                               <button
                                 onClick={() => navigate('/dashboard/fees/collect-fees', { state: { selectedStudent: defaulter } })}
-                                className="p-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-all"
+                                className="p-2 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-800 text-green-700 dark:text-green-300 rounded-lg transition-all"
                                 title="Collect Fees"
                               >
                                 <CheckCircle className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => alert(`Sending reminder to ${defaulter.studentName}`)}
-                                className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-all"
+                                className="p-2 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 rounded-lg transition-all"
                                 title="Send Reminder"
                               >
                                 <Mail className="w-4 h-4" />
@@ -406,9 +405,9 @@ const FeesDefaulters = () => {
 
                 {filteredDefaulters.length === 0 && (
                   <div className="text-center py-12">
-                    <AlertTriangle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 text-lg font-semibold">No defaulters found</p>
-                    <p className="text-gray-500 text-sm mt-2">Try adjusting your search</p>
+                    <AlertTriangle className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+                    <p className="text-gray-600 dark:text-gray-300 text-lg font-semibold">No defaulters found</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">Try adjusting your search</p>
                   </div>
                 )}
               </div>
@@ -416,7 +415,7 @@ const FeesDefaulters = () => {
 
             {/* Large View */}
             {viewMode === 'large' && (
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-300">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gradient-to-r from-red-600 to-orange-600 text-white">
@@ -434,22 +433,22 @@ const FeesDefaulters = () => {
                         <th className="px-6 py-4 text-left font-bold text-lg">Student Name</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                       {filteredDefaulters.map((defaulter) => (
-                        <tr key={defaulter._id} className="hover:bg-red-50 transition-colors">
+                        <tr key={defaulter._id} className="hover:bg-red-50 dark:hover:bg-gray-700 transition-colors">
                           <td className="px-6 py-5">
                             <input
                               type="checkbox"
                               checked={selectedDefaulters.includes(defaulter._id)}
                               onChange={() => handleSelectDefaulter(defaulter._id)}
-                              className="w-5 h-5 rounded border-gray-300"
+                              className="w-5 h-5 rounded border-gray-300 dark:border-gray-600"
                             />
                           </td>
                           <td className="px-6 py-5">
-                            <span className="text-gray-900 font-bold text-lg">{defaulter.registrationNo}</span>
+                            <span className="text-gray-900 dark:text-white font-bold text-lg">{defaulter.registrationNo}</span>
                           </td>
                           <td className="px-6 py-5">
-                            <span className="px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-base font-semibold">
+                            <span className="px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-base font-semibold">
                               {defaulter.class}
                             </span>
                           </td>
@@ -458,11 +457,11 @@ const FeesDefaulters = () => {
                               <img
                                 src={defaulter.photo?.url || `https://ui-avatars.com/api/?name=${encodeURIComponent(defaulter.studentName)}&background=4F46E5&color=fff`}
                                 alt={defaulter.studentName}
-                                className="w-12 h-12 rounded-full border-2 border-red-200"
+                                className="w-12 h-12 rounded-full border-2 border-red-200 dark:border-red-700"
                               />
                               <div>
-                                <div className="font-bold text-gray-900 text-lg">{defaulter.studentName}</div>
-                                <div className="text-sm text-gray-600">Guardian: {defaulter.guardianName}</div>
+                                <div className="font-bold text-gray-900 dark:text-white text-lg">{defaulter.studentName}</div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">Guardian: {defaulter.guardianName}</div>
                               </div>
                             </div>
                           </td>
@@ -474,30 +473,30 @@ const FeesDefaulters = () => {
 
                 {filteredDefaulters.length === 0 && (
                   <div className="text-center py-12">
-                    <AlertTriangle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 text-lg font-semibold">No defaulters found</p>
-                    <p className="text-gray-500 text-sm mt-2">Try adjusting your search</p>
+                    <AlertTriangle className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+                    <p className="text-gray-600 dark:text-gray-300 text-lg font-semibold">No defaulters found</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">Try adjusting your search</p>
                   </div>
                 )}
               </div>
             )}
 
             {/* Summary Card */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mt-6 no-print">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 mt-6 no-print transition-colors duration-300">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center p-4 bg-red-50 rounded-xl border border-red-200">
-                  <div className="text-3xl font-bold text-red-600">{stats.totalDefaulters}</div>
-                  <div className="text-sm text-gray-600 mt-1">Total Defaulters</div>
+                <div className="text-center p-4 bg-red-50 dark:bg-gray-900 rounded-xl border border-red-200 dark:border-gray-700">
+                  <div className="text-3xl font-bold text-red-600 dark:text-red-400">{stats.totalDefaulters}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Total Defaulters</div>
                 </div>
-                <div className="text-center p-4 bg-orange-50 rounded-xl border border-orange-200">
-                  <div className="text-3xl font-bold text-orange-600">{selectedDefaulters.length}</div>
-                  <div className="text-sm text-gray-600 mt-1">Selected</div>
+                <div className="text-center p-4 bg-orange-50 dark:bg-gray-900 rounded-xl border border-orange-200 dark:border-gray-700">
+                  <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">{selectedDefaulters.length}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Selected</div>
                 </div>
-                <div className="text-center p-4 bg-green-50 rounded-xl border border-green-200">
-                  <div className="text-3xl font-bold text-green-600">
+                <div className="text-center p-4 bg-green-50 dark:bg-gray-900 rounded-xl border border-green-200 dark:border-gray-700">
+                  <div className="text-3xl font-bold text-green-600 dark:text-green-400">
                     ₹{stats.totalPayable.toFixed(2)}
                   </div>
-                  <div className="text-sm text-gray-600 mt-1">Total Payable</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Total Payable</div>
                 </div>
               </div>
             </div>
@@ -510,7 +509,7 @@ const FeesDefaulters = () => {
                 className={`px-12 py-4 rounded-xl font-bold text-lg shadow-lg transition-all flex items-center gap-3 ${
                   selectedDefaulters.length > 0
                     ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white hover:shadow-xl transform hover:-translate-y-0.5'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                 }`}
               >
                 <CheckCircle className="w-6 h-6" />
@@ -522,9 +521,9 @@ const FeesDefaulters = () => {
 
         {feesMonth && !loading && defaulters.length === 0 && (
           <div className="text-center py-16">
-            <AlertTriangle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">No Defaulters Found</h3>
-            <p className="text-gray-600">
+            <AlertTriangle className="w-16 h-16 text-green-500 dark:text-green-400 mx-auto mb-4" />
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">No Defaulters Found</h3>
+            <p className="text-gray-600 dark:text-gray-400">
               All students have paid their fees for {new Date(feesMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
             </p>
           </div>

@@ -139,21 +139,21 @@ const PromoteStudents = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6 transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb Navigation */}
         <div className="flex items-center gap-2 mb-6 text-sm">
           <button 
             onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-1.5 text-gray-600 hover:text-blue-600 transition-colors font-medium"
+            className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
           >
             <Home className="w-4 h-4" />
             <span>Dashboard</span>
           </button>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-blue-600 font-semibold">Students</span>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-900 font-semibold">Promote Students</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-blue-600 dark:text-blue-400 font-semibold">Students</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-gray-900 dark:text-gray-100 font-semibold">Promote Students</span>
         </div>
 
         {/* Header */}
@@ -163,46 +163,46 @@ const PromoteStudents = () => {
               <TrendingUp className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Promote Students</h1>
-              <p className="text-gray-600 mt-1">Promote students to the next class or grade level</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Promote Students</h1>
+              <p className="text-gray-600 dark:text-gray-300 mt-1">Promote students to the next class or grade level</p>
             </div>
           </div>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Students</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{filteredStudents.length}</p>
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Total Students</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{filteredStudents.length}</p>
               </div>
-              <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl flex items-center justify-center">
-                <Users className="w-7 h-7 text-blue-600" />
+              <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 rounded-xl flex items-center justify-center">
+                <Users className="w-7 h-7 text-blue-600 dark:text-blue-300" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Selected</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{selectedStudents.length}</p>
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Selected</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{selectedStudents.length}</p>
               </div>
-              <div className="w-14 h-14 bg-gradient-to-br from-green-100 to-green-200 rounded-xl flex items-center justify-center">
-                <CheckCircle className="w-7 h-7 text-green-600" />
+              <div className="w-14 h-14 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900 dark:to-green-800 rounded-xl flex items-center justify-center">
+                <CheckCircle className="w-7 h-7 text-green-600 dark:text-green-300" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Promote To</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{promoteClass ? `Grade ${promoteClass}` : '-'}</p>
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Promote To</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{promoteClass ? `Grade ${promoteClass}` : '-'}</p>
               </div>
-              <div className="w-14 h-14 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl flex items-center justify-center">
-                <GraduationCap className="w-7 h-7 text-purple-600" />
+              <div className="w-14 h-14 bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900 dark:to-purple-800 rounded-xl flex items-center justify-center">
+                <GraduationCap className="w-7 h-7 text-purple-600 dark:text-purple-300" />
               </div>
             </div>
           </div>
@@ -211,43 +211,43 @@ const PromoteStudents = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Search and Filter Section */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 sticky top-6">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 sticky top-6 transition-colors duration-300">
               <div className="flex items-center gap-2 mb-6">
-                <Search className="w-5 h-5 text-blue-600" />
-                <h2 className="text-xl font-bold text-gray-900">Search & Filter</h2>
+                <Search className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Search & Filter</h2>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Search Student
                   </label>
                   <div className="relative">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                     <input
                       type="text"
                       placeholder="Search by name or ID..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Select Current Class
                   </label>
                   <div className="relative">
-                    <Filter className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Filter className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                     <select
                       value={selectedClass}
                       onChange={(e) => setSelectedClass(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all appearance-none"
+                      className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all appearance-none"
                     >
-                      <option value="">All Classes</option>
+                      <option value="" className="dark:bg-gray-800">All Classes</option>
                       {classes.map((cls) => (
-                        <option key={cls} value={cls}>Grade {cls}</option>
+                        <option key={cls} value={cls} className="dark:bg-gray-800">Grade {cls}</option>
                       ))}
                     </select>
                   </div>
@@ -256,14 +256,14 @@ const PromoteStudents = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={handleReload}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-all font-semibold"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl transition-all font-semibold"
                   >
                     <RefreshCw className="w-4 h-4" />
                     <span>Reset</span>
                   </button>
                   <button
                     onClick={handleRefresh}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-xl transition-all font-semibold"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 rounded-xl transition-all font-semibold"
                   >
                     <RefreshCw className="w-4 h-4" />
                     <span>Refresh</span>
@@ -272,24 +272,24 @@ const PromoteStudents = () => {
               </div>
 
               {/* Promote Section */}
-              <div className="mt-8 pt-6 border-t border-gray-200">
+              <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2 mb-4">
-                  <TrendingUp className="w-5 h-5 text-purple-600" />
-                  <h3 className="text-lg font-bold text-gray-900">Promote To</h3>
+                  <TrendingUp className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Promote To</h3>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Select New Class *
                   </label>
                   <select
                     value={promoteClass}
                     onChange={(e) => setPromoteClass(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-purple-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white transition-all font-medium"
+                    className="w-full px-4 py-3 border-2 border-purple-300 dark:border-purple-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white transition-all font-medium"
                   >
-                    <option value="">Select Class</option>
+                    <option value="" className="dark:bg-gray-800">Select Class</option>
                     {classes.map((cls) => (
-                      <option key={cls} value={cls}>Grade {cls}</option>
+                      <option key={cls} value={cls} className="dark:bg-gray-800">Grade {cls}</option>
                     ))}
                   </select>
                 </div>
@@ -314,10 +314,10 @@ const PromoteStudents = () => {
 
           {/* Students Table Section */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-              <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-                <h2 className="text-xl font-bold text-gray-900">Students List</h2>
-                <p className="text-sm text-gray-600 mt-1">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-300">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Students List</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
                   {selectedStudents.length > 0 
                     ? `${selectedStudents.length} student(s) selected` 
                     : 'Select students to promote'}
@@ -327,7 +327,7 @@ const PromoteStudents = () => {
               {/* Loading State */}
               {loading && (
                 <div className="flex justify-center items-center py-12">
-                  <Loader className="w-8 h-8 text-blue-600 animate-spin" />
+                  <Loader className="w-8 h-8 text-blue-600 dark:text-blue-400 animate-spin" />
                 </div>
               )}
 
@@ -353,14 +353,18 @@ const PromoteStudents = () => {
                         <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider">Roll Number</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                       {filteredStudents.length > 0 ? (
                         filteredStudents.map((student, index) => (
                           <tr
                             key={student._id}
-                            className={`hover:bg-blue-50 transition-colors cursor-pointer ${
-                              index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                            } ${selectedStudents.includes(student._id) ? 'bg-blue-50 border-l-4 border-blue-600' : ''}`}
+                            className={`hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors cursor-pointer ${
+                              index % 2 === 0 
+                                ? 'bg-white dark:bg-gray-800' 
+                                : 'bg-gray-50 dark:bg-gray-900'
+                            } ${selectedStudents.includes(student._id) 
+                                ? 'bg-blue-50 dark:bg-gray-700 border-l-4 border-blue-600 dark:border-blue-500' 
+                                : ''}`}
                             onClick={() => handleSelectStudent(student._id)}
                           >
                             <td className="px-6 py-4">
@@ -368,22 +372,22 @@ const PromoteStudents = () => {
                                 type="checkbox"
                                 checked={selectedStudents.includes(student._id)}
                                 onChange={() => handleSelectStudent(student._id)}
-                                className="w-4 h-4 rounded border-gray-300"
+                                className="w-4 h-4 rounded border-gray-300 dark:border-gray-600"
                               />
                             </td>
-                            <td className="px-6 py-4 text-sm font-semibold text-gray-900">{student.registrationNo}</td>
-                            <td className="px-6 py-4 text-sm font-medium text-gray-900">{student.studentName}</td>
-                            <td className="px-6 py-4 text-sm font-medium text-gray-900">Grade {student.selectClass} - {student.section}</td>
-                            <td className="px-6 py-4 text-sm text-gray-700">{student.rollNumber || 'N/A'}</td>
+                            <td className="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white">{student.registrationNo}</td>
+                            <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{student.studentName}</td>
+                            <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">Grade {student.selectClass} - {student.section}</td>
+                            <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{student.rollNumber || 'N/A'}</td>
                           </tr>
                         ))
                       ) : (
                         <tr>
                           <td colSpan="5" className="px-6 py-12 text-center">
                             <div className="flex flex-col items-center justify-center">
-                              <Users className="w-16 h-16 text-gray-400 mb-4" />
-                              <p className="text-lg font-semibold text-gray-900 mb-1">No students found</p>
-                              <p className="text-sm text-gray-600">Try adjusting your search or filters</p>
+                              <Users className="w-16 h-16 text-gray-400 dark:text-gray-500 mb-4" />
+                              <p className="text-lg font-semibold text-gray-900 dark:text-white mb-1">No students found</p>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">Try adjusting your search or filters</p>
                             </div>
                           </td>
                         </tr>

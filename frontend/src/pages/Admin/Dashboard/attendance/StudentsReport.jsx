@@ -194,11 +194,11 @@ const StudentsReport = () => {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'P':
-        return <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-bold">Present</span>;
+        return <span className="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full text-sm font-bold">Present</span>;
       case 'A':
-        return <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-bold">Absent</span>;
+        return <span className="px-3 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-full text-sm font-bold">Absent</span>;
       case 'L':
-        return <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-bold">Leave</span>;
+        return <span className="px-3 py-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 rounded-full text-sm font-bold">Leave</span>;
       default:
         return status;
     }
@@ -215,17 +215,17 @@ const StudentsReport = () => {
   const endIndex = Math.min(startIndex + entriesPerPage, totalRecords);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-6 text-sm no-print">
-          <button onClick={() => navigate('/dashboard')} className="flex items-center gap-1.5 text-gray-600 hover:text-blue-600 transition-colors font-medium">
+          <button onClick={() => navigate('/dashboard')} className="flex items-center gap-1.5 text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors font-medium">
             <Home className="w-4 h-4" /><span>Dashboard</span>
           </button>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-blue-600 font-semibold">Attendance</span>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-900 font-semibold">Students Report</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-blue-600 dark:text-blue-400 font-semibold">Attendance</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-gray-900 dark:text-gray-100 font-semibold">Students Report</span>
         </div>
 
         {/* Header */}
@@ -235,17 +235,17 @@ const StudentsReport = () => {
               <FileText className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Students Attendance Report</h1>
-              <p className="text-gray-600 mt-1">View and export student attendance records</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Students Attendance Report</h1>
+              <p className="text-gray-600 dark:text-gray-300 mt-1">View and export student attendance records</p>
             </div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6 no-print">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-600 p-6 mb-6 no-print">
           <div className="flex items-center gap-2 mb-4">
-            <Filter className="w-5 h-5 text-indigo-600" />
-            <h2 className="text-lg font-bold text-gray-900">Filter by Period</h2>
+            <Filter className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Filter by Period</h2>
           </div>
           <div className="flex flex-wrap gap-3 mb-4">
             {[
@@ -263,7 +263,7 @@ const StudentsReport = () => {
                 className={`px-4 py-2 rounded-lg font-semibold transition-all ${
                   selectedFilter === filter.value
                     ? 'bg-indigo-600 text-white shadow-lg'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
               >
                 {filter.label}
@@ -273,9 +273,9 @@ const StudentsReport = () => {
 
           {/* Custom Date Range */}
           {showCustomRange && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-indigo-50 rounded-xl border border-indigo-200">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl border border-indigo-200 dark:border-indigo-700">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
                   <Calendar className="w-4 h-4 inline mr-2" />
                   Start Date
                 </label>
@@ -283,11 +283,11 @@ const StudentsReport = () => {
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-500 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
                   <Calendar className="w-4 h-4 inline mr-2" />
                   End Date
                 </label>
@@ -295,7 +295,7 @@ const StudentsReport = () => {
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-500 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>
@@ -303,18 +303,18 @@ const StudentsReport = () => {
         </div>
 
         {/* Search and Export Options */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6 no-print">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-600 p-6 mb-6 no-print">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             {/* Search */}
             <div className="w-full md:w-96">
               <div className="relative">
-                <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search by name, ID, or class..."
-                  className="w-full pl-11 pr-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full pl-11 pr-4 py-2.5 border-2 border-gray-300 dark:border-gray-500 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>
@@ -341,31 +341,31 @@ const StudentsReport = () => {
         </div>
 
         {/* Entries Per Page */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 mb-6 flex items-center justify-between no-print">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-600 p-4 mb-6 flex items-center justify-between no-print">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">Show</span>
+            <span className="text-sm text-gray-600 dark:text-gray-300">Show</span>
             <select
               value={entriesPerPage}
               onChange={(e) => {
                 setEntriesPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="px-3 py-1.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="px-3 py-1.5 border-2 border-gray-300 dark:border-gray-500 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
               <option value={10}>10</option>
               <option value={25}>25</option>
               <option value={50}>50</option>
               <option value={100}>100</option>
             </select>
-            <span className="text-sm text-gray-600">entries</span>
+            <span className="text-sm text-gray-600 dark:text-gray-300">entries</span>
           </div>
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-600 dark:text-gray-300">
             Showing {startIndex + 1} to {endIndex} of {totalRecords} entries
           </div>
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-600 overflow-hidden mb-6">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
@@ -378,27 +378,27 @@ const StudentsReport = () => {
                   <th className="px-6 py-4 text-center font-bold">STATUS</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {isLoading ? (
                   <tr>
                     <td colSpan="6" className="px-6 py-12 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <Loader2 className="w-5 h-5 animate-spin text-indigo-600" />
-                        <span className="text-gray-600">Loading records...</span>
+                        <Loader2 className="w-5 h-5 animate-spin text-indigo-600 dark:text-indigo-400" />
+                        <span className="text-gray-600 dark:text-gray-300">Loading records...</span>
                       </div>
                     </td>
                   </tr>
                 ) : records.length > 0 ? (
                   records.map((record, index) => (
-                    <tr key={index} className="hover:bg-indigo-50 transition-colors">
-                      <td className="px-6 py-4 text-gray-700 font-medium">
+                    <tr key={index} className="hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
+                      <td className="px-6 py-4 text-gray-700 dark:text-gray-300 font-medium">
                         {new Date(record.date).toLocaleDateString('en-GB')}
                       </td>
-                      <td className="px-6 py-4 text-gray-700">{getDayName(record.date)}</td>
-                      <td className="px-6 py-4 text-gray-700 font-semibold">{record.studentId}</td>
-                      <td className="px-6 py-4 text-gray-900 font-semibold">{record.name}</td>
+                      <td className="px-6 py-4 text-gray-700 dark:text-gray-300">{getDayName(record.date)}</td>
+                      <td className="px-6 py-4 text-gray-700 dark:text-gray-300 font-semibold">{record.studentId}</td>
+                      <td className="px-6 py-4 text-gray-900 dark:text-gray-100 font-semibold">{record.name}</td>
                       <td className="px-6 py-4">
-                        <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">
+                        <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded-full text-sm font-medium">
                           {record.class}
                         </span>
                       </td>
@@ -407,7 +407,7 @@ const StudentsReport = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan="6" className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                       No attendance records found for the selected filters.
                     </td>
                   </tr>
@@ -419,15 +419,15 @@ const StudentsReport = () => {
 
         {/* Pagination */}
         {records.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-4 flex items-center justify-between no-print">
-            <div className="text-sm text-gray-600">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-600 p-4 flex items-center justify-between no-print">
+            <div className="text-sm text-gray-600 dark:text-gray-300">
               Showing {startIndex + 1} to {endIndex} of {totalRecords} entries
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                className="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
               >
                 <ChevronLeft className="w-4 h-4" />
                 Previous
@@ -451,7 +451,7 @@ const StudentsReport = () => {
                       className={`px-3 py-2 rounded-lg font-semibold transition-all ${
                         currentPage === pageNum
                           ? 'bg-indigo-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                       }`}
                     >
                       {pageNum}
@@ -462,7 +462,7 @@ const StudentsReport = () => {
               <button
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                className="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
               >
                 Next
                 <ChevronRightIcon className="w-4 h-4" />

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
+import {
   Home,
   ChevronRight,
   UserPlus,
@@ -27,7 +27,6 @@ const AddEmployees = () => {
   const [activeSection, setActiveSection] = useState('required');
   const [imagePreview, setImagePreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   // Form state
   const [formData, setFormData] = useState({
     // Basic Information (Required)
@@ -37,7 +36,7 @@ const AddEmployees = () => {
     dateOfJoining: '',
     employeeRole: '',
     monthlySalary: '',
-    
+   
     // Other Information (Optional)
     fatherHusbandName: '',
     nationalId: '',
@@ -50,9 +49,7 @@ const AddEmployees = () => {
     dateOfBirth: '',
     homeAddress: ''
   });
-
   const [errors, setErrors] = useState({});
-
   // Employee roles
   const employeeRoles = [
     'Teacher',
@@ -68,7 +65,6 @@ const AddEmployees = () => {
     'Maintenance Staff',
     'IT Support'
   ];
-
   const genderOptions = ['Male', 'Female', 'Other'];
   const religionOptions = ['Hindu', 'Muslim', 'Christian', 'Sikh', 'Buddhist', 'Jain', 'Other'];
   const bloodGroupOptions = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -95,14 +91,14 @@ const AddEmployees = () => {
         ...prev,
         picture: file
       }));
-      
+     
       // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
       };
       reader.readAsDataURL(file);
-      
+     
       // Clear error
       setErrors(prev => ({
         ...prev,
@@ -121,7 +117,7 @@ const AddEmployees = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+   
     // Required fields validation
     if (!formData.employeeName.trim()) {
       newErrors.employeeName = 'Employee name is required';
@@ -138,26 +134,22 @@ const AddEmployees = () => {
     if (!formData.monthlySalary.trim()) {
       newErrors.monthlySalary = 'Monthly salary is required';
     }
-    
+   
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+   
     if (!validateForm()) {
       return;
     }
-
     setIsSubmitting(true);
-
     try {
       // Convert form data to FormData for file upload
       const formDataToSend = convertToFormData(formData);
-
       const result = await employeeApi.createEmployee(formDataToSend);
-
       if (result.success) {
         alert('Employee added successfully!');
         // Reset form
@@ -216,45 +208,43 @@ const AddEmployees = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6">
       <div className="max-w-6xl mx-auto">
         {/* Breadcrumb Navigation */}
         <div className="flex items-center gap-2 mb-6 text-sm">
-          <button 
+          <button
             onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-1.5 text-gray-600 hover:text-blue-600 transition-colors font-medium"
+            className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
           >
             <Home className="w-4 h-4" />
             <span>Dashboard</span>
           </button>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-blue-600 font-semibold">Employees</span>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-900 font-semibold">Add New Employee</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-blue-600 dark:text-blue-400 font-semibold">Employees</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-gray-900 dark:text-white font-semibold">Add New Employee</span>
         </div>
-
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 rounded-xl flex items-center justify-center shadow-lg">
               <UserPlus className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Add New Employee</h1>
-              <p className="text-gray-600 mt-1">Fill in the employee details below</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Add New Employee</h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">Fill in the employee details below</p>
             </div>
           </div>
         </div>
-
         {/* Section Tabs */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 mb-6 overflow-hidden">
-          <div className="flex border-b border-gray-200">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 mb-6 overflow-hidden">
+          <div className="flex border-b border-gray-200 dark:border-gray-700">
             <button
               onClick={() => setActiveSection('required')}
               className={`flex-1 px-6 py-4 font-semibold transition-all ${
                 activeSection === 'required'
                   ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
-                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                  : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
               }`}
             >
               <span className="flex items-center justify-center gap-2">
@@ -267,7 +257,7 @@ const AddEmployees = () => {
               className={`flex-1 px-6 py-4 font-semibold transition-all ${
                 activeSection === 'optional'
                   ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
-                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                  : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
               }`}
             >
               <span className="flex items-center justify-center gap-2">
@@ -277,33 +267,31 @@ const AddEmployees = () => {
             </button>
           </div>
         </div>
-
         {/* Form */}
         <form onSubmit={handleSubmit}>
           {/* Required Section */}
           {activeSection === 'required' && (
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 mb-6">
-              <div className="flex items-center gap-2 mb-6 pb-4 border-b border-gray-200">
-                <User className="w-6 h-6 text-blue-600" />
-                <h2 className="text-2xl font-bold text-gray-900">Basic Information</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-8 mb-6">
+              <div className="flex items-center gap-2 mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                <User className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Basic Information</h2>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Employee Name */}
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Employee Name <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <User className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <User className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                     <input
                       type="text"
                       name="employeeName"
                       value={formData.employeeName}
                       onChange={handleInputChange}
                       placeholder="Name of Employee"
-                      className={`w-full pl-11 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all ${
-                        errors.employeeName ? 'border-red-500' : 'border-gray-300 focus:border-blue-500'
+                      className={`w-full pl-11 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                        errors.employeeName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600 focus:border-blue-500'
                       }`}
                     />
                   </div>
@@ -314,11 +302,10 @@ const AddEmployees = () => {
                     </p>
                   )}
                 </div>
-
                 {/* Picture Upload */}
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Picture <span className="text-gray-500 text-xs">(Optional)</span>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Picture <span className="text-gray-500 dark:text-gray-400 text-xs">(Optional)</span>
                   </label>
                   <div className="flex items-start gap-4">
                     {imagePreview ? (
@@ -326,7 +313,7 @@ const AddEmployees = () => {
                         <img
                           src={imagePreview}
                           alt="Preview"
-                          className="w-32 h-32 object-cover rounded-xl border-2 border-gray-300"
+                          className="w-32 h-32 object-cover rounded-xl border-2 border-gray-300 dark:border-gray-600"
                         />
                         <button
                           type="button"
@@ -337,9 +324,9 @@ const AddEmployees = () => {
                         </button>
                       </div>
                     ) : (
-                      <label className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all">
-                        <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                        <span className="text-xs text-gray-500 text-center px-2">Click to upload</span>
+                      <label className="w-32 h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all bg-white dark:bg-gray-700">
+                        <Upload className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2" />
+                        <span className="text-xs text-gray-500 dark:text-gray-400 text-center px-2">Click to upload</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -349,8 +336,8 @@ const AddEmployees = () => {
                       </label>
                     )}
                     <div className="flex-1">
-                      <p className="text-sm text-gray-600 mb-2">Upload employee photo</p>
-                      <p className="text-xs text-gray-500">Accepted formats: JPG, PNG, GIF</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Upload employee photo</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-500">Accepted formats: JPG, PNG, GIF</p>
                     </div>
                   </div>
                   {errors.picture && (
@@ -360,22 +347,21 @@ const AddEmployees = () => {
                     </p>
                   )}
                 </div>
-
                 {/* Mobile Number */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Mobile No. for SMS/WhatsApp <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <Phone className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Phone className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                     <input
                       type="text"
                       name="mobileNo"
                       value={formData.mobileNo}
                       onChange={handleInputChange}
                       placeholder="+44xxxxxxxxxx"
-                      className={`w-full pl-11 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all ${
-                        errors.mobileNo ? 'border-red-500' : 'border-gray-300 focus:border-blue-500'
+                      className={`w-full pl-11 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                        errors.mobileNo ? 'border-red-500' : 'border-gray-300 dark:border-gray-600 focus:border-blue-500'
                       }`}
                     />
                   </div>
@@ -386,21 +372,20 @@ const AddEmployees = () => {
                     </p>
                   )}
                 </div>
-
                 {/* Date of Joining */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Date of Joining <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <Calendar className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Calendar className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                     <input
                       type="date"
                       name="dateOfJoining"
                       value={formData.dateOfJoining}
                       onChange={handleInputChange}
-                      className={`w-full pl-11 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all ${
-                        errors.dateOfJoining ? 'border-red-500' : 'border-gray-300 focus:border-blue-500'
+                      className={`w-full pl-11 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                        errors.dateOfJoining ? 'border-red-500' : 'border-gray-300 dark:border-gray-600 focus:border-blue-500'
                       }`}
                     />
                   </div>
@@ -411,20 +396,19 @@ const AddEmployees = () => {
                     </p>
                   )}
                 </div>
-
                 {/* Employee Role */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Employee Role <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <Briefcase className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Briefcase className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                     <select
                       name="employeeRole"
                       value={formData.employeeRole}
                       onChange={handleInputChange}
-                      className={`w-full pl-11 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white transition-all appearance-none ${
-                        errors.employeeRole ? 'border-red-500' : 'border-gray-300 focus:border-blue-500'
+                      className={`w-full pl-11 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all appearance-none ${
+                        errors.employeeRole ? 'border-red-500' : 'border-gray-300 dark:border-gray-600 focus:border-blue-500'
                       }`}
                     >
                       <option value="">Select*</option>
@@ -440,22 +424,21 @@ const AddEmployees = () => {
                     </p>
                   )}
                 </div>
-
                 {/* Monthly Salary */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Monthly Salary <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <DollarSign className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <DollarSign className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                     <input
                       type="text"
                       name="monthlySalary"
                       value={formData.monthlySalary}
                       onChange={handleInputChange}
                       placeholder="Monthly Salary"
-                      className={`w-full pl-11 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all ${
-                        errors.monthlySalary ? 'border-red-500' : 'border-gray-300 focus:border-blue-500'
+                      className={`w-full pl-11 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                        errors.monthlySalary ? 'border-red-500' : 'border-gray-300 dark:border-gray-600 focus:border-blue-500'
                       }`}
                     />
                   </div>
@@ -469,82 +452,77 @@ const AddEmployees = () => {
               </div>
             </div>
           )}
-
           {/* Optional Section */}
           {activeSection === 'optional' && (
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 mb-6">
-              <div className="flex items-center gap-2 mb-6 pb-4 border-b border-gray-200">
-                <Users className="w-6 h-6 text-blue-600" />
-                <h2 className="text-2xl font-bold text-gray-900">Other Information</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-8 mb-6">
+              <div className="flex items-center gap-2 mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Other Information</h2>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Father/Husband Name */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Father / Husband Name
                   </label>
                   <div className="relative">
-                    <User className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <User className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                     <input
                       type="text"
                       name="fatherHusbandName"
                       value={formData.fatherHusbandName}
                       onChange={handleInputChange}
                       placeholder="Father / Husband Name"
-                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
                 </div>
-
                 {/* National ID */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     National ID
                   </label>
                   <div className="relative">
-                    <CreditCard className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <CreditCard className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                     <input
                       type="text"
                       name="nationalId"
                       value={formData.nationalId}
                       onChange={handleInputChange}
                       placeholder="National ID"
-                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
                 </div>
-
                 {/* Education */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Education
                   </label>
                   <div className="relative">
-                    <GraduationCap className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <GraduationCap className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                     <input
                       type="text"
                       name="education"
                       value={formData.education}
                       onChange={handleInputChange}
                       placeholder="Education"
-                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
                 </div>
-
                 {/* Gender */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Gender
                   </label>
                   <div className="relative">
-                    <Users className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Users className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                     <select
                       name="gender"
                       value={formData.gender}
                       onChange={handleInputChange}
-                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all appearance-none"
+                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all appearance-none"
                     >
                       <option value="">Select</option>
                       {genderOptions.map((gender) => (
@@ -553,19 +531,18 @@ const AddEmployees = () => {
                     </select>
                   </div>
                 </div>
-
                 {/* Religion */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Religion
                   </label>
                   <div className="relative">
-                    <Users className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Users className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                     <select
                       name="religion"
                       value={formData.religion}
                       onChange={handleInputChange}
-                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all appearance-none"
+                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all appearance-none"
                     >
                       <option value="">Select</option>
                       {religionOptions.map((religion) => (
@@ -574,19 +551,18 @@ const AddEmployees = () => {
                     </select>
                   </div>
                 </div>
-
                 {/* Blood Group */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Blood Group
                   </label>
                   <div className="relative">
-                    <Heart className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Heart className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                     <select
                       name="bloodGroup"
                       value={formData.bloodGroup}
                       onChange={handleInputChange}
-                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all appearance-none"
+                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all appearance-none"
                     >
                       <option value="">Select</option>
                       {bloodGroupOptions.map((group) => (
@@ -595,89 +571,84 @@ const AddEmployees = () => {
                     </select>
                   </div>
                 </div>
-
                 {/* Experience */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Experience
                   </label>
                   <div className="relative">
-                    <Briefcase className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Briefcase className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                     <input
                       type="text"
                       name="experience"
                       value={formData.experience}
                       onChange={handleInputChange}
                       placeholder="Experience (e.g., 5 years)"
-                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
                 </div>
-
                 {/* Email Address */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Email Address
                   </label>
                   <div className="relative">
-                    <Mail className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Mail className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                     <input
                       type="email"
                       name="emailAddress"
                       value={formData.emailAddress}
                       onChange={handleInputChange}
                       placeholder="Email Address"
-                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
                 </div>
-
                 {/* Date of Birth */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Date of Birth
                   </label>
                   <div className="relative">
-                    <Calendar className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Calendar className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                     <input
                       type="date"
                       name="dateOfBirth"
                       value={formData.dateOfBirth}
                       onChange={handleInputChange}
                       placeholder="dd-mm-yyyy"
-                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
                 </div>
-
                 {/* Home Address */}
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Home Address
                   </label>
                   <div className="relative">
-                    <MapPin className="w-5 h-5 absolute left-3 top-3 text-gray-400" />
+                    <MapPin className="w-5 h-5 absolute left-3 top-3 text-gray-400 dark:text-gray-500" />
                     <textarea
                       name="homeAddress"
                       value={formData.homeAddress}
                       onChange={handleInputChange}
                       placeholder="Home Address"
                       rows="4"
-                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
+                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
                 </div>
               </div>
             </div>
           )}
-
           {/* Action Buttons */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex flex-col sm:flex-row gap-4 justify-end">
               <button
                 type="button"
                 onClick={handleReset}
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-all font-semibold"
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl transition-all font-semibold"
               >
                 <X className="w-5 h-5" />
                 <span>Reset Form</span>

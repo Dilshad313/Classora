@@ -67,16 +67,16 @@ const FeesReport = () => {
   const maxCollected = monthlyData.length > 0 ? Math.max(...monthlyData.map(d => d.collected)) : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6 transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center gap-2 mb-6 text-sm no-print">
-          <button onClick={() => navigate('/dashboard')} className="flex items-center gap-1.5 text-gray-600 hover:text-blue-600 transition-colors font-medium">
+          <button onClick={() => navigate('/dashboard')} className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
             <Home className="w-4 h-4" /><span>Dashboard</span>
           </button>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-blue-600 font-semibold">Fees</span>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-900 font-semibold">Fees Report</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-blue-600 dark:text-blue-400 font-semibold">Fees</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-gray-900 dark:text-gray-100 font-semibold">Fees Report</span>
         </div>
 
         <div className="mb-8 no-print">
@@ -86,8 +86,8 @@ const FeesReport = () => {
                 <BarChart3 className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Fees Report & Analytics</h1>
-                <p className="text-gray-600 mt-1">Comprehensive overview of fee collection and insights</p>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Fees Report & Analytics</h1>
+                <p className="text-gray-600 dark:text-gray-300 mt-1">Comprehensive overview of fee collection and insights</p>
               </div>
             </div>
             <div className="flex gap-3">
@@ -103,14 +103,14 @@ const FeesReport = () => {
 
         {loading && (
           <div className="flex items-center justify-center py-8">
-            <Loader className="w-8 h-8 animate-spin text-indigo-600" />
-            <span className="ml-2 text-gray-600">Loading report data...</span>
+            <Loader className="w-8 h-8 animate-spin text-indigo-600 dark:text-indigo-400" />
+            <span className="ml-2 text-gray-600 dark:text-gray-400">Loading report data...</span>
           </div>
         )}
 
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6 no-print">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 mb-6 no-print transition-colors duration-300">
           <div className="flex items-center gap-4">
-            <label className="text-sm font-semibold text-gray-700">Report Period:</label>
+            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Report Period:</label>
             <div className="flex gap-2">
               {['month', 'quarter', 'year', 'custom'].map(period => (
                 <button 
@@ -119,7 +119,7 @@ const FeesReport = () => {
                   className={`px-4 py-2 rounded-lg font-medium transition-all ${
                     selectedPeriod === period 
                       ? 'bg-indigo-600 text-white shadow-md' 
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
                   {period.charAt(0).toUpperCase() + period.slice(1)}
@@ -129,26 +129,26 @@ const FeesReport = () => {
             
             {selectedPeriod === 'month' && (
               <>
-                <div className="w-px h-8 bg-gray-300 mx-2"></div>
+                <div className="w-px h-8 bg-gray-300 dark:bg-gray-600 mx-2"></div>
                 <input 
                   type="month" 
                   value={selectedMonth} 
                   onChange={(e) => setSelectedMonth(e.target.value)} 
-                  className="px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                  className="px-4 py-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" 
                 />
               </>
             )}
             
             {selectedPeriod === 'year' && (
               <>
-                <div className="w-px h-8 bg-gray-300 mx-2"></div>
+                <div className="w-px h-8 bg-gray-300 dark:bg-gray-600 mx-2"></div>
                 <select 
                   value={selectedYear} 
                   onChange={(e) => setSelectedYear(e.target.value)}
-                  className="px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="px-4 py-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                 >
                   {[2022, 2023, 2024, 2025].map(year => (
-                    <option key={year} value={year}>{year}</option>
+                    <option key={year} value={year} className="dark:bg-gray-800">{year}</option>
                   ))}
                 </select>
               </>
@@ -156,21 +156,21 @@ const FeesReport = () => {
             
             {selectedPeriod === 'custom' && (
               <>
-                <div className="w-px h-8 bg-gray-300 mx-2"></div>
+                <div className="w-px h-8 bg-gray-300 dark:bg-gray-600 mx-2"></div>
                 <input 
                   type="date" 
                   value={startDate} 
                   onChange={(e) => setStartDate(e.target.value)} 
                   placeholder="Start Date"
-                  className="px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                  className="px-4 py-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" 
                 />
-                <span className="text-gray-500">to</span>
+                <span className="text-gray-500 dark:text-gray-400">to</span>
                 <input 
                   type="date" 
                   value={endDate} 
                   onChange={(e) => setEndDate(e.target.value)} 
                   placeholder="End Date"
-                  className="px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                  className="px-4 py-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" 
                 />
               </>
             )}
@@ -240,32 +240,32 @@ const FeesReport = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+          <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-indigo-600" />Monthly Collection Trend
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />Monthly Collection Trend
                 </h2>
-                <p className="text-sm text-gray-600 mt-1">Collected vs Target comparison</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Collected vs Target comparison</p>
               </div>
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-indigo-600 rounded"></div>
-                  <span className="text-gray-600">Collected</span>
+                  <span className="text-gray-600 dark:text-gray-400">Collected</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-gray-300 rounded"></div>
-                  <span className="text-gray-600">Target</span>
+                  <div className="w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                  <span className="text-gray-600 dark:text-gray-400">Target</span>
                 </div>
               </div>
             </div>
             <div className="space-y-3">
               {monthlyData.map((data, index) => (
                 <div key={index} className="flex items-center gap-3">
-                  <div className="w-12 text-sm font-semibold text-gray-700">
+                  <div className="w-12 text-sm font-semibold text-gray-700 dark:text-gray-300">
                     {new Date(data.month).toLocaleDateString('en-US', { month: 'short' })}
                   </div>
-                  <div className="flex-1 relative h-10 bg-gray-100 rounded-lg overflow-hidden">
+                  <div className="flex-1 relative h-10 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
                     <div 
                       className="absolute inset-y-0 left-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg transition-all duration-500 flex items-center justify-end pr-3" 
                       style={{ width: `${maxCollected > 0 ? (data.collected / maxCollected) * 100 : 0}%` }}
@@ -275,18 +275,18 @@ const FeesReport = () => {
                       </span>
                     </div>
                     <div 
-                      className="absolute inset-y-0 left-0 border-2 border-dashed border-gray-400 rounded-lg pointer-events-none" 
+                      className="absolute inset-y-0 left-0 border-2 border-dashed border-gray-400 dark:border-gray-600 rounded-lg pointer-events-none" 
                       style={{ width: `${maxCollected > 0 ? (data.target / maxCollected) * 100 : 0}%` }}
                     ></div>
                   </div>
                   <div className="w-20 text-right">
                     {data.collected >= data.target ? (
-                      <span className="text-green-600 text-sm font-semibold flex items-center justify-end gap-1">
+                      <span className="text-green-600 dark:text-green-400 text-sm font-semibold flex items-center justify-end gap-1">
                         <TrendingUp className="w-4 h-4" />
                         {data.target > 0 ? ((data.collected / data.target) * 100 - 100).toFixed(1) : 0}%
                       </span>
                     ) : (
-                      <span className="text-orange-600 text-sm font-semibold flex items-center justify-end gap-1">
+                      <span className="text-orange-600 dark:text-orange-400 text-sm font-semibold flex items-center justify-end gap-1">
                         <TrendingDown className="w-4 h-4" />
                         {data.target > 0 ? ((data.collected / data.target) * 100 - 100).toFixed(1) : 0}%
                       </span>
@@ -297,36 +297,36 @@ const FeesReport = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <PieChart className="w-5 h-5 text-indigo-600" />Payment Methods
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+              <PieChart className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />Payment Methods
             </h2>
             <div className="space-y-4">
               {paymentMethods.map((method, index) => (
                 <div key={index}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <CreditCard className="w-4 h-4 text-gray-600" />
-                      <span className="text-sm font-semibold text-gray-700 capitalize">{method._id}</span>
+                      <CreditCard className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 capitalize">{method._id}</span>
                     </div>
-                    <span className="text-sm font-bold text-gray-900">{method.percentage}%</span>
+                    <span className="text-sm font-bold text-gray-900 dark:text-white">{method.percentage}%</span>
                   </div>
-                  <div className="relative h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="relative h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div 
                       className={`absolute inset-y-0 left-0 bg-indigo-500 rounded-full transition-all duration-500`} 
                       style={{ width: `${method.percentage}%` }}
                     ></div>
                   </div>
-                  <div className="text-xs text-gray-600 mt-1">
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                     ₹{(method.amount / 1000).toFixed(0)}K
                   </div>
                 </div>
               ))}
             </div>
-            <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-gray-700">Total</span>
-                <span className="text-lg font-bold text-indigo-600">
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Total</span>
+                <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
                   ₹{(paymentMethods.reduce((sum, m) => sum + m.amount, 0) / 100000).toFixed(1)}L
                 </span>
               </div>
@@ -334,9 +334,9 @@ const FeesReport = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <Award className="w-5 h-5 text-indigo-600" />Class-wise Fee Collection
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 mb-6 transition-colors duration-300">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+            <Award className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />Class-wise Fee Collection
           </h2>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -350,36 +350,36 @@ const FeesReport = () => {
                   <th className="px-6 py-4 text-left font-bold">Progress</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {classWiseData.map((classData, index) => (
-                  <tr key={index} className="hover:bg-indigo-50 transition-colors">
+                  <tr key={index} className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
                     <td className="px-6 py-4">
-                      <span className="font-semibold text-gray-900">{classData.class}</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{classData.class}</span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
+                      <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-sm font-medium">
                         {classData.students}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <span className="text-green-600 font-bold">
+                      <span className="text-green-600 dark:text-green-400 font-bold">
                         ₹{(classData.collected / 1000).toFixed(0)}K
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <span className="text-orange-600 font-bold">
+                      <span className="text-orange-600 dark:text-orange-400 font-bold">
                         ₹{(classData.pending / 1000).toFixed(0)}K
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span className={`px-3 py-1 rounded-full text-sm font-bold ${
-                        classData.percentage >= 85 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                        classData.percentage >= 85 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
                       }`}>
                         {classData.percentage}%
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden w-32">
+                      <div className="relative h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden w-32">
                         <div 
                           className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${
                             classData.percentage >= 85 ? 'bg-green-500' : 'bg-yellow-500'
@@ -391,19 +391,19 @@ const FeesReport = () => {
                   </tr>
                 ))}
               </tbody>
-              <tfoot className="bg-indigo-50 border-t-2 border-indigo-200">
+              <tfoot className="bg-indigo-50 dark:bg-gray-900 border-t-2 border-indigo-200 dark:border-gray-700">
                 <tr>
-                  <td className="px-6 py-4 font-bold text-gray-900">Total</td>
-                  <td className="px-6 py-4 text-center font-bold text-gray-900">
+                  <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">Total</td>
+                  <td className="px-6 py-4 text-center font-bold text-gray-900 dark:text-white">
                     {classWiseData.reduce((sum, c) => sum + c.students, 0)}
                   </td>
-                  <td className="px-6 py-4 text-right font-bold text-green-600">
+                  <td className="px-6 py-4 text-right font-bold text-green-600 dark:text-green-400">
                     ₹{(classWiseData.reduce((sum, c) => sum + c.collected, 0) / 100000).toFixed(1)}L
                   </td>
-                  <td className="px-6 py-4 text-right font-bold text-orange-600">
+                  <td className="px-6 py-4 text-right font-bold text-orange-600 dark:text-orange-400">
                     ₹{(classWiseData.reduce((sum, c) => sum + c.pending, 0) / 100000).toFixed(1)}L
                   </td>
-                  <td className="px-6 py-4 text-center font-bold text-indigo-600">
+                  <td className="px-6 py-4 text-center font-bold text-indigo-600 dark:text-indigo-400">
                     {classWiseData.length > 0 ? 
                       (classWiseData.reduce((sum, c) => sum + parseFloat(c.percentage), 0) / classWiseData.length).toFixed(1) 
                       : 0}%
@@ -416,28 +416,28 @@ const FeesReport = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <Wallet className="w-5 h-5 text-indigo-600" />Fee Categories Breakdown
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+              <Wallet className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />Fee Categories Breakdown
             </h2>
             <div className="space-y-4">
               {feeCategories.map((category, index) => (
-                <div key={index} className="border-b border-gray-100 pb-4 last:border-b-0">
+                <div key={index} className="border-b border-gray-100 dark:border-gray-700 pb-4 last:border-b-0">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold text-gray-700">{category._id}</span>
-                    <span className="text-sm font-bold text-gray-900">
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{category._id}</span>
+                    <span className="text-sm font-bold text-gray-900 dark:text-white">
                       ₹{(category.amount / 1000).toFixed(0)}K
                     </span>
                   </div>
-                  <div className="relative h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="relative h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div 
                       className="absolute inset-y-0 left-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500" 
                       style={{ width: `${category.percentage}%` }}
                     ></div>
                   </div>
                   <div className="flex items-center justify-between mt-1">
-                    <span className="text-xs text-gray-600">{category.percentage}% of total</span>
-                    <span className="text-xs text-indigo-600 font-semibold">
+                    <span className="text-xs text-gray-600 dark:text-gray-400">{category.percentage}% of total</span>
+                    <span className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold">
                       ₹{overallStats.totalStudents > 0 ? (category.amount / overallStats.totalStudents).toFixed(0) : 0}/student
                     </span>
                   </div>
@@ -446,28 +446,28 @@ const FeesReport = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <FileText className="w-5 h-5 text-indigo-600" />Recent Transactions
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+              <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />Recent Transactions
             </h2>
             <div className="space-y-3">
               {recentTransactions.map((transaction) => (
-                <div key={transaction._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-indigo-50 transition-colors">
+                <div key={transaction._id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-xl hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
                   <div className="flex-1">
-                    <div className="font-semibold text-gray-900 text-sm">
+                    <div className="font-semibold text-gray-900 dark:text-white text-sm">
                       {transaction.student?.studentName || transaction.studentName}
                     </div>
-                    <div className="text-xs text-gray-600 mt-0.5">
+                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                       {transaction.class} • {new Date(transaction.paymentDate).toLocaleDateString()}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-bold text-gray-900">₹{transaction.amount.toLocaleString()}</div>
+                    <div className="font-bold text-gray-900 dark:text-white">₹{transaction.amount.toLocaleString()}</div>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs text-gray-600 capitalize">{transaction.depositType}</span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400 capitalize">{transaction.depositType}</span>
                       {transaction.status === 'completed' ? 
-                        <CheckCircle className="w-3 h-3 text-green-600" /> : 
-                        <Clock className="w-3 h-3 text-orange-600" />
+                        <CheckCircle className="w-3 h-3 text-green-600 dark:text-green-400" /> : 
+                        <Clock className="w-3 h-3 text-orange-600 dark:text-orange-400" />
                       }
                     </div>
                   </div>

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Plus, 
-  Search, 
+import {
+  Plus,
+  Search,
   Users,
   Edit3,
   Trash2,
@@ -51,7 +51,7 @@ const AllEmployees = () => {
         status: activeTab === 'all' ? '' : activeTab,
         search: searchTerm
       });
-      
+     
       if (result.success) {
         setEmployees(result.data);
         setStats(result.stats);
@@ -82,9 +82,9 @@ const AllEmployees = () => {
   };
 
   const getStatusColor = (status) => {
-    return status === 'active' 
-      ? 'text-green-700 bg-green-100 border-green-200'
-      : 'text-red-700 bg-red-100 border-red-200';
+    return status === 'active'
+      ? 'text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30 border-green-200 dark:border-green-700'
+      : 'text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 border-red-200 dark:border-red-700';
   };
 
   const getInitials = (name) => {
@@ -113,7 +113,6 @@ const AllEmployees = () => {
           <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
           <span className="text-gray-900 dark:text-white font-semibold">All Employees</span>
         </div>
-
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
@@ -123,14 +122,13 @@ const AllEmployees = () => {
             </div>
             <button
               onClick={() => navigate('/dashboard/employee/add-new')}
-              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-500 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               <UserPlus className="w-5 h-5" />
               <span className="font-semibold">Add New Employee</span>
             </button>
           </div>
         </div>
-
         {/* Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl transition-shadow">
@@ -145,7 +143,6 @@ const AllEmployees = () => {
               </div>
             </div>
           </div>
-
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between">
               <div>
@@ -158,7 +155,6 @@ const AllEmployees = () => {
               </div>
             </div>
           </div>
-
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between">
               <div>
@@ -172,7 +168,6 @@ const AllEmployees = () => {
             </div>
           </div>
         </div>
-
         {/* Filters and Search */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 gap-4">
@@ -209,7 +204,6 @@ const AllEmployees = () => {
                 Inactive ({stats.inactive})
               </button>
             </div>
-
             {/* Search and Actions */}
             <div className="flex items-center space-x-3">
               <div className="relative flex-1 lg:flex-initial">
@@ -222,7 +216,6 @@ const AllEmployees = () => {
                   className="pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full lg:w-64 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                 />
               </div>
-
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setViewMode('grid')}
@@ -245,7 +238,6 @@ const AllEmployees = () => {
                   <List className="w-5 h-5" />
                 </button>
               </div>
-
               <button className="flex items-center space-x-2 px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-all font-medium">
                 <Download className="w-4 h-4" />
                 <span className="hidden sm:inline">Export</span>
@@ -253,7 +245,6 @@ const AllEmployees = () => {
             </div>
           </div>
         </div>
-
         {/* Loading State */}
         {loading && (
           <div className="text-center py-12">
@@ -261,7 +252,6 @@ const AllEmployees = () => {
             <p className="text-gray-600 dark:text-gray-400">Loading employees...</p>
           </div>
         )}
-
         {/* Employees Grid */}
         {!loading && viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -272,7 +262,7 @@ const AllEmployees = () => {
               >
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 p-6 border-b border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
                       {getInitials(employee.employeeName)}
                     </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(employee.status)}`}>
@@ -282,7 +272,6 @@ const AllEmployees = () => {
                   <h3 className="font-bold text-gray-900 dark:text-white text-xl mb-1">{employee.employeeName}</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">{employee.employeeId}</p>
                 </div>
-
                 <div className="p-6 space-y-3">
                   <div className="flex items-center space-x-3 text-sm">
                     <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -293,7 +282,6 @@ const AllEmployees = () => {
                       <p className="font-semibold text-gray-900 dark:text-white">{employee.employeeRole}</p>
                     </div>
                   </div>
-
                   <div className="flex items-center space-x-3 text-sm">
                     <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
                       <Mail className="w-4 h-4 text-green-600 dark:text-green-400" />
@@ -303,7 +291,6 @@ const AllEmployees = () => {
                       <p className="font-medium text-gray-900 dark:text-white truncate">{employee.emailAddress}</p>
                     </div>
                   </div>
-
                   <div className="flex items-center space-x-3 text-sm">
                     <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
                       <Phone className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -313,7 +300,6 @@ const AllEmployees = () => {
                       <p className="font-medium text-gray-900 dark:text-white">{employee.mobileNo}</p>
                     </div>
                   </div>
-
                   <div className="flex items-center space-x-3 text-sm">
                     <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
                       <DollarSign className="w-4 h-4 text-orange-600 dark:text-orange-400" />
@@ -324,13 +310,12 @@ const AllEmployees = () => {
                     </div>
                   </div>
                 </div>
-
                 <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex items-center justify-between">
                   <button className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold text-sm transition-colors">
                     <Eye className="w-4 h-4" />
                     <span>View Details</span>
                   </button>
-                  
+                 
                   <div className="flex items-center space-x-2">
                     <button className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition-all">
                       <Edit3 className="w-4 h-4" />
@@ -367,7 +352,7 @@ const AllEmployees = () => {
                     <tr key={employee._id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-sm">
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 rounded-xl flex items-center justify-center text-white font-bold text-sm">
                             {getInitials(employee.employeeName)}
                           </div>
                           <div>
@@ -408,7 +393,6 @@ const AllEmployees = () => {
             </div>
           )
         )}
-
         {/* Empty State */}
         {!loading && employees.length === 0 && (
           <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700">
@@ -417,13 +401,13 @@ const AllEmployees = () => {
             </div>
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No employees found</h3>
             <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto">
-              {searchTerm 
-                ? 'Try adjusting your search terms or filters' 
+              {searchTerm
+                ? 'Try adjusting your search terms or filters'
                 : 'Get started by adding your first employee to the system'}
             </p>
             <button
               onClick={() => navigate('/dashboard/employee/add-new')}
-              className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl font-semibold"
+              className="inline-flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-500 transition-all shadow-lg hover:shadow-xl font-semibold"
             >
               <UserPlus className="w-5 h-5" />
               <span>Add New Employee</span>
