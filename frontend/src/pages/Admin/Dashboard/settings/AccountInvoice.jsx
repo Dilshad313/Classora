@@ -220,14 +220,14 @@ export const AccountInvoice = () => {
   const paginatedBanks = filteredBanks.slice(startIndex, startIndex + entriesPerPage);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-indigo-50/30 to-purple-50/40 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 p-6 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-indigo-50/30 to-purple-50/40 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 p-6 md:p-8 transition-colors duration-200">
       {/* Notification */}
       {notification.show && (
         <div className={`fixed top-4 right-4 z-50 p-4 rounded-xl shadow-lg border-l-4 ${
           notification.type === 'success' 
-            ? 'bg-green-50 border-green-500 text-green-800 dark:bg-green-900/20 dark:text-green-300' 
-            : 'bg-red-50 border-red-500 text-red-800 dark:bg-red-900/20 dark:text-red-300'
-        }`}>
+            ? 'bg-green-50 border-green-500 text-green-800 dark:bg-green-900/20 dark:text-green-300 dark:border-green-600' 
+            : 'bg-red-50 border-red-500 text-red-800 dark:bg-red-900/20 dark:text-red-300 dark:border-red-600'
+        } transition-all duration-300`}>
           <div className="flex items-center gap-3">
             {notification.type === 'success' ? (
               <CheckCircle className="w-5 h-5" />
@@ -237,7 +237,7 @@ export const AccountInvoice = () => {
             <span className="font-medium">{notification.message}</span>
             <button 
               onClick={() => setNotification({ show: false, type: '', message: '' })}
-              className="ml-4 hover:opacity-70"
+              className="ml-4 hover:opacity-70 dark:hover:text-gray-300"
             >
               <X className="w-4 h-4" />
             </button>
@@ -255,35 +255,35 @@ export const AccountInvoice = () => {
             <Home className="w-4 h-4" />
             <span>Dashboard</span>
           </button>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
           <span className="text-blue-600 dark:text-blue-400 font-semibold">General Settings</span>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
           <span className="text-gray-900 dark:text-white font-semibold">Account Invoice</span>
         </div>
 
         {/* Header */}
-        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 mb-6 border border-gray-100 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 mb-6 border border-gray-100 dark:border-gray-700 transition-colors duration-200">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
               <div className="p-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg">
                 <Landmark className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-1">Bank Settings</h1>
-                <p className="text-gray-600 dark:text-gray-400">Manage your bank accounts and fee challan details</p>
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-1 transition-colors">Bank Settings</h1>
+                <p className="text-gray-600 dark:text-gray-400 transition-colors">Manage your bank accounts and fee challan details</p>
               </div>
             </div>
             
             {/* Stats */}
             {stats && (
               <div className="flex gap-4">
-                <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl border border-green-200 dark:border-green-800">
+                <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-gray-800 dark:to-gray-700 rounded-xl border border-green-200 dark:border-gray-600 transition-colors">
                   <div className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.totalAccounts}</div>
-                  <div className="text-sm text-green-700 dark:text-green-300">Total Banks</div>
+                  <div className="text-sm text-green-700 dark:text-gray-300">Total Banks</div>
                 </div>
-                <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-gray-800 dark:to-gray-700 rounded-xl border border-blue-200 dark:border-gray-600 transition-colors">
                   <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.activeAccounts}</div>
-                  <div className="text-sm text-blue-700 dark:text-blue-300">Active</div>
+                  <div className="text-sm text-blue-700 dark:text-gray-300">Active</div>
                 </div>
               </div>
             )}
@@ -292,7 +292,7 @@ export const AccountInvoice = () => {
 
         {/* Tabs */}
         <div className="mb-6">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 p-2">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 p-2 transition-colors duration-200">
             <nav className="flex gap-2">
               <button
                 onClick={() => setActiveTab('general')}
@@ -319,20 +319,20 @@ export const AccountInvoice = () => {
         </div>
 
         {/* Main Content */}
-        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 transition-colors duration-200">
           {/* Add/Edit Bank Section */}
           {showAddBank ? (
-            <div className="p-8 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-br from-gray-50 to-indigo-50/30 dark:from-gray-900 dark:to-gray-800">
+            <div className="p-8 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-br from-gray-50 to-indigo-50/30 dark:from-gray-900 dark:to-gray-800/50 transition-colors">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3 transition-colors">
                   <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
                     <Landmark className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                   </div>
                   {editingBank ? 'Edit Bank Account' : 'Add New Bank'}
                 </h2>
-                <div className="flex items-center gap-2 bg-white dark:bg-gray-800 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-                  <span className="text-red-500 font-semibold text-sm">* Required</span>
-                  <span className="text-gray-400">•</span>
+                <div className="flex items-center gap-2 bg-white dark:bg-gray-700 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm transition-colors">
+                  <span className="text-red-500 dark:text-red-400 font-semibold text-sm">* Required</span>
+                  <span className="text-gray-400 dark:text-gray-500">•</span>
                   <span className="text-gray-600 dark:text-gray-400 text-sm">Optional</span>
                 </div>
               </div>
@@ -342,11 +342,11 @@ export const AccountInvoice = () => {
                 <div className="space-y-6">
                   {/* Bank Logo */}
                   <div>
-                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-3">
+                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 transition-colors">
                       <Upload className="w-4 h-4" />
                       <span>Bank Logo</span>
                     </label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center transition-colors">
                       <input
                         type="file"
                         accept="image/*"
@@ -356,29 +356,29 @@ export const AccountInvoice = () => {
                       />
                       <label
                         htmlFor="bank-logo"
-                        className="cursor-pointer inline-flex items-center space-x-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+                        className="cursor-pointer inline-flex items-center space-x-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800/50 transition-colors"
                       >
                         <Upload className="w-4 h-4" />
                         <span>Choose Logo</span>
                       </label>
                       {bankForm.logo && (
-                        <p className="mt-2 text-sm text-gray-600">
+                        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                           Selected: {bankForm.logo.name}
                         </p>
                       )}
                       {editingBank?.logoUrl && !bankForm.logo && (
                         <div className="mt-4">
-                          <p className="text-sm text-gray-600 mb-2">Current logo:</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Current logo:</p>
                           <div className="flex items-center gap-3">
                             <img
                               src={editingBank.logoUrl}
                               alt="Current logo"
-                              className="w-16 h-16 object-contain rounded-lg border border-gray-200"
+                              className="w-16 h-16 object-contain rounded-lg border border-gray-200 dark:border-gray-700"
                             />
                             <button
                               type="button"
                               onClick={() => handleDeleteLogo(editingBank)}
-                              className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded-lg border border-red-200 transition-colors"
+                              className="px-3 py-1 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg border border-red-200 dark:border-red-800 transition-colors"
                             >
                               Remove Logo
                             </button>
@@ -390,51 +390,51 @@ export const AccountInvoice = () => {
 
                   {/* Login Required */}
                   <div>
-                    <label className="flex items-center space-x-3">
+                    <label className="flex items-center space-x-3 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={bankForm.loginRequired}
                         onChange={(e) => handleInputChange('loginRequired', e.target.checked)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-gray-300 dark:border-gray-600 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:focus:ring-blue-600 dark:bg-gray-700"
                       />
-                      <span className="text-sm font-medium text-gray-700">Login Required</span>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors">Login Required</span>
                     </label>
                   </div>
 
                   {/* Status */}
                   <div>
-                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
+                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                       <span>Status</span>
                     </label>
                     <select
                       value={bankForm.status}
                       onChange={(e) => handleInputChange('status', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 focus:border-blue-500 dark:focus:border-blue-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
                     >
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
+                      <option value="active" className="dark:bg-gray-700 dark:text-white">Active</option>
+                      <option value="inactive" className="dark:bg-gray-700 dark:text-white">Inactive</option>
                     </select>
                   </div>
 
                   {/* Bank Name */}
                   <div>
-                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
+                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                       <Building className="w-4 h-4" />
                       <span>Your Bank Name</span>
-                      <span className="text-red-500">*</span>
+                      <span className="text-red-500 dark:text-red-400">*</span>
                     </label>
                     <input
                       type="text"
                       value={bankForm.bankName}
                       onChange={(e) => handleInputChange('bankName', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 focus:border-blue-500 dark:focus:border-blue-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors"
                       placeholder="Enter bank name"
                     />
                   </div>
 
                   {/* Email/Service Manager */}
                   <div>
-                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
+                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                       <User className="w-4 h-4" />
                       <span>Email/Service Manager</span>
                     </label>
@@ -442,7 +442,7 @@ export const AccountInvoice = () => {
                       type="email"
                       value={bankForm.emailManager}
                       onChange={(e) => handleInputChange('emailManager', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 focus:border-blue-500 dark:focus:border-blue-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors"
                       placeholder="Enter email address"
                     />
                   </div>
@@ -452,7 +452,7 @@ export const AccountInvoice = () => {
                 <div className="space-y-6">
                   {/* Bank Address */}
                   <div>
-                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
+                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                       <MapPin className="w-4 h-4" />
                       <span>Bank Address</span>
                     </label>
@@ -460,30 +460,30 @@ export const AccountInvoice = () => {
                       value={bankForm.bankAddress}
                       onChange={(e) => handleInputChange('bankAddress', e.target.value)}
                       rows="3"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 focus:border-blue-500 dark:focus:border-blue-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors resize-none"
                       placeholder="Enter bank address"
                     />
                   </div>
 
                   {/* Account Number */}
                   <div>
-                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
+                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                       <CreditCard className="w-4 h-4" />
                       <span>Bank Account No</span>
-                      <span className="text-red-500">*</span>
+                      <span className="text-red-500 dark:text-red-400">*</span>
                     </label>
                     <input
                       type="text"
                       value={bankForm.accountNumber}
                       onChange={(e) => handleInputChange('accountNumber', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 focus:border-blue-500 dark:focus:border-blue-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors"
                       placeholder="Enter account number"
                     />
                   </div>
 
                   {/* Instructions */}
                   <div>
-                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
+                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors">
                       <FileText className="w-4 h-4" />
                       <span>Instructions</span>
                     </label>
@@ -491,7 +491,7 @@ export const AccountInvoice = () => {
                       value={bankForm.instructions}
                       onChange={(e) => handleInputChange('instructions', e.target.value)}
                       rows="3"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 focus:border-blue-500 dark:focus:border-blue-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors resize-none"
                       placeholder="Write instructions"
                     />
                   </div>
@@ -499,7 +499,7 @@ export const AccountInvoice = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 transition-colors">
                 <button
                   onClick={resetForm}
                   disabled={submitting}
@@ -522,7 +522,7 @@ export const AccountInvoice = () => {
               </div>
             </div>
           ) : (
-            <div className="p-8 border-b border-gray-200 dark:border-gray-700">
+            <div className="p-8 border-b border-gray-200 dark:border-gray-700 transition-colors">
               <button
                 onClick={() => setShowAddBank(true)}
                 className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl flex items-center gap-2 hover:scale-105 active:scale-95"
@@ -538,28 +538,28 @@ export const AccountInvoice = () => {
             {/* Table Controls */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 mb-6">
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-700">Show</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300 transition-colors">Show</span>
                 <select
                   value={entriesPerPage}
                   onChange={(e) => setEntriesPerPage(Number(e.target.value))}
-                  className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 focus:border-blue-500 dark:focus:border-blue-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
                 >
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
+                  <option value={10} className="dark:bg-gray-700 dark:text-white">10</option>
+                  <option value={25} className="dark:bg-gray-700 dark:text-white">25</option>
+                  <option value={50} className="dark:bg-gray-700 dark:text-white">50</option>
+                  <option value={100} className="dark:bg-gray-700 dark:text-white">100</option>
                 </select>
-                <span className="text-sm text-gray-700">entries</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300 transition-colors">entries</span>
               </div>
 
               <div className="relative">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 transition-colors" />
                 <input
                   type="text"
                   placeholder="Search by bank name or account number..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-64"
+                  className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 focus:border-blue-500 dark:focus:border-blue-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 w-64 transition-colors"
                 />
               </div>
             </div>
@@ -567,47 +567,47 @@ export const AccountInvoice = () => {
             {/* Loading State */}
             {loading && (
               <div className="flex justify-center items-center py-16">
-                <Loader className="w-8 h-8 text-indigo-600 animate-spin" />
-                <span className="ml-3 text-gray-600">Loading banks...</span>
+                <Loader className="w-8 h-8 text-indigo-600 dark:text-indigo-400 animate-spin" />
+                <span className="ml-3 text-gray-600 dark:text-gray-400 transition-colors">Loading banks...</span>
               </div>
             )}
 
             {/* Table */}
             {!loading && (
-              <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
+              <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 transition-colors">
                 <table className="w-full border-collapse">
                   <thead>
-                    <tr className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700">
-                      <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 dark:text-white">
+                    <tr className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors">
+                      <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 dark:text-white transition-colors">
                         Bank Name
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 dark:text-white">
+                      <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 dark:text-white transition-colors">
                         Logo
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 dark:text-white">
+                      <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 dark:text-white transition-colors">
                         Account No.
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 dark:text-white">
+                      <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 dark:text-white transition-colors">
                         Status
                       </th>
-                      <th className="px-6 py-4 text-center text-sm font-bold text-gray-900 dark:text-white">
+                      <th className="px-6 py-4 text-center text-sm font-bold text-gray-900 dark:text-white transition-colors">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 transition-colors">
                     {paginatedBanks.length > 0 ? (
                       paginatedBanks.map((bank) => (
-                        <tr key={bank._id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                        <tr key={bank._id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150">
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
                                 <Landmark className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                               </div>
                               <div>
-                                <span className="font-semibold text-gray-900 dark:text-white block">{bank.bankName}</span>
+                                <span className="font-semibold text-gray-900 dark:text-white block transition-colors">{bank.bankName}</span>
                                 {bank.emailManager && (
-                                  <span className="text-sm text-gray-500 dark:text-gray-400">{bank.emailManager}</span>
+                                  <span className="text-sm text-gray-500 dark:text-gray-400 transition-colors">{bank.emailManager}</span>
                                 )}
                               </div>
                             </div>
@@ -620,16 +620,16 @@ export const AccountInvoice = () => {
                                 className="w-12 h-12 object-contain rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
                               />
                             ) : (
-                              <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center border border-gray-200 dark:border-gray-600">
+                              <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center border border-gray-200 dark:border-gray-600 transition-colors">
                                 <Building className="w-6 h-6 text-gray-400" />
                               </div>
                             )}
                           </td>
-                          <td className="px-6 py-4 font-semibold text-gray-900 dark:text-white">
+                          <td className="px-6 py-4 font-semibold text-gray-900 dark:text-white transition-colors">
                             {bank.accountNumber}
                           </td>
                           <td className="px-6 py-4">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                               bank.status === 'active' 
                                 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' 
                                 : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
@@ -641,13 +641,15 @@ export const AccountInvoice = () => {
                             <div className="flex items-center justify-center gap-2">
                               <button 
                                 onClick={() => handleEditBank(bank)}
-                                className="p-2 text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900/30 rounded-lg transition-all hover:scale-110"
+                                className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-all hover:scale-110"
+                                title="Edit"
                               >
                                 <Edit className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => handleDeleteBank(bank)}
-                                className="p-2 text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/30 rounded-lg transition-all hover:scale-110"
+                                className="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-all hover:scale-110"
+                                title="Delete"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -659,12 +661,12 @@ export const AccountInvoice = () => {
                       <tr>
                         <td colSpan="5" className="px-6 py-16 text-center">
                           <div className="flex flex-col items-center gap-4">
-                            <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-full">
+                            <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-full transition-colors">
                               <AlertCircle className="w-12 h-12 text-gray-400" />
                             </div>
                             <div>
-                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">No Banks Added</h3>
-                              <p className="text-gray-500 dark:text-gray-400">Add your first bank account to get started</p>
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 transition-colors">No Banks Added</h3>
+                              <p className="text-gray-500 dark:text-gray-400 transition-colors">Add your first bank account to get started</p>
                             </div>
                           </div>
                         </td>
@@ -677,8 +679,8 @@ export const AccountInvoice = () => {
 
             {/* Table Footer */}
             {!loading && (
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 transition-colors">
+                <div className="text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors">
                   Showing <span className="font-bold text-gray-900 dark:text-white">{filteredBanks.length > 0 ? startIndex + 1 : 0}</span> to{' '}
                   <span className="font-bold text-gray-900 dark:text-white">{Math.min(startIndex + entriesPerPage, filteredBanks.length)}</span> of{' '}
                   <span className="font-bold text-gray-900 dark:text-white">{filteredBanks.length}</span> entries
@@ -693,7 +695,7 @@ export const AccountInvoice = () => {
                     <ChevronLeft className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                   </button>
                   
-                  <span className="px-4 py-2 bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 text-indigo-700 dark:text-indigo-300 rounded-xl font-semibold text-sm border border-indigo-200 dark:border-indigo-800">
+                  <span className="px-4 py-2 bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-gray-800 dark:to-gray-700 text-indigo-700 dark:text-indigo-300 rounded-xl font-semibold text-sm border border-indigo-200 dark:border-gray-600 transition-colors">
                     Page {currentPage} of {totalPages || 1}
                   </span>
                   
