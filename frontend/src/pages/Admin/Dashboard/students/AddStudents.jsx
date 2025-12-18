@@ -193,33 +193,33 @@ const AddStudents = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6">
       <div className="max-w-5xl mx-auto">
         {/* Breadcrumb Navigation */}
         <div className="flex items-center gap-2 mb-6 text-sm">
-          <button 
+          <button
             onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-1.5 text-gray-600 hover:text-blue-600 transition-colors font-medium"
+            className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
           >
             <Home className="w-4 h-4" />
             <span>Dashboard</span>
           </button>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <button 
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <button
             onClick={() => navigate('/dashboard/students/all')}
-            className="text-gray-600 hover:text-blue-600 transition-colors font-medium"
+            className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
           >
             Students
           </button>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-900 font-semibold">Add New</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-gray-900 dark:text-white font-semibold">Add New</span>
         </div>
 
         {/* Header */}
         <div className="mb-8">
           <button
             onClick={() => navigate('/dashboard/students/all')}
-            className="flex items-center text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+            className="flex items-center text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white mb-4 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Students
@@ -230,43 +230,43 @@ const AddStudents = () => {
               <UserPlus className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Add New Student</h1>
-              <p className="text-gray-600 mt-1">Fill in the student information to create a new record</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Add New Student</h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">Fill in the student information to create a new record</p>
             </div>
           </div>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="p-8 space-y-10">
               {/* Personal Information */}
               <div>
-                <div className="flex items-center space-x-3 mb-6 pb-3 border-b-2 border-blue-100">
-                  <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <User className="w-6 h-6 text-blue-600" />
+                <div className="flex items-center space-x-3 mb-6 pb-3 border-b-2 border-blue-100 dark:border-blue-900">
+                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-xl flex items-center justify-center">
+                    <User className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">Personal Information</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Personal Information</h2>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Student Name <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <User className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <User className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <input
                         type="text"
                         value={formData.studentName}
                         onChange={(e) => handleInputChange('studentName', e.target.value)}
-                        className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                          errors.studentName ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+                        className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 ${
+                          errors.studentName ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
                         }`}
                         placeholder="Enter student full name"
                       />
                     </div>
                     {errors.studentName && (
-                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
                         <AlertCircle className="w-3 h-3 mr-1" />
                         {errors.studentName}
                       </p>
@@ -274,23 +274,23 @@ const AddStudents = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Registration No <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <Hash className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <Hash className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <input
                         type="text"
                         value={formData.registrationNo}
                         onChange={(e) => handleInputChange('registrationNo', e.target.value.toUpperCase())}
-                        className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                          errors.registrationNo ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+                        className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 ${
+                          errors.registrationNo ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
                         }`}
                         placeholder="STU001"
                       />
                     </div>
                     {errors.registrationNo && (
-                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
                         <AlertCircle className="w-3 h-3 mr-1" />
                         {errors.registrationNo}
                       </p>
@@ -298,23 +298,23 @@ const AddStudents = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Mobile Number
                     </label>
                     <div className="relative">
-                      <Phone className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <Phone className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <input
                         type="tel"
                         value={formData.mobileNo}
                         onChange={(e) => handleInputChange('mobileNo', e.target.value)}
-                        className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                          errors.mobileNo ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+                        className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 ${
+                          errors.mobileNo ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
                         }`}
                         placeholder="+91 XXXXX XXXXX"
                       />
                     </div>
                     {errors.mobileNo && (
-                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
                         <AlertCircle className="w-3 h-3 mr-1" />
                         {errors.mobileNo}
                       </p>
@@ -322,22 +322,22 @@ const AddStudents = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Date of Admission <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <Calendar className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <Calendar className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <input
                         type="date"
                         value={formData.dateOfAdmission}
                         onChange={(e) => handleInputChange('dateOfAdmission', e.target.value)}
-                        className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                          errors.dateOfAdmission ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+                        className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 ${
+                          errors.dateOfAdmission ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
                         }`}
                       />
                     </div>
                     {errors.dateOfAdmission && (
-                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
                         <AlertCircle className="w-3 h-3 mr-1" />
                         {errors.dateOfAdmission}
                       </p>
@@ -345,16 +345,16 @@ const AddStudents = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Select Class <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <BookOpen className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" />
+                      <BookOpen className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 z-10" />
                       <select
                         value={formData.selectClass}
                         onChange={(e) => handleInputChange('selectClass', e.target.value)}
-                        className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white ${
-                          errors.selectClass ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-gray-400'
+                        className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 ${
+                          errors.selectClass ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
                         }`}
                       >
                         <option value="">Select Class</option>
@@ -362,10 +362,10 @@ const AddStudents = () => {
                           <option key={className} value={className}>Class {className}</option>
                         ))}
                       </select>
-                      <ChevronRight className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none" />
+                      <ChevronRight className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 dark:text-gray-500 pointer-events-none" />
                     </div>
                     {errors.selectClass && (
-                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
                         <AlertCircle className="w-3 h-3 mr-1" />
                         {errors.selectClass}
                       </p>
@@ -373,70 +373,70 @@ const AddStudents = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Section
                     </label>
                     <div className="relative">
-                      <Users className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" />
+                      <Users className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 z-10" />
                       <select
                         value={formData.section}
                         onChange={(e) => handleInputChange('section', e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white hover:border-gray-400"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500"
                       >
                         {sections.map(section => (
                           <option key={section} value={section}>Section {section}</option>
                         ))}
                       </select>
-                      <ChevronRight className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none" />
+                      <ChevronRight className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 dark:text-gray-500 pointer-events-none" />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Date of Birth
                     </label>
                     <div className="relative">
-                      <Calendar className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <Calendar className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <input
                         type="date"
                         value={formData.dateOfBirth}
                         onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Gender
                     </label>
                     <div className="relative">
-                      <Users className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" />
+                      <Users className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 z-10" />
                       <select
                         value={formData.gender}
                         onChange={(e) => handleInputChange('gender', e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white hover:border-gray-400"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500"
                       >
                         <option value="">Select Gender</option>
                         <option value="male">Male</option>
                         <option value="female">Female</option>
                         <option value="other">Other</option>
                       </select>
-                      <ChevronRight className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none" />
+                      <ChevronRight className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 dark:text-gray-500 pointer-events-none" />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Discount in Fee (%)
                     </label>
                     <div className="relative">
-                      <DollarSign className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <DollarSign className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <input
                         type="number"
                         value={formData.discountInFee}
                         onChange={(e) => handleInputChange('discountInFee', e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500"
                         placeholder="0"
                         min="0"
                         max="100"
@@ -445,36 +445,36 @@ const AddStudents = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Blood Group
                     </label>
                     <div className="relative">
-                      <Heart className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" />
+                      <Heart className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 z-10" />
                       <select
                         value={formData.bloodGroup}
                         onChange={(e) => handleInputChange('bloodGroup', e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white hover:border-gray-400"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500"
                       >
                         <option value="">Select Blood Group</option>
                         {bloodGroups.map(group => (
                           <option key={group} value={group}>{group}</option>
                         ))}
                       </select>
-                      <ChevronRight className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none" />
+                      <ChevronRight className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 dark:text-gray-500 pointer-events-none" />
                     </div>
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Address
                     </label>
                     <div className="relative">
-                      <MapPin className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
+                      <MapPin className="w-4 h-4 absolute left-3 top-3 text-gray-400 dark:text-gray-500" />
                       <textarea
                         value={formData.address}
                         onChange={(e) => handleInputChange('address', e.target.value)}
                         rows="3"
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400 resize-none"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500 resize-none"
                         placeholder="Enter full address"
                       />
                     </div>
@@ -484,175 +484,175 @@ const AddStudents = () => {
 
               {/* Additional Information */}
               <div>
-                <div className="flex items-center space-x-3 mb-6 pb-3 border-b-2 border-green-100">
-                  <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                    <FileText className="w-6 h-6 text-green-600" />
+                <div className="flex items-center space-x-3 mb-6 pb-3 border-b-2 border-green-100 dark:border-green-900">
+                  <div className="w-10 h-10 bg-green-100 dark:bg-green-900/50 rounded-xl flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-green-600 dark:text-green-400" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">Additional Information</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Additional Information</h2>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Orphan Student
                     </label>
                     <div className="relative">
-                      <Users className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" />
+                      <Users className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 z-10" />
                       <select
                         value={formData.orphanStudent}
                         onChange={(e) => handleInputChange('orphanStudent', e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white hover:border-gray-400"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500"
                       >
                         <option value="">Select</option>
                         <option value="yes">Yes</option>
                         <option value="no">No</option>
                       </select>
-                      <ChevronRight className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none" />
+                      <ChevronRight className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 dark:text-gray-500 pointer-events-none" />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Caste
                     </label>
                     <div className="relative">
-                      <User className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <User className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <input
                         type="text"
                         value={formData.caste}
                         onChange={(e) => handleInputChange('caste', e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500"
                         placeholder="Enter caste"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       OSC (Other Special Category)
                     </label>
                     <div className="relative">
-                      <Users className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" />
+                      <Users className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 z-10" />
                       <select
                         value={formData.osc}
                         onChange={(e) => handleInputChange('osc', e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white hover:border-gray-400"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500"
                       >
                         <option value="">Select</option>
                         <option value="yes">Yes</option>
                         <option value="no">No</option>
                       </select>
-                      <ChevronRight className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none" />
+                      <ChevronRight className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 dark:text-gray-500 pointer-events-none" />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Any Identification Mark?
                     </label>
                     <div className="relative">
-                      <FileText className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <FileText className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <input
                         type="text"
                         value={formData.identificationMark}
                         onChange={(e) => handleInputChange('identificationMark', e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500"
                         placeholder="Enter identification mark"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Previous School
                     </label>
                     <div className="relative">
-                      <School className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <School className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <input
                         type="text"
                         value={formData.previousSchool}
                         onChange={(e) => handleInputChange('previousSchool', e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500"
                         placeholder="Enter previous school name"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Religion
                     </label>
                     <div className="relative">
-                      <Cross className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <Cross className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <input
                         type="text"
                         value={formData.religion}
                         onChange={(e) => handleInputChange('religion', e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500"
                         placeholder="Enter religion"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Previous ID / Board Roll No
                     </label>
                     <div className="relative">
-                      <Hash className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <Hash className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <input
                         type="text"
                         value={formData.previousIdBoardRollNo}
                         onChange={(e) => handleInputChange('previousIdBoardRollNo', e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500"
                         placeholder="Enter previous ID or board roll no"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Select Family
                     </label>
                     <div className="relative">
-                      <Users className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <Users className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <input
                         type="text"
                         value={formData.selectFamily}
                         onChange={(e) => handleInputChange('selectFamily', e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500"
                         placeholder="Enter family name"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Disease (if any)
                     </label>
                     <div className="relative">
-                      <Stethoscope className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <Stethoscope className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <input
                         type="text"
                         value={formData.disease}
                         onChange={(e) => handleInputChange('disease', e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500"
                         placeholder="Enter disease if any"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Total Siblings
                     </label>
                     <div className="relative">
-                      <Users className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <Users className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <input
                         type="number"
                         value={formData.totalSiblings}
                         onChange={(e) => handleInputChange('totalSiblings', e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500"
                         placeholder="Enter number of siblings"
                         min="0"
                       />
@@ -660,16 +660,16 @@ const AddStudents = () => {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Any Additional Note
                     </label>
                     <div className="relative">
-                      <StickyNote className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
+                      <StickyNote className="w-4 h-4 absolute left-3 top-3 text-gray-400 dark:text-gray-500" />
                       <textarea
                         value={formData.additionalNote}
                         onChange={(e) => handleInputChange('additionalNote', e.target.value)}
                         rows="3"
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400 resize-none"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500 resize-none"
                         placeholder="Enter any additional notes"
                       />
                     </div>
@@ -679,105 +679,105 @@ const AddStudents = () => {
 
               {/* Parent/Guardian Information */}
               <div>
-                <div className="flex items-center space-x-3 mb-6 pb-3 border-b-2 border-purple-100">
-                  <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-                    <Users className="w-6 h-6 text-purple-600" />
+                <div className="flex items-center space-x-3 mb-6 pb-3 border-b-2 border-purple-100 dark:border-purple-900">
+                  <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/50 rounded-xl flex items-center justify-center">
+                    <Users className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">Parent/Guardian Information</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Parent/Guardian Information</h2>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Father's Name
                     </label>
                     <div className="relative">
-                      <User className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <User className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <input
                         type="text"
                         value={formData.fatherName}
                         onChange={(e) => handleInputChange('fatherName', e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500"
                         placeholder="Enter father's name"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Father's Mobile
                     </label>
                     <div className="relative">
-                      <Phone className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <Phone className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <input
                         type="tel"
                         value={formData.fatherMobile}
                         onChange={(e) => handleInputChange('fatherMobile', e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500"
                         placeholder="+91 XXXXX XXXXX"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Father's Occupation
                     </label>
                     <div className="relative">
-                      <Briefcase className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <Briefcase className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <input
                         type="text"
                         value={formData.fatherOccupation}
                         onChange={(e) => handleInputChange('fatherOccupation', e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500"
                         placeholder="Enter occupation"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Mother's Name
                     </label>
                     <div className="relative">
-                      <User className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <User className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <input
                         type="text"
                         value={formData.motherName}
                         onChange={(e) => handleInputChange('motherName', e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500"
                         placeholder="Enter mother's name"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Mother's Mobile
                     </label>
                     <div className="relative">
-                      <Phone className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <Phone className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <input
                         type="tel"
                         value={formData.motherMobile}
                         onChange={(e) => handleInputChange('motherMobile', e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500"
                         placeholder="+91 XXXXX XXXXX"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Mother's Occupation
                     </label>
                     <div className="relative">
-                      <Briefcase className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <Briefcase className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <input
                         type="text"
                         value={formData.motherOccupation}
                         onChange={(e) => handleInputChange('motherOccupation', e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500"
                         placeholder="Enter occupation"
                       />
                     </div>
@@ -787,19 +787,19 @@ const AddStudents = () => {
 
               {/* Documents Upload */}
               <div>
-                <div className="flex items-center space-x-3 mb-6 pb-3 border-b-2 border-indigo-100">
-                  <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
-                    <Upload className="w-6 h-6 text-indigo-600" />
+                <div className="flex items-center space-x-3 mb-6 pb-3 border-b-2 border-indigo-100 dark:border-indigo-900">
+                  <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl flex items-center justify-center">
+                    <Upload className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">Documents</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Documents</h2>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Student Photo
                     </label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 transition-colors bg-gray-50">
+                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center hover:border-blue-400 dark:hover:border-blue-500 transition-colors bg-gray-50 dark:bg-gray-700/50">
                       <input
                         type="file"
                         accept="image/*"
@@ -811,21 +811,21 @@ const AddStudents = () => {
                         htmlFor="student-photo"
                         className="cursor-pointer inline-flex flex-col items-center"
                       >
-                        <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-3">
-                          <Upload className="w-6 h-6 text-blue-600" />
+                        <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-xl flex items-center justify-center mb-3">
+                          <Upload className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                         </div>
-                        <span className="text-sm font-medium text-gray-700">Click to upload photo</span>
-                        <span className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB</span>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Click to upload photo</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">PNG, JPG up to 5MB</span>
                       </label>
                       {formData.picture && (
                         <div className="mt-3">
-                          <p className="text-sm text-green-600 font-medium mb-2">
+                          <p className="text-sm text-green-600 dark:text-green-400 font-medium mb-2">
                             ✓ {formData.picture.name}
                           </p>
                           <button
                             type="button"
                             onClick={() => setFormData(prev => ({ ...prev, picture: null }))}
-                            className="text-sm text-red-600 hover:text-red-700"
+                            className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-500"
                           >
                             Remove
                           </button>
@@ -835,10 +835,10 @@ const AddStudents = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Additional Documents
                     </label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 transition-colors bg-gray-50">
+                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center hover:border-blue-400 dark:hover:border-blue-500 transition-colors bg-gray-50 dark:bg-gray-700/50">
                       <input
                         type="file"
                         multiple
@@ -850,25 +850,25 @@ const AddStudents = () => {
                         htmlFor="documents-upload"
                         className="cursor-pointer inline-flex flex-col items-center"
                       >
-                        <div className="w-12 h-12 bg-gray-200 rounded-xl flex items-center justify-center mb-3">
-                          <FileText className="w-6 h-6 text-gray-600" />
+                        <div className="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-xl flex items-center justify-center mb-3">
+                          <FileText className="w-6 h-6 text-gray-600 dark:text-gray-300" />
                         </div>
-                        <span className="text-sm font-medium text-gray-700">Click to upload documents</span>
-                        <span className="text-xs text-gray-500 mt-1">PDF, DOC, JPG up to 5MB each</span>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Click to upload documents</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">PDF, DOC, JPG up to 5MB each</span>
                       </label>
                       {formData.documents && formData.documents.length > 0 && (
                         <div className="mt-3">
-                          <p className="text-sm text-green-600 font-medium mb-2">
+                          <p className="text-sm text-green-600 dark:text-green-400 font-medium mb-2">
                             ✓ {formData.documents.length} file(s) selected
                           </p>
                           <div className="space-y-1 max-h-20 overflow-y-auto">
                             {formData.documents.map((doc, index) => (
-                              <div key={index} className="flex items-center justify-between text-xs">
+                              <div key={index} className="flex items-center justify-between text-xs text-gray-700 dark:text-gray-300">
                                 <span className="truncate flex-1">{doc.name}</span>
                                 <button
                                   type="button"
                                   onClick={() => removeDocument(index)}
-                                  className="text-red-500 hover:text-red-700 ml-2"
+                                  className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-500 ml-2"
                                 >
                                   ×
                                 </button>
@@ -884,11 +884,11 @@ const AddStudents = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex justify-between items-center p-6 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
+            <div className="flex justify-between items-center p-6 border-t border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-800/50">
               <button
                 type="button"
                 onClick={() => navigate('/dashboard/students/all')}
-                className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-white hover:border-gray-400 transition-all font-medium flex items-center space-x-2"
+                className="px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-white dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-all font-medium flex items-center space-x-2"
               >
                 <X className="w-4 h-4" />
                 <span>Cancel</span>
@@ -899,13 +899,13 @@ const AddStudents = () => {
                 disabled={isSubmitting}
                 className={`px-8 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 ${
                   isSubmitting
-                    ? 'bg-gray-400 cursor-not-allowed text-gray-200'
+                    ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed text-gray-200 dark:text-gray-400'
                     : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
                 }`}
               >
                 {isSubmitting ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-white dark:border-gray-300 border-t-transparent dark:border-t-transparent rounded-full animate-spin" />
                     <span>Adding Student...</span>
                   </>
                 ) : (
