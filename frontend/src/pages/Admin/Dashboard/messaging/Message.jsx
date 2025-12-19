@@ -469,22 +469,22 @@ const Message = () => {
   );
 
   return (
-    <div className="h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
+    <div className="h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex flex-col">
       <div className="flex-shrink-0 p-6 pb-0">
         <div className="max-w-7xl mx-auto">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 mb-6 text-sm">
             <button 
               onClick={() => navigate('/dashboard')}
-              className="flex items-center gap-1.5 text-gray-600 hover:text-blue-600 transition-colors font-medium"
+              className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
             >
               <Home className="w-4 h-4" />
               <span>Dashboard</span>
             </button>
-            <ChevronRight className="w-4 h-4 text-gray-400" />
-            <span className="text-blue-600 font-semibold">Messaging</span>
-            <ChevronRight className="w-4 h-4 text-gray-400" />
-            <span className="text-gray-900 font-semibold">Messages</span>
+            <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+            <span className="text-blue-600 dark:text-blue-400 font-semibold">Messaging</span>
+            <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+            <span className="text-gray-900 dark:text-gray-100 font-semibold">Messages</span>
           </div>
         </div>
       </div>
@@ -492,14 +492,14 @@ const Message = () => {
       {/* Error and Success Messages */}
       {error && (
         <div className="max-w-7xl mx-auto px-6 mb-4">
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <AlertCircle className="w-5 h-5 text-red-500" />
-              <p className="text-red-700 font-medium">{error}</p>
+              <AlertCircle className="w-5 h-5 text-red-500 dark:text-red-400" />
+              <p className="text-red-700 dark:text-red-300 font-medium">{error}</p>
             </div>
             <button
               onClick={() => setError('')}
-              className="text-red-500 hover:text-red-700"
+              className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
             >
               <X className="w-5 h-5" />
             </button>
@@ -509,14 +509,14 @@ const Message = () => {
 
       {successMessage && (
         <div className="max-w-7xl mx-auto px-6 mb-4">
-          <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center justify-between">
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <Check className="w-5 h-5 text-green-500" />
-              <p className="text-green-700 font-medium">{successMessage}</p>
+              <Check className="w-5 h-5 text-green-500 dark:text-green-400" />
+              <p className="text-green-700 dark:text-green-300 font-medium">{successMessage}</p>
             </div>
             <button
               onClick={() => setSuccessMessage('')}
-              className="text-green-500 hover:text-green-700"
+              className="text-green-500 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
             >
               <X className="w-5 h-5" />
             </button>
@@ -529,18 +529,18 @@ const Message = () => {
         <div className="max-w-7xl mx-auto h-full">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
             {/* Left Sidebar - Chats List */}
-            <div className="lg:col-span-1 bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden flex flex-col h-full">
+            <div className="lg:col-span-1 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-full">
               {/* Header */}
-              <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
-                    <MessageCircle className="w-6 h-6 text-blue-600" />
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
+                    <MessageCircle className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                     <span>Chats</span>
                   </h2>
                   <button
                     onClick={fetchChats}
                     disabled={loading.chats}
-                    className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                    className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition-all"
                     title="Refresh"
                   >
                     {loading.chats ? (
@@ -553,11 +553,11 @@ const Message = () => {
               </div>
 
               {/* New Chat Button */}
-              <div className="p-4 border-b border-gray-200">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                 <button
                   onClick={handleNewChat}
                   disabled={loading.chats}
-                  className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 dark:from-blue-700 dark:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 text-white rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus className="w-5 h-5" />
                   <span className="font-semibold">New Chat</span>
@@ -565,16 +565,16 @@ const Message = () => {
               </div>
 
               {/* Search Bar */}
-              <div className="p-4 border-b border-gray-200">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                   <input
                     type="text"
                     placeholder="Search chats..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     disabled={loading.chats}
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -583,17 +583,19 @@ const Message = () => {
               <div className="flex-1 overflow-y-auto">
                 {loading.chats ? (
                   <div className="p-8 text-center">
-                    <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-3" />
-                    <p className="text-gray-500">Loading chats...</p>
+                    <Loader2 className="w-8 h-8 text-blue-600 dark:text-blue-400 animate-spin mx-auto mb-3" />
+                    <p className="text-gray-500 dark:text-gray-400">Loading chats...</p>
                   </div>
                 ) : filteredChats.length > 0 ? (
-                  <div className="divide-y divide-gray-200">
+                  <div className="divide-y divide-gray-200 dark:divide-gray-700">
                     {filteredChats.map(chat => (
                       <button
                         key={chat._id}
                         onClick={() => handleChatClick(chat)}
-                        className={`w-full p-4 hover:bg-gray-50 transition-colors text-left ${
-                          selectedChat?._id === chat._id ? 'bg-blue-50 border-l-4 border-blue-600' : ''
+                        className={`w-full p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left ${
+                          selectedChat?._id === chat._id 
+                            ? 'bg-blue-50 dark:bg-gray-700 border-l-4 border-blue-600 dark:border-blue-400' 
+                            : ''
                         }`}
                       >
                         <div className="flex items-start space-x-3">
@@ -612,12 +614,12 @@ const Message = () => {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
-                              <h3 className="font-semibold text-gray-900 truncate">{chat.name}</h3>
-                              <span className="text-xs text-gray-500 ml-2">
+                              <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">{chat.name}</h3>
+                              <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
                                 {formatTime(chat.lastActivity || chat.createdAt)}
                               </span>
                             </div>
-                            <p className="text-sm text-gray-600 truncate">
+                            <p className="text-sm text-gray-600 dark:text-gray-300 truncate">
                               {chat.lastMessageData?.text || 'No messages yet'}
                             </p>
                           </div>
@@ -642,12 +644,12 @@ const Message = () => {
                   </div>
                 ) : (
                   <div className="p-8 text-center">
-                    <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500">No chats found</p>
+                    <MessageCircle className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                    <p className="text-gray-500 dark:text-gray-400">No chats found</p>
                     {searchTerm && (
                       <button
                         onClick={() => setSearchTerm('')}
-                        className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                        className="mt-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium"
                       >
                         Clear search
                       </button>
@@ -658,12 +660,12 @@ const Message = () => {
             </div>
 
             {/* Right Content Area */}
-            <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden flex flex-col h-full">
+            <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-full">
               {selectedChat ? (
                 /* Chat View */
                 <div className="flex-1 flex flex-col overflow-hidden">
                   {/* Chat Header */}
-                  <div className="flex-shrink-0 p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+                  <div className="flex-shrink-0 p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
@@ -680,8 +682,8 @@ const Message = () => {
                           )}
                         </div>
                         <div>
-                          <h2 className="text-xl font-bold text-gray-900">{selectedChat.name}</h2>
-                          <p className="text-sm text-gray-600">
+                          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{selectedChat.name}</h2>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
                             {selectedChat.type === 'group' ? 'Group Chat' : 
                              selectedChat.type === 'broadcast' ? 'Broadcast' : 'Individual Chat'}
                           </p>
@@ -690,7 +692,7 @@ const Message = () => {
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => handleDeleteChat(selectedChat._id, { stopPropagation: () => {} })}
-                          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all"
+                          className="p-2 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-gray-700 rounded-lg transition-all"
                           title="Delete Chat"
                         >
                           <X className="w-5 h-5" />
@@ -700,7 +702,7 @@ const Message = () => {
                             setSelectedChat(null);
                             setChatMessages([]);
                           }}
-                          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+                          className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all"
                         >
                           <X className="w-5 h-5" />
                         </button>
@@ -709,10 +711,10 @@ const Message = () => {
                   </div>
 
                   {/* Messages Area */}
-                  <div className="flex-1 overflow-y-auto p-6 bg-gray-50 relative">
+                  <div className="flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-gray-900 relative">
                     {loading.chatDetails && chatMessages.length === 0 ? (
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                        <Loader2 className="w-8 h-8 text-blue-600 dark:text-blue-400 animate-spin" />
                       </div>
                     ) : (
                       <>
@@ -721,7 +723,7 @@ const Message = () => {
                             <button
                               onClick={loadMoreMessages}
                               disabled={loading.chatDetails}
-                              className="inline-flex items-center space-x-2 px-4 py-2 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all"
+                              className="inline-flex items-center space-x-2 px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-gray-800 rounded-lg transition-all"
                             >
                               {loading.chatDetails ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -741,21 +743,21 @@ const Message = () => {
                             >
                               <div className={`max-w-[70%] ${message.senderModel === 'Admin' ? 'order-2' : 'order-1'}`}>
                                 {message.senderModel !== 'Admin' && (
-                                  <p className="text-xs font-semibold text-gray-600 mb-1 ml-2">
+                                  <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 ml-2">
                                     {message.senderName}
                                   </p>
                                 )}
                                 <div className={`rounded-2xl px-4 py-3 ${
                                   message.senderModel === 'Admin' 
                                     ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white' 
-                                    : 'bg-white border border-gray-200 text-gray-900'
+                                    : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100'
                                 }`}>
                                   <p className="text-sm leading-relaxed">{message.text}</p>
                                   
                                   {message.attachments && message.attachments.length > 0 && (
                                     <div className="mt-2 space-y-2">
                                       {message.attachments.map((attachment, index) => (
-                                        <div key={index} className="flex items-center space-x-2 p-2 bg-white/20 rounded-lg">
+                                        <div key={index} className="flex items-center space-x-2 p-2 bg-white/20 dark:bg-gray-800/50 rounded-lg">
                                           <Paperclip className="w-4 h-4" />
                                           <a
                                             href={attachment.url}
@@ -771,7 +773,7 @@ const Message = () => {
                                   )}
                                   
                                   <p className={`text-xs mt-1 ${
-                                    message.senderModel === 'Admin' ? 'text-blue-100' : 'text-gray-500'
+                                    message.senderModel === 'Admin' ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
                                   }`}>
                                     {message.formattedTime || formatTime(message.createdAt)}
                                   </p>
@@ -786,23 +788,23 @@ const Message = () => {
                   </div>
 
                   {/* Message Input */}
-                  <div className="flex-shrink-0 p-4 border-t border-gray-200 bg-white">
+                  <div className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                     <form onSubmit={handleSendNewMessage} className="space-y-3">
                       {attachedFiles.length > 0 && (
                         <div className="space-y-2">
                           {attachedFiles.map((file, index) => (
-                            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
                               <div className="flex items-center space-x-2">
-                                <Paperclip className="w-4 h-4 text-gray-500" />
-                                <span className="text-sm text-gray-700">{file.name}</span>
-                                <span className="text-xs text-gray-500">
+                                <Paperclip className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                <span className="text-sm text-gray-700 dark:text-gray-300">{file.name}</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
                                   ({(file.size / 1024).toFixed(2)} KB)
                                 </span>
                               </div>
                               <button
                                 type="button"
                                 onClick={() => handleRemoveFile(index)}
-                                className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors"
+                                className="p-1 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-600 rounded transition-colors"
                               >
                                 <X className="w-4 h-4" />
                               </button>
@@ -817,7 +819,7 @@ const Message = () => {
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
                             placeholder="Type your message..."
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 resize-none"
                             rows="2"
                             disabled={loading.sending}
                           />
@@ -834,14 +836,14 @@ const Message = () => {
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
                             disabled={loading.sending}
-                            className="p-3 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all disabled:opacity-50"
+                            className="p-3 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-xl transition-all disabled:opacity-50"
                           >
                             <Paperclip className="w-5 h-5" />
                           </button>
                           <button
                             type="submit"
                             disabled={!newMessage.trim() || loading.sending}
-                            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 dark:from-blue-700 dark:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 text-white rounded-xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                           >
                             {loading.sending ? (
                               <Loader2 className="w-5 h-5 animate-spin" />
@@ -859,48 +861,48 @@ const Message = () => {
                 /* Welcome Screen */
                 <div className="flex-1 flex items-center justify-center p-8 overflow-y-auto">
                   <div className="text-center max-w-2xl">
-                    <div className="w-32 h-32 bg-gradient-to-br from-blue-100 to-indigo-200 rounded-full flex items-center justify-center mx-auto mb-8 shadow-lg">
-                      <MessageCircle className="w-16 h-16 text-blue-600" />
+                    <div className="w-32 h-32 bg-gradient-to-br from-blue-100 to-indigo-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center mx-auto mb-8 shadow-lg">
+                      <MessageCircle className="w-16 h-16 text-blue-600 dark:text-blue-400" />
                     </div>
                     
-                    <h2 className="text-4xl font-bold text-gray-900 mb-4 flex items-center justify-center space-x-2">
+                    <h2 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center justify-center space-x-2">
                       <span>Stay Connected!</span>
                       <Sparkles className="w-8 h-8 text-yellow-500" />
                     </h2>
                     
-                    <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+                    <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
                       Effortless communication at your fingertips! Classora's built-in chatting system lets school admins, teachers, students, and staff collaborate instantly.
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
+                      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-6 border border-blue-200 dark:border-gray-700">
                         <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-md">
                           <Users className="w-7 h-7 text-white" />
                         </div>
-                        <h3 className="font-bold text-gray-900 mb-2">Group Messages</h3>
-                        <p className="text-sm text-gray-600">Send announcements to all students or staff</p>
+                        <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-2">Group Messages</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Send announcements to all students or staff</p>
                       </div>
 
-                      <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-200">
+                      <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-6 border border-purple-200 dark:border-gray-700">
                         <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-md">
                           <UserCheck className="w-7 h-7 text-white" />
                         </div>
-                        <h3 className="font-bold text-gray-900 mb-2">Individual Chat</h3>
-                        <p className="text-sm text-gray-600">Direct messaging with specific users</p>
+                        <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-2">Individual Chat</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Direct messaging with specific users</p>
                       </div>
 
-                      <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200">
+                      <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-6 border border-green-200 dark:border-gray-700">
                         <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-md">
                           <BookOpen className="w-7 h-7 text-white" />
                         </div>
-                        <h3 className="font-bold text-gray-900 mb-2">Class Updates</h3>
-                        <p className="text-sm text-gray-600">Share information with entire classes</p>
+                        <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-2">Class Updates</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Share information with entire classes</p>
                       </div>
                     </div>
 
                     <button
                       onClick={handleNewChat}
-                      className="inline-flex items-center space-x-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold text-lg"
+                      className="inline-flex items-center space-x-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 dark:from-blue-700 dark:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 text-white rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold text-lg"
                     >
                       <Plus className="w-6 h-6" />
                       <span>Start New Chat</span>
@@ -911,15 +913,15 @@ const Message = () => {
                 /* New Chat Form */
                 <div className="flex-1 flex flex-col overflow-hidden">
                   {/* Header */}
-                  <div className="flex-shrink-0 p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+                  <div className="flex-shrink-0 p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900">
                     <div className="flex items-center justify-between">
-                      <h2 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
-                        <Send className="w-6 h-6 text-blue-600" />
+                      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
+                        <Send className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                         <span>Start New Chat</span>
                       </h2>
                       <button
                         onClick={() => setShowNewChat(false)}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+                        className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all"
                       >
                         <X className="w-5 h-5" />
                       </button>
@@ -932,7 +934,7 @@ const Message = () => {
                       <form onSubmit={handleSendMessage} className="space-y-6 pb-4">
                         {/* Send Message To Section */}
                         <div>
-                          <label className="block text-sm font-bold text-gray-900 mb-4 text-lg">
+                          <label className="block text-sm font-bold text-gray-900 dark:text-gray-100 mb-4 text-lg">
                             Send Message To:
                           </label>
                           
@@ -949,21 +951,21 @@ const Message = () => {
                               }}
                               className={`p-4 rounded-xl border-2 transition-all text-left ${
                                 messageType === 'allStudents'
-                                  ? 'border-blue-500 bg-blue-50'
-                                  : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                                  ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-gray-800'
+                                  : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-gray-50 dark:hover:bg-gray-800'
                               }`}
                             >
                               <div className="flex items-center space-x-3">
                                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                                   messageType === 'allStudents'
                                     ? 'bg-gradient-to-br from-blue-500 to-indigo-600'
-                                    : 'bg-gray-100'
+                                    : 'bg-gray-100 dark:bg-gray-700'
                                 }`}>
-                                  <Users className={`w-6 h-6 ${messageType === 'allStudents' ? 'text-white' : 'text-gray-400'}`} />
+                                  <Users className={`w-6 h-6 ${messageType === 'allStudents' ? 'text-white' : 'text-gray-400 dark:text-gray-500'}`} />
                                 </div>
                                 <div>
-                                  <h3 className="font-semibold text-gray-900">All Students</h3>
-                                  <p className="text-xs text-gray-500">Group message</p>
+                                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">All Students</h3>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Group message</p>
                                 </div>
                               </div>
                             </button>
@@ -980,21 +982,21 @@ const Message = () => {
                               }}
                               className={`p-4 rounded-xl border-2 transition-all text-left ${
                                 messageType === 'allEmployees'
-                                  ? 'border-green-500 bg-green-50'
-                                  : 'border-gray-200 hover:border-green-300 hover:bg-gray-50'
+                                  ? 'border-green-500 dark:border-green-400 bg-green-50 dark:bg-gray-800'
+                                  : 'border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600 hover:bg-gray-50 dark:hover:bg-gray-800'
                               }`}
                             >
                               <div className="flex items-center space-x-3">
                                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                                   messageType === 'allEmployees'
                                     ? 'bg-gradient-to-br from-green-500 to-emerald-600'
-                                    : 'bg-gray-100'
+                                    : 'bg-gray-100 dark:bg-gray-700'
                                 }`}>
-                                  <GraduationCap className={`w-6 h-6 ${messageType === 'allEmployees' ? 'text-white' : 'text-gray-400'}`} />
+                                  <GraduationCap className={`w-6 h-6 ${messageType === 'allEmployees' ? 'text-white' : 'text-gray-400 dark:text-gray-500'}`} />
                                 </div>
                                 <div>
-                                  <h3 className="font-semibold text-gray-900">All Employees</h3>
-                                  <p className="text-xs text-gray-500">Group message</p>
+                                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">All Employees</h3>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Group message</p>
                                 </div>
                               </div>
                             </button>
@@ -1008,21 +1010,21 @@ const Message = () => {
                               }}
                               className={`p-4 rounded-xl border-2 transition-all text-left ${
                                 messageType === 'specificClass'
-                                  ? 'border-purple-500 bg-purple-50'
-                                  : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
+                                  ? 'border-purple-500 dark:border-purple-400 bg-purple-50 dark:bg-gray-800'
+                                  : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 hover:bg-gray-50 dark:hover:bg-gray-800'
                               }`}
                             >
                               <div className="flex items-center space-x-3">
                                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                                   messageType === 'specificClass'
                                     ? 'bg-gradient-to-br from-purple-500 to-pink-600'
-                                    : 'bg-gray-100'
+                                    : 'bg-gray-100 dark:bg-gray-700'
                                 }`}>
-                                  <BookOpen className={`w-6 h-6 ${messageType === 'specificClass' ? 'text-white' : 'text-gray-400'}`} />
+                                  <BookOpen className={`w-6 h-6 ${messageType === 'specificClass' ? 'text-white' : 'text-gray-400 dark:text-gray-500'}`} />
                                 </div>
                                 <div>
-                                  <h3 className="font-semibold text-gray-900">Specific Class</h3>
-                                  <p className="text-xs text-gray-500">Group message</p>
+                                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">Specific Class</h3>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Group message</p>
                                 </div>
                               </div>
                             </button>
@@ -1036,21 +1038,21 @@ const Message = () => {
                               }}
                               className={`p-4 rounded-xl border-2 transition-all text-left ${
                                 messageType === 'specificStudent'
-                                  ? 'border-orange-500 bg-orange-50'
-                                  : 'border-gray-200 hover:border-orange-300 hover:bg-gray-50'
+                                  ? 'border-orange-500 dark:border-orange-400 bg-orange-50 dark:bg-gray-800'
+                                  : 'border-gray-200 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-600 hover:bg-gray-50 dark:hover:bg-gray-800'
                               }`}
                             >
                               <div className="flex items-center space-x-3">
                                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                                   messageType === 'specificStudent'
                                     ? 'bg-gradient-to-br from-orange-500 to-red-600'
-                                    : 'bg-gray-100'
+                                    : 'bg-gray-100 dark:bg-gray-700'
                                 }`}>
-                                  <UserCheck className={`w-6 h-6 ${messageType === 'specificStudent' ? 'text-white' : 'text-gray-400'}`} />
+                                  <UserCheck className={`w-6 h-6 ${messageType === 'specificStudent' ? 'text-white' : 'text-gray-400 dark:text-gray-500'}`} />
                                 </div>
                                 <div>
-                                  <h3 className="font-semibold text-gray-900">Specific Student</h3>
-                                  <p className="text-xs text-gray-500">Individual message</p>
+                                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">Specific Student</h3>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Individual message</p>
                                 </div>
                               </div>
                             </button>
@@ -1064,21 +1066,21 @@ const Message = () => {
                               }}
                               className={`p-4 rounded-xl border-2 transition-all text-left md:col-span-2 ${
                                 messageType === 'specificEmployee'
-                                  ? 'border-indigo-500 bg-indigo-50'
-                                  : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'
+                                  ? 'border-indigo-500 dark:border-indigo-400 bg-indigo-50 dark:bg-gray-800'
+                                  : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600 hover:bg-gray-50 dark:hover:bg-gray-800'
                               }`}
                             >
                               <div className="flex items-center space-x-3">
                                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                                   messageType === 'specificEmployee'
                                     ? 'bg-gradient-to-br from-indigo-500 to-purple-600'
-                                    : 'bg-gray-100'
+                                    : 'bg-gray-100 dark:bg-gray-700'
                                 }`}>
-                                  <GraduationCap className={`w-6 h-6 ${messageType === 'specificEmployee' ? 'text-white' : 'text-gray-400'}`} />
+                                  <GraduationCap className={`w-6 h-6 ${messageType === 'specificEmployee' ? 'text-white' : 'text-gray-400 dark:text-gray-500'}`} />
                                 </div>
                                 <div>
-                                  <h3 className="font-semibold text-gray-900">Specific Employee</h3>
-                                  <p className="text-xs text-gray-500">Individual message</p>
+                                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">Specific Employee</h3>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Individual message</p>
                                 </div>
                               </div>
                             </button>
@@ -1089,17 +1091,17 @@ const Message = () => {
                         {(messageType === 'specificClass' || messageType === 'specificStudent' || messageType === 'specificEmployee') && (
                           <div>
                             <div className="flex items-center justify-between mb-2">
-                              <label className="block text-sm font-semibold text-gray-700">
+                              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
                                 Select {messageType === 'specificClass' ? 'Class' : messageType === 'specificStudent' ? 'Student' : 'Employee'}
                               </label>
                               {loading.recipients && (
-                                <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                                <Loader2 className="w-4 h-4 animate-spin text-blue-600 dark:text-blue-400" />
                               )}
                             </div>
                             <select
                               value={selectedRecipient}
                               onChange={(e) => setSelectedRecipient(e.target.value)}
-                              className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50"
                               required
                               disabled={loading.recipients}
                             >
@@ -1125,13 +1127,13 @@ const Message = () => {
 
                         {/* Message Input */}
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                             Message <span className="text-red-500">*</span>
                           </label>
                           <textarea
                             value={messageText}
                             onChange={(e) => setMessageText(e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[150px] resize-y disabled:opacity-50"
+                            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 min-h-[150px] resize-y disabled:opacity-50"
                             placeholder="Type your message here..."
                             required
                             disabled={loading.sending}
@@ -1140,10 +1142,10 @@ const Message = () => {
 
                         {/* File Attachment */}
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                             Attachments (Optional)
                           </label>
-                          <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
+                          <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-6 text-center hover:border-blue-400 dark:hover:border-blue-500 transition-colors bg-gray-50/50 dark:bg-gray-900/50">
                             <input
                               type="file"
                               id="file-upload-new"
@@ -1153,9 +1155,9 @@ const Message = () => {
                               disabled={loading.sending}
                             />
                             <label htmlFor="file-upload-new" className="cursor-pointer disabled:cursor-not-allowed">
-                              <Paperclip className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                              <p className="text-sm text-gray-600 font-medium">Click to attach files</p>
-                              <p className="text-xs text-gray-500 mt-1">PDF, DOC, Images, etc. (Max 10MB each)</p>
+                              <Paperclip className="w-8 h-8 text-gray-400 dark:text-gray-500 mx-auto mb-2" />
+                              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Click to attach files</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">PDF, DOC, Images, etc. (Max 10MB each)</p>
                             </label>
                           </div>
 
@@ -1163,18 +1165,18 @@ const Message = () => {
                           {attachedFiles.length > 0 && (
                             <div className="mt-4 space-y-2">
                               {attachedFiles.map((file, index) => (
-                                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
                                   <div className="flex items-center space-x-2">
-                                    <Paperclip className="w-4 h-4 text-gray-500" />
-                                    <span className="text-sm text-gray-700">{file.name}</span>
-                                    <span className="text-xs text-gray-500">
+                                    <Paperclip className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                    <span className="text-sm text-gray-700 dark:text-gray-300">{file.name}</span>
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">
                                       ({(file.size / 1024).toFixed(2)} KB)
                                     </span>
                                   </div>
                                   <button
                                     type="button"
                                     onClick={() => handleRemoveFile(index)}
-                                    className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors"
+                                    className="p-1 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-600 rounded transition-colors"
                                   >
                                     <X className="w-4 h-4" />
                                   </button>
@@ -1186,12 +1188,12 @@ const Message = () => {
 
                         {/* Recipient Summary */}
                         {messageType && (
-                          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                            <p className="text-sm text-blue-900">
+                          <div className="bg-blue-50 dark:bg-gray-800 border border-blue-200 dark:border-gray-700 rounded-xl p-4">
+                            <p className="text-sm text-blue-900 dark:text-blue-300">
                               <span className="font-semibold">Sending to:</span> {getRecipientLabel()}
                             </p>
                             {(messageType === 'allStudents' || messageType === 'allEmployees') && (
-                              <p className="text-xs text-blue-700 mt-1">
+                              <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
                                 This will be sent as a broadcast message to all recipients
                               </p>
                             )}
@@ -1200,13 +1202,13 @@ const Message = () => {
 
                         {/* Success Message */}
                         {showSuccess && (
-                          <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center space-x-3">
+                          <div className="bg-green-50 dark:bg-gray-800 border border-green-200 dark:border-gray-700 rounded-xl p-4 flex items-center space-x-3">
                             <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                               <Check className="w-5 h-5 text-white" />
                             </div>
                             <div>
-                              <p className="font-semibold text-green-900">Message Sent Successfully!</p>
-                              <p className="text-sm text-green-700">Your message has been delivered.</p>
+                              <p className="font-semibold text-green-900 dark:text-green-300">Message Sent Successfully!</p>
+                              <p className="text-sm text-green-700 dark:text-green-400">Your message has been delivered.</p>
                             </div>
                           </div>
                         )}
@@ -1215,7 +1217,7 @@ const Message = () => {
                         <button
                           type="submit"
                           disabled={loading.sending || showSuccess}
-                          className="w-full flex items-center justify-center space-x-2 px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-full flex items-center justify-center space-x-2 px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 dark:from-blue-700 dark:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 text-white rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {loading.sending ? (
                             <Loader2 className="w-6 h-6 animate-spin" />

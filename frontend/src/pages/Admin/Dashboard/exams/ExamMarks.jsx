@@ -240,55 +240,55 @@ const ExamMarks = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-6 text-sm">
           <button 
             onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-1.5 text-gray-600 hover:text-blue-600 transition-colors font-medium"
+            className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
           >
             <Home className="w-4 h-4" />
             <span>Dashboard</span>
           </button>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-blue-600 font-semibold">Exams</span>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-900 font-semibold">Add/Update Marks</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-blue-600 dark:text-blue-400 font-semibold">Exams</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-gray-900 dark:text-gray-100 font-semibold">Add/Update Marks</span>
         </div>
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center space-x-3">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-3">
             <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center shadow-lg">
               <Award className="w-6 h-6 text-white" />
             </div>
             <span>Add/Update Exam Marks</span>
           </h1>
-          <p className="text-gray-600 mt-2">Enter or update marks for students</p>
+          <p className="text-gray-600 dark:text-gray-300 mt-2">Enter or update marks for students</p>
         </div>
 
         {/* Selection Section */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden mb-8">
-          <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-cyan-50">
-            <h2 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
-              <BookOpen className="w-6 h-6 text-blue-600" />
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-8">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-gray-800 dark:to-gray-900">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
+              <BookOpen className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               <span>Select Exam & Class</span>
             </h2>
-            <p className="text-sm text-gray-600 mt-1">Choose the exam and class to enter marks</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Choose the exam and class to enter marks</p>
           </div>
 
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Select Exam */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Select Exam <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={selectedExam}
                   onChange={handleExamChange}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all"
                   disabled={loading}
                 >
                   <option value="">Choose Exam...</option>
@@ -300,13 +300,13 @@ const ExamMarks = () => {
 
               {/* Select Class */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Select Class <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={selectedClass}
                   onChange={handleClassChange}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all"
                   disabled={!selectedExam || loading}
                 >
                   <option value="">Choose Class...</option>
@@ -323,63 +323,63 @@ const ExamMarks = () => {
 
         {/* Loading State */}
         {loading && (
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-12 text-center">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600" />
-            <p className="mt-4 text-gray-600">Loading marks data...</p>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600 dark:text-blue-400" />
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading marks data...</p>
           </div>
         )}
 
         {/* Marks Entry Table */}
         {marksData && !loading && (
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-cyan-50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-gray-800 dark:to-gray-900">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
-                    <Users className="w-6 h-6 text-blue-600" />
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
+                    <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                     <span>Add Obtained Marks</span>
                   </h2>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Enter marks for {marksData.class.name} - {marksData.exam.name}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-gray-600">Total Students</p>
-                  <p className="text-2xl font-bold text-blue-600">{marksData.students.length}</p>
+                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Total Students</p>
+                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{marksData.students.length}</p>
                 </div>
               </div>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 sticky left-0 bg-gray-50 z-10">Roll No</th>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 sticky left-24 bg-gray-50 z-10">Name</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 dark:text-gray-100 sticky left-0 bg-gray-50 dark:bg-gray-700 z-10">Roll No</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 dark:text-gray-100 sticky left-24 bg-gray-50 dark:bg-gray-700 z-10">Name</th>
                     {marksData.subjects.map(subject => (
-                      <th key={subject._id} className="px-6 py-4 text-center text-sm font-bold text-gray-900">
+                      <th key={subject._id} className="px-6 py-4 text-center text-sm font-bold text-gray-900 dark:text-gray-100">
                         <div>
                           <div>{subject.name}</div>
-                          <div className="text-xs font-normal text-gray-500 mt-1">(Max: {subject.totalMarks})</div>
+                          <div className="text-xs font-normal text-gray-500 dark:text-gray-400 mt-1">(Max: {subject.totalMarks})</div>
                         </div>
                       </th>
                     ))}
-                    <th className="px-6 py-4 text-center text-sm font-bold text-gray-900 bg-blue-50">Total</th>
-                    <th className="px-6 py-4 text-center text-sm font-bold text-gray-900 bg-blue-50">%</th>
+                    <th className="px-6 py-4 text-center text-sm font-bold text-gray-900 dark:text-gray-100 bg-blue-50 dark:bg-gray-700">Total</th>
+                    <th className="px-6 py-4 text-center text-sm font-bold text-gray-900 dark:text-gray-100 bg-blue-50 dark:bg-gray-700">%</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {marksData.students.map((student, index) => (
-                    <tr key={student.student._id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 sticky left-0 bg-white">
-                        <span className="inline-flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-700 rounded-lg font-bold">
+                    <tr key={student.student._id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                      <td className="px-6 py-4 sticky left-0 bg-white dark:bg-gray-800">
+                        <span className="inline-flex items-center justify-center w-10 h-10 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg font-bold">
                           {student.student.rollNumber || index + 1}
                         </span>
                       </td>
-                      <td className="px-6 py-4 sticky left-24 bg-white">
+                      <td className="px-6 py-4 sticky left-24 bg-white dark:bg-gray-800">
                         <div>
-                          <p className="font-semibold text-gray-900">{student.student.name}</p>
-                          <p className="text-sm text-gray-500">{student.student.registrationNo}</p>
+                          <p className="font-semibold text-gray-900 dark:text-gray-100">{student.student.name}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{student.student.registrationNo}</p>
                         </div>
                       </td>
                       {marksData.subjects.map(subject => (
@@ -388,7 +388,7 @@ const ExamMarks = () => {
                             type="number"
                             value={student.marks[subject._id]?.marksObtained || ''}
                             onChange={(e) => handleMarkChange(student.student._id, subject._id, e.target.value)}
-                            className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center"
+                            className="w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-center"
                             placeholder="0"
                             min="0"
                             max={subject.totalMarks || 100}
@@ -396,17 +396,17 @@ const ExamMarks = () => {
                           />
                         </td>
                       ))}
-                      <td className="px-6 py-4 bg-blue-50">
+                      <td className="px-6 py-4 bg-blue-50 dark:bg-gray-700">
                         <div className="text-center">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-blue-100 text-blue-700">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
                             {student.total || 0}
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 bg-blue-50">
+                      <td className="px-6 py-4 bg-blue-50 dark:bg-gray-700">
                         <div className="text-center">
                           <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${
-                            student.percentage >= 40 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                            student.percentage >= 40 ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
                           }`}>
                             {student.percentage || 0}%
                           </span>
@@ -419,9 +419,9 @@ const ExamMarks = () => {
             </div>
 
             {/* Save Button */}
-            <div className="p-6 border-t border-gray-200 bg-gray-50">
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
                   <p className="font-semibold">Note:</p>
                   <p>• Enter marks between 0 and maximum marks for each subject</p>
                   <p>• Leave blank if marks are not available</p>
@@ -430,7 +430,7 @@ const ExamMarks = () => {
                 <button
                   onClick={handleSaveMarks}
                   disabled={saving}
-                  className="flex items-center space-x-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-700 text-white rounded-xl hover:from-blue-700 hover:to-cyan-800 transition-all shadow-lg hover:shadow-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center space-x-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-700 hover:from-blue-700 hover:to-cyan-800 dark:from-blue-700 dark:to-cyan-800 dark:hover:from-blue-600 dark:hover:to-cyan-700 text-white rounded-xl transition-all shadow-lg hover:shadow-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {saving ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
@@ -446,10 +446,10 @@ const ExamMarks = () => {
 
         {/* Empty State */}
         {!selectedExam && !selectedClass && !loading && (
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-12 text-center">
-            <Award className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Select Exam and Class</h3>
-            <p className="text-gray-500">Please select an exam and class from the dropdowns above to start entering marks</p>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
+            <Award className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Select Exam and Class</h3>
+            <p className="text-gray-500 dark:text-gray-400">Please select an exam and class from the dropdowns above to start entering marks</p>
           </div>
         )}
       </div>

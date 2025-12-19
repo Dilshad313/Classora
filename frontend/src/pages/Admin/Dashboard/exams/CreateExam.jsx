@@ -259,42 +259,42 @@ const CreateExam = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-6 text-sm">
           <button 
             onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-1.5 text-gray-600 hover:text-blue-600 transition-colors font-medium"
+            className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
           >
             <Home className="w-4 h-4" />
             <span>Dashboard</span>
           </button>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-blue-600 font-semibold">Exams</span>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-900 font-semibold">Create Exam</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-blue-600 dark:text-blue-400 font-semibold">Exams</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-gray-900 dark:text-gray-100 font-semibold">Create Exam</span>
         </div>
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center space-x-3">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-3">
             <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
               <ClipboardList className="w-6 h-6 text-white" />
             </div>
             <span>Exam Management</span>
           </h1>
-          <p className="text-gray-600 mt-2">Create and manage examination schedules</p>
+          <p className="text-gray-600 dark:text-gray-300 mt-2">Create and manage examination schedules</p>
         </div>
 
         {/* Add New Exam Form */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden mb-8">
-          <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
-            <h2 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
-              <Plus className="w-6 h-6 text-indigo-600" />
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-8">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-900">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
+              <Plus className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
               <span>{editingExam ? 'Edit Exam' : 'Add New Exam'}</span>
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               {editingExam ? 'Update the exam details below' : 'Fill in the details to create a new exam'}
             </p>
           </div>
@@ -303,7 +303,7 @@ const CreateExam = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Examination Name */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Examination Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -311,17 +311,17 @@ const CreateExam = () => {
                   name="examinationName"
                   value={formData.examinationName}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2.5 border ${errors.examinationName ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all`}
+                  className={`w-full px-4 py-2.5 border ${errors.examinationName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-xl focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 transition-all`}
                   placeholder="e.g., Mid-Term Examination"
                 />
                 {errors.examinationName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.examinationName}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.examinationName}</p>
                 )}
               </div>
 
               {/* Name of the Exam */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Name of the Exam <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -329,54 +329,54 @@ const CreateExam = () => {
                   name="examName"
                   value={formData.examName}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2.5 border ${errors.examName ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all`}
+                  className={`w-full px-4 py-2.5 border ${errors.examName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-xl focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 transition-all`}
                   placeholder="e.g., Mathematics Mid-Term"
                 />
                 {errors.examName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.examName}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.examName}</p>
                 )}
               </div>
 
               {/* Start Date */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Start Date <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <Calendar className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <Calendar className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                   <input
                     type="date"
                     name="startDate"
                     value={formData.startDate}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-2.5 border ${errors.startDate ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all`}
+                    className={`w-full pl-10 pr-4 py-2.5 border ${errors.startDate ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-xl focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all`}
                   />
                 </div>
                 {errors.startDate && (
-                  <p className="mt-1 text-sm text-red-600">{errors.startDate}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.startDate}</p>
                 )}
-                <p className="mt-1 text-xs text-gray-500">Format: yyyy-mm-dd</p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Format: yyyy-mm-dd</p>
               </div>
 
               {/* End Date */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   End Date <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <Calendar className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <Calendar className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                   <input
                     type="date"
                     name="endDate"
                     value={formData.endDate}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-2.5 border ${errors.endDate ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all`}
+                    className={`w-full pl-10 pr-4 py-2.5 border ${errors.endDate ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-xl focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all`}
                   />
                 </div>
                 {errors.endDate && (
-                  <p className="mt-1 text-sm text-red-600">{errors.endDate}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.endDate}</p>
                 )}
-                <p className="mt-1 text-xs text-gray-500">Format: yyyy-mm-dd</p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Format: yyyy-mm-dd</p>
               </div>
             </div>
 
@@ -386,7 +386,7 @@ const CreateExam = () => {
                 <button
                   type="button"
                   onClick={handleCancelEdit}
-                  className="flex-1 md:flex-none px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-semibold"
+                  className="flex-1 md:flex-none px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-semibold"
                   disabled={submitting}
                 >
                   Cancel
@@ -395,7 +395,7 @@ const CreateExam = () => {
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex-1 md:flex-none flex items-center justify-center space-x-2 px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-700 text-white rounded-xl hover:from-indigo-700 hover:to-purple-800 transition-all shadow-lg hover:shadow-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 md:flex-none flex items-center justify-center space-x-2 px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-indigo-700 hover:to-purple-800 dark:from-indigo-700 dark:to-purple-800 dark:hover:from-indigo-600 dark:hover:to-purple-700 text-white rounded-xl transition-all shadow-lg hover:shadow-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -410,60 +410,60 @@ const CreateExam = () => {
 
         {/* Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Exams</p>
-                <p className="text-4xl font-bold text-gray-900 mt-2">{stats.total}</p>
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Total Exams</p>
+                <p className="text-4xl font-bold text-gray-900 dark:text-gray-100 mt-2">{stats.total}</p>
               </div>
-              <div className="w-16 h-16 bg-gradient-to-br from-indigo-100 to-indigo-200 rounded-2xl flex items-center justify-center">
-                <ClipboardList className="w-8 h-8 text-indigo-600" />
+              <div className="w-16 h-16 bg-gradient-to-br from-indigo-100 to-indigo-200 dark:from-indigo-900 dark:to-indigo-800 rounded-2xl flex items-center justify-center">
+                <ClipboardList className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Published</p>
-                <p className="text-4xl font-bold text-gray-900 mt-2">{stats.published}</p>
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Published</p>
+                <p className="text-4xl font-bold text-gray-900 dark:text-gray-100 mt-2">{stats.published}</p>
               </div>
-              <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-green-200 rounded-2xl flex items-center justify-center">
-                <Eye className="w-8 h-8 text-green-600" />
+              <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900 dark:to-green-800 rounded-2xl flex items-center justify-center">
+                <Eye className="w-8 h-8 text-green-600 dark:text-green-400" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Active</p>
-                <p className="text-4xl font-bold text-gray-900 mt-2">{stats.active}</p>
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Active</p>
+                <p className="text-4xl font-bold text-gray-900 dark:text-gray-100 mt-2">{stats.active}</p>
               </div>
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl flex items-center justify-center">
-                <ClipboardList className="w-8 h-8 text-blue-600" />
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 rounded-2xl flex items-center justify-center">
+                <ClipboardList className="w-8 h-8 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Upcoming</p>
-                <p className="text-4xl font-bold text-gray-900 mt-2">{stats.upcoming}</p>
+                <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Upcoming</p>
+                <p className="text-4xl font-bold text-gray-900 dark:text-gray-100 mt-2">{stats.upcoming}</p>
               </div>
-              <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-2xl flex items-center justify-center">
-                <Calendar className="w-8 h-8 text-orange-600" />
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900 dark:to-orange-800 rounded-2xl flex items-center justify-center">
+                <Calendar className="w-8 h-8 text-orange-600 dark:text-orange-400" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden mb-8">
-          <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
-            <h3 className="text-lg font-bold text-gray-900 flex items-center space-x-2">
-              <Filter className="w-5 h-5 text-indigo-600" />
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-8">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-900">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
+              <Filter className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
               <span>Filters</span>
             </h3>
           </div>
@@ -471,14 +471,14 @@ const CreateExam = () => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Search */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Search</label>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Search</label>
                 <div className="relative">
-                  <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                   <input
                     type="text"
                     value={filters.search}
                     onChange={(e) => handleFilterChange('search', e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                     placeholder="Search exams..."
                   />
                 </div>
@@ -486,11 +486,11 @@ const CreateExam = () => {
 
               {/* Status Filter */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Status</label>
                 <select
                   value={filters.status}
                   onChange={(e) => handleFilterChange('status', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 >
                   <option value="all">All Status</option>
                   <option value="active">Active</option>
@@ -501,11 +501,11 @@ const CreateExam = () => {
 
               {/* Publish Status Filter */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Publish Status</label>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Publish Status</label>
                 <select
                   value={filters.isPublished}
                   onChange={(e) => handleFilterChange('isPublished', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 >
                   <option value="all">All</option>
                   <option value="true">Published</option>
@@ -515,11 +515,11 @@ const CreateExam = () => {
 
               {/* Academic Year Filter */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Academic Year</label>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Academic Year</label>
                 <select
                   value={filters.academicYear}
                   onChange={(e) => handleFilterChange('academicYear', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 >
                   <option value="all">All Years</option>
                   <option value="2024-2025">2024-2025</option>
@@ -531,52 +531,52 @@ const CreateExam = () => {
         </div>
 
         {/* Exams Table */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-          <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
-            <h3 className="text-lg font-bold text-gray-900 flex items-center space-x-2">
-              <ClipboardList className="w-5 h-5 text-indigo-600" />
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-900">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
+              <ClipboardList className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
               <span>All Exams ({exams.length})</span>
             </h3>
           </div>
 
           {loading ? (
             <div className="p-12 text-center">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto text-indigo-600" />
-              <p className="mt-4 text-gray-600">Loading exams...</p>
+              <Loader2 className="w-8 h-8 animate-spin mx-auto text-indigo-600 dark:text-indigo-400" />
+              <p className="mt-4 text-gray-600 dark:text-gray-400">Loading exams...</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Exam Name</th>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Start Date</th>
-                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">End Date</th>
-                    <th className="px-6 py-4 text-center text-sm font-bold text-gray-900">Status</th>
-                    <th className="px-6 py-4 text-center text-sm font-bold text-gray-900">Publish</th>
-                    <th className="px-6 py-4 text-center text-sm font-bold text-gray-900">Actions</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 dark:text-gray-100">Exam Name</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 dark:text-gray-100">Start Date</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-900 dark:text-gray-100">End Date</th>
+                    <th className="px-6 py-4 text-center text-sm font-bold text-gray-900 dark:text-gray-100">Status</th>
+                    <th className="px-6 py-4 text-center text-sm font-bold text-gray-900 dark:text-gray-100">Publish</th>
+                    <th className="px-6 py-4 text-center text-sm font-bold text-gray-900 dark:text-gray-100">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {exams.length > 0 ? (
                     exams.map((exam) => (
-                      <tr key={exam._id} className="hover:bg-gray-50 transition-colors">
+                      <tr key={exam._id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                         <td className="px-6 py-4">
                           <div>
-                            <p className="font-semibold text-gray-900">{exam.examName}</p>
-                            <p className="text-sm text-gray-500">{exam.examinationName}</p>
-                            <p className="text-xs text-gray-400">Academic Year: {exam.academicYear}</p>
+                            <p className="font-semibold text-gray-900 dark:text-gray-100">{exam.examName}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{exam.examinationName}</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500">Academic Year: {exam.academicYear}</p>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex items-center space-x-2 text-gray-700">
-                            <Calendar className="w-4 h-4 text-indigo-600" />
+                          <div className="flex items-center space-x-2 text-gray-700 dark:text-gray-300">
+                            <Calendar className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                             <span>{exam.formattedStartDate}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex items-center space-x-2 text-gray-700">
-                            <Calendar className="w-4 h-4 text-indigo-600" />
+                          <div className="flex items-center space-x-2 text-gray-700 dark:text-gray-300">
+                            <Calendar className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                             <span>{exam.formattedEndDate}</span>
                           </div>
                         </td>
@@ -584,10 +584,10 @@ const CreateExam = () => {
                           <div className="flex justify-center">
                             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
                               exam.status === 'active' 
-                                ? 'bg-green-100 text-green-700'
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200'
                                 : exam.status === 'completed'
-                                ? 'bg-blue-100 text-blue-700'
-                                : 'bg-gray-100 text-gray-700'
+                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200'
+                                : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
                             }`}>
                               {exam.status.charAt(0).toUpperCase() + exam.status.slice(1)}
                             </span>
@@ -599,8 +599,8 @@ const CreateExam = () => {
                               onClick={() => handleTogglePublish(exam._id)}
                               className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-semibold transition-all ${
                                 exam.isPublished
-                                  ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                  : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                                  ? 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900 dark:text-green-200 dark:hover:bg-green-800'
+                                  : 'bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900 dark:text-orange-200 dark:hover:bg-orange-800'
                               }`}
                             >
                               {exam.isPublished ? (
@@ -621,14 +621,14 @@ const CreateExam = () => {
                           <div className="flex items-center justify-center space-x-2">
                             <button
                               onClick={() => handleEdit(exam)}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
                               title="Edit exam"
                             >
                               <Edit2 className="w-5 h-5" />
                             </button>
                             <button
                               onClick={() => handleDelete(exam._id)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
                               title="Delete exam"
                             >
                               <Trash2 className="w-5 h-5" />
@@ -640,9 +640,9 @@ const CreateExam = () => {
                   ) : (
                     <tr>
                       <td colSpan="6" className="px-6 py-12 text-center">
-                        <ClipboardList className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                        <p className="text-gray-500">No exams found</p>
-                        <p className="text-gray-400 text-sm mt-1">Try changing your filters or create a new exam</p>
+                        <ClipboardList className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                        <p className="text-gray-500 dark:text-gray-400">No exams found</p>
+                        <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Try changing your filters or create a new exam</p>
                       </td>
                     </tr>
                   )}

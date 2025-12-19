@@ -177,105 +177,105 @@ const CreateQuestion = () => {
 
   if (loadingData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading data...</p>
+          <Loader2 className="w-12 h-12 text-blue-600 dark:text-blue-400 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-300">Loading data...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6">
       <div className="max-w-5xl mx-auto">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-6 text-sm">
           <button 
             onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-1.5 text-gray-600 hover:text-blue-600 transition-colors font-medium"
+            className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
           >
             <Home className="w-4 h-4" />
             <span>Dashboard</span>
           </button>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-600" />
           <button
             onClick={() => navigate('/dashboard/question-paper/bank')}
-            className="text-blue-600 hover:text-blue-700 font-medium"
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
           >
             Question Paper
           </button>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-900 font-semibold">Create Question</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-600" />
+          <span className="text-gray-900 dark:text-white font-semibold">Create Question</span>
         </div>
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center space-x-3">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center space-x-3">
             <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
               <FilePlus className="w-6 h-6 text-white" />
             </div>
             <span>Create New Question</span>
           </h1>
-          <p className="text-gray-600 mt-2">Add a new question to the question bank</p>
+          <p className="text-gray-600 dark:text-gray-300 mt-2">Add a new question to the question bank</p>
         </div>
 
         {/* Form */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-          <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50">
-            <h2 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
-              <FileText className="w-6 h-6 text-green-600" />
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center space-x-2">
+              <FileText className="w-6 h-6 text-green-600 dark:text-green-400" />
               <span>Question Details</span>
             </h2>
-            <p className="text-sm text-gray-600 mt-1">Fill in the information below</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">Fill in the information below</p>
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Subject and Chapter */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Subject <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="subject"
                   value={formData.subject}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2.5 border ${errors.subject ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500`}
+                  className={`w-full px-4 py-2.5 border ${errors.subject ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:focus:ring-green-400 dark:focus:border-green-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                   disabled={loading}
                 >
-                  <option value="">Select Subject</option>
+                  <option value="" className="dark:bg-gray-700">Select Subject</option>
                   {subjects.map(subject => (
-                    <option key={subject._id} value={subject._id}>
+                    <option key={subject._id} value={subject._id} className="dark:bg-gray-700">
                       {subject.name}
                     </option>
                   ))}
                 </select>
                 {errors.subject && (
-                  <p className="mt-1 text-sm text-red-600">{errors.subject}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.subject}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Chapter <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="chapter"
                   value={formData.chapter}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2.5 border ${errors.chapter ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500`}
+                  className={`w-full px-4 py-2.5 border ${errors.chapter ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:focus:ring-green-400 dark:focus:border-green-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                   disabled={!formData.subject || loading}
                 >
-                  <option value="">Select Chapter</option>
+                  <option value="" className="dark:bg-gray-700">Select Chapter</option>
                   {filteredChapters.map(chapter => (
-                    <option key={chapter._id} value={chapter._id}>
+                    <option key={chapter._id} value={chapter._id} className="dark:bg-gray-700">
                       {chapter.title} (Chapter {chapter.chapterNumber})
                     </option>
                   ))}
                 </select>
                 {errors.chapter && (
-                  <p className="mt-1 text-sm text-red-600">{errors.chapter}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.chapter}</p>
                 )}
               </div>
             </div>
@@ -283,49 +283,49 @@ const CreateQuestion = () => {
             {/* Question Type, Difficulty, and Marks */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Question Type <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="questionType"
                   value={formData.questionType}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2.5 border ${errors.questionType ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500`}
+                  className={`w-full px-4 py-2.5 border ${errors.questionType ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:focus:ring-green-400 dark:focus:border-green-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                   disabled={loading}
                 >
-                  <option value="">Select Type</option>
+                  <option value="" className="dark:bg-gray-700">Select Type</option>
                   {questionTypes.map(type => (
-                    <option key={type} value={type}>{type}</option>
+                    <option key={type} value={type} className="dark:bg-gray-700">{type}</option>
                   ))}
                 </select>
                 {errors.questionType && (
-                  <p className="mt-1 text-sm text-red-600">{errors.questionType}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.questionType}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Difficulty Level <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="difficulty"
                   value={formData.difficulty}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2.5 border ${errors.difficulty ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500`}
+                  className={`w-full px-4 py-2.5 border ${errors.difficulty ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:focus:ring-green-400 dark:focus:border-green-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                   disabled={loading}
                 >
-                  <option value="">Select Difficulty</option>
+                  <option value="" className="dark:bg-gray-700">Select Difficulty</option>
                   {difficultyLevels.map(level => (
-                    <option key={level} value={level}>{level}</option>
+                    <option key={level} value={level} className="dark:bg-gray-700">{level}</option>
                   ))}
                 </select>
                 {errors.difficulty && (
-                  <p className="mt-1 text-sm text-red-600">{errors.difficulty}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.difficulty}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Marks <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -333,47 +333,47 @@ const CreateQuestion = () => {
                   name="marks"
                   value={formData.marks}
                   onChange={handleChange}
-                  className={`w-full px-4 py-2.5 border ${errors.marks ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500`}
+                  className={`w-full px-4 py-2.5 border ${errors.marks ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:focus:ring-green-400 dark:focus:border-green-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                   placeholder="e.g., 5"
                   min="1"
                   max="100"
                   disabled={loading}
                 />
                 {errors.marks && (
-                  <p className="mt-1 text-sm text-red-600">{errors.marks}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.marks}</p>
                 )}
               </div>
             </div>
 
             {/* Question */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 Question <span className="text-red-500">*</span>
               </label>
               <textarea
                 name="question"
                 value={formData.question}
                 onChange={handleChange}
-                className={`w-full px-4 py-3 border ${errors.question ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 min-h-[120px] resize-y`}
+                className={`w-full px-4 py-3 border ${errors.question ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:focus:ring-green-400 dark:focus:border-green-400 min-h-[120px] resize-y bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                 placeholder="Enter the question here..."
                 disabled={loading}
               />
               {errors.question && (
-                <p className="mt-1 text-sm text-red-600">{errors.question}</p>
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.question}</p>
               )}
             </div>
 
             {/* MCQ Options (only show if MCQ is selected) */}
             {formData.questionType === 'MCQ' && (
-              <div className="space-y-4 p-6 bg-blue-50 rounded-xl border border-blue-200">
-                <h3 className="font-bold text-gray-900 flex items-center space-x-2">
-                  <Hash className="w-5 h-5 text-blue-600" />
+              <div className="space-y-4 p-6 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                <h3 className="font-bold text-gray-900 dark:text-white flex items-center space-x-2">
+                  <Hash className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   <span>Multiple Choice Options</span>
                 </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Option 1 <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -381,17 +381,17 @@ const CreateQuestion = () => {
                       name="option1"
                       value={formData.option1}
                       onChange={handleChange}
-                      className={`w-full px-4 py-2.5 border ${errors.option1 ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500`}
+                      className={`w-full px-4 py-2.5 border ${errors.option1 ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:focus:ring-green-400 dark:focus:border-green-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                       placeholder="Enter option 1"
                       disabled={loading}
                     />
                     {errors.option1 && (
-                      <p className="mt-1 text-sm text-red-600">{errors.option1}</p>
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.option1}</p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Option 2 <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -399,17 +399,17 @@ const CreateQuestion = () => {
                       name="option2"
                       value={formData.option2}
                       onChange={handleChange}
-                      className={`w-full px-4 py-2.5 border ${errors.option2 ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500`}
+                      className={`w-full px-4 py-2.5 border ${errors.option2 ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:focus:ring-green-400 dark:focus:border-green-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                       placeholder="Enter option 2"
                       disabled={loading}
                     />
                     {errors.option2 && (
-                      <p className="mt-1 text-sm text-red-600">{errors.option2}</p>
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.option2}</p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Option 3 <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -417,17 +417,17 @@ const CreateQuestion = () => {
                       name="option3"
                       value={formData.option3}
                       onChange={handleChange}
-                      className={`w-full px-4 py-2.5 border ${errors.option3 ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500`}
+                      className={`w-full px-4 py-2.5 border ${errors.option3 ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:focus:ring-green-400 dark:focus:border-green-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                       placeholder="Enter option 3"
                       disabled={loading}
                     />
                     {errors.option3 && (
-                      <p className="mt-1 text-sm text-red-600">{errors.option3}</p>
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.option3}</p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Option 4 <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -435,35 +435,35 @@ const CreateQuestion = () => {
                       name="option4"
                       value={formData.option4}
                       onChange={handleChange}
-                      className={`w-full px-4 py-2.5 border ${errors.option4 ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500`}
+                      className={`w-full px-4 py-2.5 border ${errors.option4 ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:focus:ring-green-400 dark:focus:border-green-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                       placeholder="Enter option 4"
                       disabled={loading}
                     />
                     {errors.option4 && (
-                      <p className="mt-1 text-sm text-red-600">{errors.option4}</p>
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.option4}</p>
                     )}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Correct Answer <span className="text-red-500">*</span>
                   </label>
                   <select
                     name="correctAnswer"
                     value={formData.correctAnswer}
                     onChange={handleChange}
-                    className={`w-full px-4 py-2.5 border ${errors.correctAnswer ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500`}
+                    className={`w-full px-4 py-2.5 border ${errors.correctAnswer ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:focus:ring-green-400 dark:focus:border-green-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                     disabled={loading}
                   >
-                    <option value="">Select Correct Answer</option>
-                    <option value="1">Option 1</option>
-                    <option value="2">Option 2</option>
-                    <option value="3">Option 3</option>
-                    <option value="4">Option 4</option>
+                    <option value="" className="dark:bg-gray-700">Select Correct Answer</option>
+                    <option value="1" className="dark:bg-gray-700">Option 1</option>
+                    <option value="2" className="dark:bg-gray-700">Option 2</option>
+                    <option value="3" className="dark:bg-gray-700">Option 3</option>
+                    <option value="4" className="dark:bg-gray-700">Option 4</option>
                   </select>
                   {errors.correctAnswer && (
-                    <p className="mt-1 text-sm text-red-600">{errors.correctAnswer}</p>
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.correctAnswer}</p>
                   )}
                 </div>
               </div>
@@ -472,28 +472,28 @@ const CreateQuestion = () => {
             {/* Solution and Hint */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Solution <span className="text-gray-400 text-xs">(Optional)</span>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  Solution <span className="text-gray-400 dark:text-gray-500 text-xs">(Optional)</span>
                 </label>
                 <textarea
                   name="solution"
                   value={formData.solution}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 min-h-[100px] resize-y"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:focus:ring-green-400 dark:focus:border-green-400 min-h-[100px] resize-y bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="Enter the solution or answer..."
                   disabled={loading}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Hint <span className="text-gray-400 text-xs">(Optional)</span>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  Hint <span className="text-gray-400 dark:text-gray-500 text-xs">(Optional)</span>
                 </label>
                 <textarea
                   name="hint"
                   value={formData.hint}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 min-h-[100px] resize-y"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:focus:ring-green-400 dark:focus:border-green-400 min-h-[100px] resize-y bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="Enter a hint for students..."
                   disabled={loading}
                 />
@@ -502,26 +502,26 @@ const CreateQuestion = () => {
 
             {/* Preview Box */}
             {(formData.subject || formData.chapter || formData.questionType) && (
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
-                <h3 className="font-bold text-gray-900 mb-4 flex items-center space-x-2">
-                  <BookOpen className="w-5 h-5 text-green-600" />
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-xl p-6">
+                <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
+                  <BookOpen className="w-5 h-5 text-green-600 dark:text-green-400" />
                   <span>Question Preview</span>
                 </h3>
                 <div className="space-y-2 text-sm">
                   {formData.subject && (
-                    <p><span className="font-semibold text-gray-700">Subject:</span> <span className="text-gray-900">{getSubjectName(formData.subject)}</span></p>
+                    <p><span className="font-semibold text-gray-700 dark:text-gray-300">Subject:</span> <span className="text-gray-900 dark:text-white">{getSubjectName(formData.subject)}</span></p>
                   )}
                   {formData.chapter && (
-                    <p><span className="font-semibold text-gray-700">Chapter:</span> <span className="text-gray-900">{getChapterName(formData.chapter)}</span></p>
+                    <p><span className="font-semibold text-gray-700 dark:text-gray-300">Chapter:</span> <span className="text-gray-900 dark:text-white">{getChapterName(formData.chapter)}</span></p>
                   )}
                   {formData.questionType && (
-                    <p><span className="font-semibold text-gray-700">Type:</span> <span className="text-gray-900">{formData.questionType}</span></p>
+                    <p><span className="font-semibold text-gray-700 dark:text-gray-300">Type:</span> <span className="text-gray-900 dark:text-white">{formData.questionType}</span></p>
                   )}
                   {formData.difficulty && (
-                    <p><span className="font-semibold text-gray-700">Difficulty:</span> <span className="text-gray-900">{formData.difficulty}</span></p>
+                    <p><span className="font-semibold text-gray-700 dark:text-gray-300">Difficulty:</span> <span className="text-gray-900 dark:text-white">{formData.difficulty}</span></p>
                   )}
                   {formData.marks && (
-                    <p><span className="font-semibold text-gray-700">Marks:</span> <span className="text-gray-900">{formData.marks}</span></p>
+                    <p><span className="font-semibold text-gray-700 dark:text-gray-300">Marks:</span> <span className="text-gray-900 dark:text-white">{formData.marks}</span></p>
                   )}
                 </div>
               </div>
@@ -529,13 +529,13 @@ const CreateQuestion = () => {
 
             {/* Success Message */}
             {showSuccess && (
-              <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center space-x-3">
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 flex items-center space-x-3">
                 <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                   <CheckCircle2 className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="font-semibold text-green-900">Question Created Successfully!</p>
-                  <p className="text-sm text-green-700">The question has been added to the question bank.</p>
+                  <p className="font-semibold text-green-900 dark:text-green-200">Question Created Successfully!</p>
+                  <p className="text-sm text-green-700 dark:text-green-300">The question has been added to the question bank.</p>
                 </div>
               </div>
             )}
@@ -545,7 +545,7 @@ const CreateQuestion = () => {
               <button
                 type="button"
                 onClick={() => navigate('/dashboard/question-paper/bank')}
-                className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={loading}
               >
                 Cancel
@@ -553,7 +553,7 @@ const CreateQuestion = () => {
               <button
                 type="submit"
                 disabled={loading || showSuccess}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-700 text-white rounded-xl hover:from-green-700 hover:to-emerald-800 transition-all shadow-lg hover:shadow-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-700 text-white rounded-xl hover:from-green-700 hover:to-emerald-800 transition-all shadow-lg hover:shadow-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center dark:from-green-700 dark:to-emerald-800 dark:hover:from-green-800 dark:hover:to-emerald-900"
               >
                 {loading ? (
                   <>

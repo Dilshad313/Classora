@@ -212,48 +212,48 @@ const ResultCard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-6 text-sm print:hidden">
           <button 
             onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-1.5 text-gray-600 hover:text-blue-600 transition-colors font-medium"
+            className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
           >
             <Home className="w-4 h-4" />
             <span>Dashboard</span>
           </button>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-blue-600 font-semibold">Exams</span>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-900 font-semibold">Result Card</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-blue-600 dark:text-blue-400 font-semibold">Exams</span>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+          <span className="text-gray-900 dark:text-gray-100 font-semibold">Result Card</span>
         </div>
 
         {/* Header */}
         <div className="mb-8 print:hidden">
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center space-x-3">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-3">
             <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg">
               <Award className="w-6 h-6 text-white" />
             </div>
             <span>Generate Result Card</span>
           </h1>
-          <p className="text-gray-600 mt-2">Generate and download student result cards</p>
+          <p className="text-gray-600 dark:text-gray-300 mt-2">Generate and download student result cards</p>
         </div>
 
         {/* Selection Section */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden mb-8 print:hidden">
-          <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50">
-            <h2 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
-              <FileText className="w-6 h-6 text-purple-600" />
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-8 print:hidden">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-gray-800 dark:to-gray-900">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
+              <FileText className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               <span>Result Generation Options</span>
             </h2>
-            <p className="text-sm text-gray-600 mt-1">Select the type and details for result generation</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Select the type and details for result generation</p>
           </div>
 
           <div className="p-6 space-y-6">
             {/* Result Type Selection */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                 Select Result Type <span className="text-red-500">*</span>
               </label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -261,21 +261,21 @@ const ResultCard = () => {
                   onClick={() => handleFilterChange('resultType', 'school')}
                   className={`p-4 rounded-xl border-2 transition-all text-left ${
                     filters.resultType === 'school'
-                      ? 'border-purple-500 bg-purple-50'
-                      : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
+                      ? 'border-purple-500 dark:border-purple-400 bg-purple-50 dark:bg-gray-800'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
                 >
                   <div className="flex items-center space-x-3">
                     <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
                       filters.resultType === 'school'
                         ? 'bg-gradient-to-br from-purple-500 to-pink-600'
-                        : 'bg-gray-100'
+                        : 'bg-gray-100 dark:bg-gray-700'
                     }`}>
-                      <Building2 className={`w-6 h-6 ${filters.resultType === 'school' ? 'text-white' : 'text-gray-400'}`} />
+                      <Building2 className={`w-6 h-6 ${filters.resultType === 'school' ? 'text-white' : 'text-gray-400 dark:text-gray-500'}`} />
                     </div>
                     <div>
-                      <p className="font-bold text-gray-900">School-wise</p>
-                      <p className="text-sm text-gray-600">Generate for any student in school</p>
+                      <p className="font-bold text-gray-900 dark:text-gray-100">School-wise</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Generate for any student in school</p>
                     </div>
                   </div>
                 </button>
@@ -284,21 +284,21 @@ const ResultCard = () => {
                   onClick={() => handleFilterChange('resultType', 'class')}
                   className={`p-4 rounded-xl border-2 transition-all text-left ${
                     filters.resultType === 'class'
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                      ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-gray-800'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
                 >
                   <div className="flex items-center space-x-3">
                     <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
                       filters.resultType === 'class'
                         ? 'bg-gradient-to-br from-blue-500 to-cyan-600'
-                        : 'bg-gray-100'
+                        : 'bg-gray-100 dark:bg-gray-700'
                     }`}>
-                      <Users className={`w-6 h-6 ${filters.resultType === 'class' ? 'text-white' : 'text-gray-400'}`} />
+                      <Users className={`w-6 h-6 ${filters.resultType === 'class' ? 'text-white' : 'text-gray-400 dark:text-gray-500'}`} />
                     </div>
                     <div>
-                      <p className="font-bold text-gray-900">Class-wise</p>
-                      <p className="text-sm text-gray-600">Generate for students in a class</p>
+                      <p className="font-bold text-gray-900 dark:text-gray-100">Class-wise</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Generate for students in a class</p>
                     </div>
                   </div>
                 </button>
@@ -309,13 +309,13 @@ const ResultCard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Select Exam */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Select Exam <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={filters.selectedExam}
                   onChange={(e) => handleFilterChange('selectedExam', e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-purple-500 dark:focus:border-purple-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all"
                   disabled={loading}
                 >
                   <option value="">Choose Exam...</option>
@@ -328,13 +328,13 @@ const ResultCard = () => {
               {/* Select Class (only for class-wise) */}
               {filters.resultType === 'class' && (
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Select Class <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={filters.selectedClass}
                     onChange={handleClassChange}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-purple-500 dark:focus:border-purple-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all"
                     disabled={loading}
                   >
                     <option value="">Choose Class...</option>
@@ -349,13 +349,13 @@ const ResultCard = () => {
 
               {/* Select Student */}
               <div className={filters.resultType === 'school' ? 'md:col-span-2' : ''}>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Select Student <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={filters.selectedStudentId}
                   onChange={handleStudentChange}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-purple-500 dark:focus:border-purple-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all"
                   disabled={loading || (!filters.selectedClass && filters.resultType === 'class')}
                 >
                   <option value="">Choose Student...</option>
@@ -366,7 +366,7 @@ const ResultCard = () => {
                   ))}
                 </select>
                 {selectedStudent && (
-                  <p className="mt-2 text-sm text-green-600 font-semibold">
+                  <p className="mt-2 text-sm text-green-600 dark:text-green-400 font-semibold">
                     ✓ Selected: {selectedStudent.studentName} (Reg No: {selectedStudent.registrationNo})
                   </p>
                 )}
@@ -378,7 +378,7 @@ const ResultCard = () => {
               <button
                 onClick={handleGenerateResult}
                 disabled={generating || !filters.selectedExam || !selectedStudent}
-                className="flex items-center space-x-2 px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-700 text-white rounded-xl hover:from-purple-700 hover:to-pink-800 transition-all shadow-lg hover:shadow-xl font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center space-x-2 px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-700 hover:from-purple-700 hover:to-pink-800 dark:from-purple-700 dark:to-pink-800 dark:hover:from-purple-600 dark:hover:to-pink-700 text-white rounded-xl transition-all shadow-lg hover:shadow-xl font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {generating ? (
                   <Loader2 className="w-6 h-6 animate-spin" />
@@ -416,9 +416,9 @@ const ResultCard = () => {
             <div className="p-8">
               {/* School Header */}
               <div className="text-center mb-8 border-b-2 border-gray-300 pb-6">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Classora School</h1>
-                <p className="text-gray-600">123 Education Street, Knowledge City - 123456</p>
-                <p className="text-gray-600">Phone: +91 1234567890 | Email: info@classora.edu</p>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-900">Classora School</h1>
+                <p className="text-gray-600 dark:text-gray-700">123 Education Street, Knowledge City - 123456</p>
+                <p className="text-gray-600 dark:text-gray-700">Phone: +91 1234567890 | Email: info@classora.edu</p>
                 <div className="mt-4 inline-block px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-bold text-lg">
                   STUDENT RESULT CARD
                 </div>
@@ -428,33 +428,33 @@ const ResultCard = () => {
               <div className="grid grid-cols-2 gap-6 mb-8">
                 <div className="space-y-3">
                   <div className="flex">
-                    <span className="font-semibold text-gray-700 w-40">Student Name:</span>
-                    <span className="text-gray-900">{generatedResult.studentInfo?.studentName || generatedResult.student?.studentName}</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-700 w-40">Student Name:</span>
+                    <span className="text-gray-900 dark:text-gray-900">{generatedResult.studentInfo?.studentName || generatedResult.student?.studentName}</span>
                   </div>
                   <div className="flex">
-                    <span className="font-semibold text-gray-700 w-40">Father's Name:</span>
-                    <span className="text-gray-900">{generatedResult.studentInfo?.fatherName || generatedResult.student?.fatherName}</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-700 w-40">Father's Name:</span>
+                    <span className="text-gray-900 dark:text-gray-900">{generatedResult.studentInfo?.fatherName || generatedResult.student?.fatherName}</span>
                   </div>
                   <div className="flex">
-                    <span className="font-semibold text-gray-700 w-40">Registration No:</span>
-                    <span className="text-gray-900">{generatedResult.studentInfo?.registrationNo || generatedResult.student?.registrationNo}</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-700 w-40">Registration No:</span>
+                    <span className="text-gray-900 dark:text-gray-900">{generatedResult.studentInfo?.registrationNo || generatedResult.student?.registrationNo}</span>
                   </div>
                 </div>
                 <div className="space-y-3">
                   <div className="flex">
-                    <span className="font-semibold text-gray-700 w-40">Roll Number:</span>
-                    <span className="text-gray-900">{generatedResult.studentInfo?.rollNumber || generatedResult.student?.rollNumber}</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-700 w-40">Roll Number:</span>
+                    <span className="text-gray-900 dark:text-gray-900">{generatedResult.studentInfo?.rollNumber || generatedResult.student?.rollNumber}</span>
                   </div>
                   <div className="flex">
-                    <span className="font-semibold text-gray-700 w-40">Class:</span>
-                    <span className="text-gray-900">
+                    <span className="font-semibold text-gray-700 dark:text-gray-700 w-40">Class:</span>
+                    <span className="text-gray-900 dark:text-gray-900">
                       {generatedResult.classInfo?.className || generatedResult.class?.className} - 
                       {generatedResult.classInfo?.section || generatedResult.class?.section}
                     </span>
                   </div>
                   <div className="flex">
-                    <span className="font-semibold text-gray-700 w-40">Date of Birth:</span>
-                    <span className="text-gray-900">
+                    <span className="font-semibold text-gray-700 dark:text-gray-700 w-40">Date of Birth:</span>
+                    <span className="text-gray-900 dark:text-gray-900">
                       {new Date(generatedResult.studentInfo?.dateOfBirth || generatedResult.student?.dateOfBirth).toLocaleDateString('en-IN')}
                     </span>
                   </div>
@@ -464,12 +464,12 @@ const ResultCard = () => {
               <div className="mb-6">
                 <div className="flex justify-between">
                   <div className="flex">
-                    <span className="font-semibold text-gray-700 w-40">Examination:</span>
-                    <span className="text-gray-900">{generatedResult.examInfo?.examName || generatedResult.exam?.examName}</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-700 w-40">Examination:</span>
+                    <span className="text-gray-900 dark:text-gray-900">{generatedResult.examInfo?.examName || generatedResult.exam?.examName}</span>
                   </div>
                   <div className="flex">
-                    <span className="font-semibold text-gray-700 w-40">Date of Issue:</span>
-                    <span className="text-gray-900">
+                    <span className="font-semibold text-gray-700 dark:text-gray-700 w-40">Date of Issue:</span>
+                    <span className="text-gray-900 dark:text-gray-900">
                       {new Date(generatedResult.generatedDate).toLocaleDateString('en-IN')}
                     </span>
                   </div>
@@ -478,7 +478,7 @@ const ResultCard = () => {
 
               {/* Marks Table */}
               <div className="mb-8">
-                <h3 className="text-xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-purple-50 to-pink-50 p-3 rounded-lg">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-900 mb-4 bg-gradient-to-r from-purple-50 to-pink-50 p-3 rounded-lg">
                   Academic Performance
                 </h3>
                 <table className="w-full border-2 border-gray-300">
@@ -494,10 +494,10 @@ const ResultCard = () => {
                   <tbody>
                     {generatedResult.subjects.map((subject, index) => (
                       <tr key={index} className="hover:bg-gray-50">
-                        <td className="border border-gray-300 px-4 py-3 font-semibold">{subject.subjectName}</td>
-                        <td className="border border-gray-300 px-4 py-3 text-center">{subject.marksObtained}</td>
-                        <td className="border border-gray-300 px-4 py-3 text-center">{subject.maxMarks}</td>
-                        <td className="border border-gray-300 px-4 py-3 text-center">{subject.percentage}%</td>
+                        <td className="border border-gray-300 px-4 py-3 font-semibold text-gray-900 dark:text-gray-900">{subject.subjectName}</td>
+                        <td className="border border-gray-300 px-4 py-3 text-center text-gray-900 dark:text-gray-900">{subject.marksObtained}</td>
+                        <td className="border border-gray-300 px-4 py-3 text-center text-gray-900 dark:text-gray-900">{subject.maxMarks}</td>
+                        <td className="border border-gray-300 px-4 py-3 text-center text-gray-900 dark:text-gray-900">{subject.percentage}%</td>
                         <td className="border border-gray-300 px-4 py-3 text-center">
                           <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-bold">
                             {subject.grade}
@@ -506,10 +506,10 @@ const ResultCard = () => {
                       </tr>
                     ))}
                     <tr className="bg-gradient-to-r from-purple-50 to-pink-50 font-bold">
-                      <td className="border border-gray-300 px-4 py-3">TOTAL</td>
-                      <td className="border border-gray-300 px-4 py-3 text-center text-lg">{generatedResult.totalObtained}</td>
-                      <td className="border border-gray-300 px-4 py-3 text-center text-lg">{generatedResult.totalMaxMarks}</td>
-                      <td className="border border-gray-300 px-4 py-3 text-center text-lg">{generatedResult.overallPercentage}%</td>
+                      <td className="border border-gray-300 px-4 py-3 text-gray-900 dark:text-gray-900">TOTAL</td>
+                      <td className="border border-gray-300 px-4 py-3 text-center text-lg text-gray-900 dark:text-gray-900">{generatedResult.totalObtained}</td>
+                      <td className="border border-gray-300 px-4 py-3 text-center text-lg text-gray-900 dark:text-gray-900">{generatedResult.totalMaxMarks}</td>
+                      <td className="border border-gray-300 px-4 py-3 text-center text-lg text-gray-900 dark:text-gray-900">{generatedResult.overallPercentage}%</td>
                       <td className="border border-gray-300 px-4 py-3 text-center">
                         <span className="inline-block px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-bold text-lg">
                           {generatedResult.overallGrade}
@@ -522,24 +522,24 @@ const ResultCard = () => {
 
               {/* Grade Scale */}
               <div className="mb-8 p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-bold text-gray-900 mb-3">Grading Scale:</h4>
+                <h4 className="font-bold text-gray-900 dark:text-gray-900 mb-3">Grading Scale:</h4>
                 <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-sm">
-                  <div className="text-center p-2 bg-white rounded border border-gray-200">
+                  <div className="text-center p-2 bg-white rounded border border-gray-200 text-gray-900 dark:text-gray-900">
                     <span className="font-bold">A+</span>: 90-100%
                   </div>
-                  <div className="text-center p-2 bg-white rounded border border-gray-200">
+                  <div className="text-center p-2 bg-white rounded border border-gray-200 text-gray-900 dark:text-gray-900">
                     <span className="font-bold">A</span>: 80-89%
                   </div>
-                  <div className="text-center p-2 bg-white rounded border border-gray-200">
+                  <div className="text-center p-2 bg-white rounded border border-gray-200 text-gray-900 dark:text-gray-900">
                     <span className="font-bold">B+</span>: 70-79%
                   </div>
-                  <div className="text-center p-2 bg-white rounded border border-gray-200">
+                  <div className="text-center p-2 bg-white rounded border border-gray-200 text-gray-900 dark:text-gray-900">
                     <span className="font-bold">B</span>: 60-69%
                   </div>
-                  <div className="text-center p-2 bg-white rounded border border-gray-200">
+                  <div className="text-center p-2 bg-white rounded border border-gray-200 text-gray-900 dark:text-gray-900">
                     <span className="font-bold">C</span>: 50-59%
                   </div>
-                  <div className="text-center p-2 bg-white rounded border border-gray-200">
+                  <div className="text-center p-2 bg-white rounded border border-gray-200 text-gray-900 dark:text-gray-900">
                     <span className="font-bold">D</span>: 40-49%
                   </div>
                 </div>
@@ -548,16 +548,16 @@ const ResultCard = () => {
               {/* Result Summary */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border-2 border-green-200">
-                  <p className="text-sm font-semibold text-gray-700 mb-1">Overall Result</p>
-                  <p className="text-2xl font-bold text-green-700">{generatedResult.resultStatus}</p>
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-700 mb-1">Overall Result</p>
+                  <p className="text-2xl font-bold text-green-700 dark:text-green-700">{generatedResult.resultStatus}</p>
                 </div>
                 <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border-2 border-blue-200">
-                  <p className="text-sm font-semibold text-gray-700 mb-1">Remarks</p>
-                  <p className="text-2xl font-bold text-blue-700">{generatedResult.overallRemarks}</p>
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-700 mb-1">Remarks</p>
+                  <p className="text-2xl font-bold text-blue-700 dark:text-blue-700">{generatedResult.overallRemarks}</p>
                 </div>
                 <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border-2 border-purple-200">
-                  <p className="text-sm font-semibold text-gray-700 mb-1">Overall Percentage</p>
-                  <p className="text-2xl font-bold text-purple-700">{generatedResult.overallPercentage}%</p>
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-700 mb-1">Overall Percentage</p>
+                  <p className="text-2xl font-bold text-purple-700 dark:text-purple-700">{generatedResult.overallPercentage}%</p>
                 </div>
               </div>
 
@@ -566,19 +566,19 @@ const ResultCard = () => {
                 <div className="text-center">
                   <div className="h-16 mb-2 border-b-2 border-gray-400"></div>
                   <div className="pt-2">
-                    <p className="font-semibold text-gray-900">Class Teacher</p>
+                    <p className="font-semibold text-gray-900 dark:text-gray-900">Class Teacher</p>
                   </div>
                 </div>
                 <div className="text-center">
                   <div className="h-16 mb-2 border-b-2 border-gray-400"></div>
                   <div className="pt-2">
-                    <p className="font-semibold text-gray-900">Principal</p>
+                    <p className="font-semibold text-gray-900 dark:text-gray-900">Principal</p>
                   </div>
                 </div>
                 <div className="text-center">
                   <div className="h-16 mb-2 border-b-2 border-gray-400"></div>
                   <div className="pt-2">
-                    <p className="font-semibold text-gray-900">Parent's Signature</p>
+                    <p className="font-semibold text-gray-900 dark:text-gray-900">Parent's Signature</p>
                   </div>
                 </div>
               </div>
@@ -588,10 +588,10 @@ const ResultCard = () => {
 
         {/* Empty State */}
         {!generatedResult && (
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-12 text-center print:hidden">
-            <Award className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-gray-900 mb-2">No Result Generated Yet</h3>
-            <p className="text-gray-500">Select the options above and click "Generate Result Card" to view the result</p>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-12 text-center print:hidden">
+            <Award className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">No Result Generated Yet</h3>
+            <p className="text-gray-500 dark:text-gray-400">Select the options above and click "Generate Result Card" to view the result</p>
           </div>
         )}
       </div>
