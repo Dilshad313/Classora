@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Users, DollarSign, Calendar, UserCheck, UserX, UserPlus, ArrowUpRight, ArrowDownRight, ChevronLeft, ChevronRight, TrendingUp, Briefcase, Settings } from 'lucide-react';
+import { ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, AreaChart, Area, BarChart, Bar } from 'recharts';
 import { getDashboardStats } from '../../../services/dashboardApi';
 import toast from 'react-hot-toast';
 
@@ -25,9 +26,9 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchStats = async (showLoader = false) => {
       try {
-        setLoading(true);
+        if (showLoader) setLoading(true);
         const data = await getDashboardStats();
         if (data) {
           setStats(data);
@@ -36,11 +37,13 @@ const Home = () => {
         console.error('Error fetching dashboard stats:', error);
         toast.error('Failed to load dashboard statistics');
       } finally {
-        setLoading(false);
+        if (showLoader) setLoading(false);
       }
     };
 
-    fetchStats();
+    fetchStats(true);
+    const intervalId = setInterval(() => fetchStats(false), 30000);
+    return () => clearInterval(intervalId);
   }, []);
 
   // Format currency
@@ -66,6 +69,38 @@ const Home = () => {
   const { daysInMonth, startingDayOfWeek } = getDaysInMonth(currentDate);
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const monthShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  const buildLastNMonths = (n) => {
+    const base = new Date();
+    base.setDate(1);
+    const out = [];
+    for (let i = n - 1; i >= 0; i--) {
+      const d = new Date(base.getFullYear(), base.getMonth() - i, 1);
+      out.push({
+        month: d.getMonth() + 1,
+        year: d.getFullYear(),
+        label: `${monthShort[d.getMonth()]} ${String(d.getFullYear()).slice(-2)}`
+      });
+    }
+    return out;
+  };
+
+  const last6 = buildLastNMonths(6);
+  const incomeMap = new Map(stats.incomeStats.map(it => [`${it._id.year}-${it._id.month}`, it.total]));
+  const studentMap = new Map(stats.studentStats.map(it => [`${it._id.year}-${it._id.month}`, it.count]));
+
+  const incomeChartData = last6.map(m => ({
+    label: m.label,
+    total: Number(incomeMap.get(`${m.year}-${m.month}`) || 0)
+  }));
+
+  const studentChartData = last6.map(m => ({
+    label: m.label,
+    count: Number(studentMap.get(`${m.year}-${m.month}`) || 0)
+  }));
+
+
 
   const previousMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
@@ -272,6 +307,42 @@ const Home = () => {
                 </div>
               </div>
             ))}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="card">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">Income (Last 6 Months)</h3>
+              </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={incomeChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="#6b7280" />
+                    <YAxis tick={{ fontSize: 12 }} stroke="#6b7280" />
+                    <Tooltip />
+                    <Area type="monotone" dataKey="total" stroke="#10b981" fill="#10b981" fillOpacity={0.2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">Admissions (Last 6 Months)</h3>
+              </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={studentChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="#6b7280" />
+                    <YAxis tick={{ fontSize: 12 }} stroke="#6b7280" allowDecimals={false} />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           </div>
         </div>
 

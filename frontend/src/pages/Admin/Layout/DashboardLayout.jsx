@@ -519,7 +519,7 @@ const DashboardLayout = () => {
       <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 fixed w-full z-30 top-0 transition-colors duration-200">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Left Section */}
+            {/* Left Section - Classora name with special styling */}
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -527,7 +527,7 @@ const DashboardLayout = () => {
               >
                 <Menu className="w-5 h-5" />
               </button>
-              
+
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
@@ -535,24 +535,11 @@ const DashboardLayout = () => {
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
 
-              <div className="flex items-center gap-3">
-                {instituteData.logoUrl ? (
-                  <img 
-                    src={instituteData.logoUrl} 
-                    alt="Institute Logo" 
-                    className="w-10 h-10 object-contain rounded-lg bg-white"
-                  />
-                ) : (
-                  <div className="bg-gradient-to-br from-primary-600 to-secondary-600 p-2 rounded-lg">
-                    <GraduationCap className="w-6 h-6 text-white" />
-                  </div>
-                )}
-                <div className="hidden sm:block">
-                  <h1 className="text-lg font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
-                    {instituteData.name}
-                  </h1>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{instituteData.tagline}</p>
-                </div>
+              {/* Classora name with special styling */}
+              <div className="hidden sm:flex items-center">
+                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-teal-500 bg-clip-text text-transparent">
+                  Classora
+                </h1>
               </div>
             </div>
 
@@ -712,19 +699,33 @@ const DashboardLayout = () => {
                     <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{user.name}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user.role}</p>
                   </div>
-                  <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-full flex items-center justify-center text-white font-semibold">
-                    {user.name?.charAt(0) || 'U'}
-                  </div>
+                  {/* Using institute logo instead of circular name initial */}
+                  {instituteData.logoUrl ? (
+                    <img
+                      src={instituteData.logoUrl}
+                      alt="Institute Logo"
+                      className="w-10 h-10 object-contain rounded-full bg-white border border-gray-200 dark:border-gray-600"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-full flex items-center justify-center text-white font-semibold">
+                      {user.name?.charAt(0) || 'U'}
+                    </div>
+                  )}
                   <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-300" />
                 </button>
 
                 {userMenuOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2">
+                    {/* Institution information added inside the profile dropdown */}
+                    <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                      <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{instituteData.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{instituteData.tagline}</p>
+                    </div>
                     <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                       <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{user.name}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
                     </div>
-                    <button 
+                    <button
                       onClick={() => {
                         navigate('/dashboard/settings/institute');
                         setUserMenuOpen(false);
@@ -734,7 +735,7 @@ const DashboardLayout = () => {
                       <User className="w-4 h-4" />
                       My Profile
                     </button>
-                    <button 
+                    <button
                       onClick={() => {
                         navigate('/dashboard/settings/account');
                         setUserMenuOpen(false);
