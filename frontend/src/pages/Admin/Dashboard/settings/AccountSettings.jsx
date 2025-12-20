@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Eye, 
-  EyeOff, 
-  Edit3, 
-  Save, 
-  X, 
-  Upload, 
+import {
+  Eye,
+  EyeOff,
+  Edit3,
+  Save,
+  X,
+  Upload,
   Trash2,
   User,
   Mail,
@@ -31,30 +31,34 @@ import {
   Building,
   MapPin,
   Phone,
-  Globe
+  Globe,
+  Type
 } from 'lucide-react';
-import { 
+import { useInstituteProfile } from '../../../../context/InstituteProfileContext';
+import {
   getAccountSettings,
   updateAccountSettings,
   changePassword,
   deleteAccount
 } from '../../../../services/accountSettingsApi';
-import { 
-  getAllUploads, 
-  uploadFile, 
-  deleteUpload, 
-  getStorageStats 
+import {
+  getAllUploads,
+  uploadFile,
+  deleteUpload,
+  getStorageStats
 } from '../../../../services/uploadApi';
-import { 
-  getBilling, 
-  updateBilling, 
-  updateSubscription, 
-  cancelSubscription, 
-  getInvoices 
+import {
+  getBilling,
+  updateBilling,
+  updateSubscription,
+  cancelSubscription,
+  getInvoices
 } from '../../../../services/billingApi';
 
 export const AccountSettings = () => {
   const navigate = useNavigate();
+  const instituteProfileContext = useInstituteProfile();
+  const { instituteData = {}, updateInstituteData = () => {} } = instituteProfileContext || {};
   const [activeSection, setActiveSection] = useState('account');
   const [showPassword, setShowPassword] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -91,24 +95,40 @@ export const AccountSettings = () => {
       setLoading(true);
       const data = await getAccountSettings();
       setAccountData(data);
-      
+
+      // Update institute profile context if institute data exists in response
+      if (data.institute && updateInstituteData) {
+        updateInstituteData({
+          instituteName: data.institute.instituteName || '',
+          tagline: data.institute.tagline || '',
+          phone: data.institute.phone || '',
+          address: data.institute.address || '',
+          country: data.institute.country || '',
+          website: data.institute.website || '',
+          logoUrl: data.institute.logoUrl || null
+        });
+      }
+
       // Fetch uploads and storage stats
       const uploadsData = await getAllUploads();
       setUploads(uploadsData);
-      
+
       const stats = await getStorageStats();
       setStorageStats(stats);
-      
+
       // Fetch billing data
       const billing = await getBilling();
       setBillingData(billing);
-      
+
       const invoicesData = await getInvoices();
       setInvoices(invoicesData);
-      
+
     } catch (error) {
       console.error('Error fetching account data:', error);
-      showNotification('error', `Failed to load data: ${error.message}`);
+      // Only show notification if it's not already showing
+      if (!notification.show) {
+        showNotification('error', `Failed to load data: ${error.message}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -124,9 +144,16 @@ export const AccountSettings = () => {
     if (!accountData) return;
     
     setTempData({
+      // User data
       fullName: accountData.user?.fullName || '',
       email: accountData.user?.email || '',
-      currency: accountData.billing?.currency || 'USD'
+      currency: accountData.billing?.currency || 'USD',
+      // Institute data
+      instituteName: instituteData.instituteName || '',
+      tagline: instituteData.tagline || '',
+      phone: instituteData.phone || '',
+      address: instituteData.address || '',
+      website: instituteData.website || ''
     });
     setIsEditing(true);
   };
@@ -135,15 +162,19 @@ export const AccountSettings = () => {
   const handleSave = async () => {
     const newErrors = {};
 
-    // Validation
+    // Validation for user data
     if (!tempData.fullName?.trim()) {
       newErrors.fullName = 'Full name is required';
     }
-
     if (!tempData.email?.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(tempData.email)) {
       newErrors.email = 'Email is invalid';
+    }
+
+    // Validation for institute data
+    if (!tempData.instituteName?.trim()) {
+      newErrors.instituteName = 'Institute name is required';
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -153,13 +184,31 @@ export const AccountSettings = () => {
 
     try {
       setSubmitting(true);
-      const updatedData = await updateAccountSettings({
+      const payload = {
+        // User data
         fullName: tempData.fullName,
         email: tempData.email,
-        currency: tempData.currency
-      });
+        currency: tempData.currency,
+        // Institute data
+        institute: {
+          instituteName: tempData.instituteName,
+          tagline: tempData.tagline,
+          phone: tempData.phone,
+          address: tempData.address,
+          website: tempData.website,
+        }
+      };
 
+      const updatedData = await updateAccountSettings(payload);
+
+      // Update local account state
       setAccountData(updatedData);
+
+      // Update institute context
+      if (updatedData.institute && updateInstituteData) {
+        updateInstituteData(updatedData.institute);
+      }
+
       setIsEditing(false);
       setTempData({});
       setErrors({});
@@ -181,17 +230,25 @@ export const AccountSettings = () => {
 
   // Handle input change
   const handleInputChange = (field, value) => {
-    setTempData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    const [section, key] = field.split('.');
 
-    // Clear error when user types
-    if (errors[field]) {
-      setErrors(prev => ({
+    if (key) {
+      setTempData(prev => ({
         ...prev,
-        [field]: ''
+        [section]: {
+          ...prev[section],
+          [key]: value
+        }
       }));
+    } else {
+      setTempData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
+
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
@@ -380,16 +437,20 @@ export const AccountSettings = () => {
 
         {/* Header */}
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 mb-6 border border-gray-100 dark:border-gray-700">
-          <div className="flex items-center gap-4">
-            <div className="p-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg">
-              <UserCog className="w-8 h-8 text-white" />
+          <div className="flex items-center gap-6">
+            <div className="w-20 h-20 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-gray-700 dark:to-gray-600 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
+              {instituteData.logoUrl ? (
+                <img src={instituteData.logoUrl} alt="Institute Logo" className="w-full h-full object-cover" />
+              ) : (
+                <Building className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
+              )}
             </div>
             <div>
               <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-1">
-                Account Settings
+                {instituteData.instituteName || 'Account Settings'}
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
-                Manage your account preferences and security settings
+                Manage your institute profile, account preferences, and security settings.
               </p>
             </div>
           </div>
@@ -448,6 +509,7 @@ export const AccountSettings = () => {
             {activeSection === 'account' && (
               <AccountSection 
                 accountData={accountData}
+                instituteData={instituteData}
                 isEditing={isEditing}
                 tempData={tempData}
                 errors={errors}
@@ -507,6 +569,7 @@ export const AccountSettings = () => {
 // Account Section Component
 const AccountSection = ({
   accountData,
+  instituteData,
   isEditing,
   tempData,
   errors,
@@ -558,28 +621,7 @@ const AccountSection = ({
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700">
-      {/* Profile Header */}
-      <div className="p-8 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20">
-        <div className="flex items-center gap-6">
-          <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-            <span className="text-white text-3xl font-bold">
-              {accountData.user?.fullName?.charAt(0).toUpperCase() || 'U'}
-            </span>
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {accountData.user?.fullName || 'User'}
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
-              {accountData.user?.email || 'No email'}
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Member since {new Date(accountData.user?.createdAt).toLocaleDateString()}
-            </p>
-          </div>
-        </div>
-      </div>
-
+      
       {/* Account Details */}
       <div className="p-8">
         <div className="flex items-center justify-between mb-8">
@@ -619,6 +661,117 @@ const AccountSection = ({
         </div>
 
         <div className="space-y-6">
+          {/* Institute Information */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start pt-6 border-t border-gray-200 dark:border-gray-700">
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-800 dark:text-gray-200">
+              <Building className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <span>Institute Name:</span>
+            </label>
+            <div className="md:col-span-2">
+              {isEditing ? (
+                <>
+                  <input
+                    type="text"
+                    value={tempData.instituteName}
+                    onChange={(e) => onInputChange('instituteName', e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-900/50 dark:text-white transition-all"
+                  />
+                  {errors.instituteName && (
+                    <p className="text-red-600 text-sm mt-1">{errors.instituteName}</p>
+                  )}
+                </>
+              ) : (
+                <span className="text-gray-900 dark:text-white font-medium">
+                  {instituteData.instituteName || 'Not set'}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-800 dark:text-gray-200">
+              <Type className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <span>Tagline:</span>
+            </label>
+            <div className="md:col-span-2">
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={tempData.tagline}
+                  onChange={(e) => onInputChange('tagline', e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-900/50 dark:text-white transition-all"
+                />
+              ) : (
+                <span className="text-gray-900 dark:text-white font-medium">
+                  {instituteData.tagline || 'Not set'}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-800 dark:text-gray-200">
+              <Phone className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <span>Phone:</span>
+            </label>
+            <div className="md:col-span-2">
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={tempData.phone}
+                  onChange={(e) => onInputChange('phone', e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-900/50 dark:text-white transition-all"
+                />
+              ) : (
+                <span className="text-gray-900 dark:text-white font-medium">
+                  {instituteData.phone || 'Not set'}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-800 dark:text-gray-200">
+              <MapPin className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <span>Address:</span>
+            </label>
+            <div className="md:col-span-2">
+              {isEditing ? (
+                <textarea
+                  value={tempData.address}
+                  onChange={(e) => onInputChange('address', e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-900/50 dark:text-white transition-all"
+                  rows="3"
+                />
+              ) : (
+                <span className="text-gray-900 dark:text-white font-medium">
+                  {instituteData.address || 'Not set'}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-800 dark:text-gray-200">
+              <Globe className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <span>Website:</span>
+            </label>
+            <div className="md:col-span-2">
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={tempData.website}
+                  onChange={(e) => onInputChange('website', e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-900/50 dark:text-white transition-all"
+                />
+              ) : (
+                <span className="text-gray-900 dark:text-white font-medium">
+                  {instituteData.website || 'Not set'}
+                </span>
+              )}
+            </div>
+          </div>
+
           {/* Full Name */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
             <label className="flex items-center gap-2 text-sm font-semibold text-gray-800 dark:text-gray-200">
@@ -719,6 +872,7 @@ const AccountSection = ({
           </div>
         </div>
 
+        
         {/* Change Password Section */}
         <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
           <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">

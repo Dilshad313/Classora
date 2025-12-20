@@ -410,6 +410,46 @@ export const uploadClassMaterial = async (formData) => {
   }
 };
 
+/**
+ * Get all class names only
+ * @returns {Promise<Array<string>>} Array of class names
+ */
+export const getAllClassNames = async () => {
+  try {
+    console.log('🔗 Fetching all class names');
+
+    const response = await fetch(`${API_BASE_URL}/classes/names`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getAuthToken()}`
+      },
+    });
+
+    if (!response.ok) {
+      let errorMessage = `HTTP error! status: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+
+    if (result.success) {
+      return result.data; // Array of class names
+    } else {
+      throw new Error(result.message || 'Failed to fetch class names');
+    }
+  } catch (error) {
+    console.error(`❌ Failed to fetch class names:`, error.message);
+    throw error;
+  }
+};
+
 // Export as API object
 export const classApi = {
   getAllClasses,
@@ -420,7 +460,8 @@ export const classApi = {
   bulkDeleteClasses,
   updateClassStatus,
   getClassStats,
-  uploadClassMaterial
+  uploadClassMaterial,
+  getAllClassNames
 };
 
 export default classApi;

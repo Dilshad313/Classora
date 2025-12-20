@@ -28,6 +28,7 @@ import {
   deleteFeeStructure,
   getFeeStructureStats
 } from '../../../../services/feeStructureApi';
+import { getAllClassNames } from '../../../../services/classApi';
 
 export const FeeStructure = () => {
   const navigate = useNavigate();
@@ -59,11 +60,14 @@ export const FeeStructure = () => {
   });
 
   const [errors, setErrors] = useState({});
+  const [classNames, setClassNames] = useState([]);
+  const [classNamesLoading, setClassNamesLoading] = useState(false);
 
-  // Fetch fee structures on component mount
+  // Fetch fee structures and class names on component mount
   useEffect(() => {
     fetchFeeStructures();
     fetchStatistics();
+    fetchClassNames();
   }, []);
 
   const fetchFeeStructures = async () => {
@@ -93,6 +97,21 @@ export const FeeStructure = () => {
     }
   };
 
+  const fetchClassNames = async () => {
+    try {
+      setClassNamesLoading(true);
+      const names = await getAllClassNames();
+      console.log('📚 Class names received:', names);
+      setClassNames(names);
+    } catch (error) {
+      console.error('❌ Failed to fetch class names:', error);
+      toast.error(error.message || 'Failed to load class names');
+      setClassNames([]); // Ensure we have an empty array on error
+    } finally {
+      setClassNamesLoading(false);
+    }
+  };
+
   const handleInputChange = (field, value) => {
     if (['tuitionFee', 'admissionFee', 'examFee', 'labFee', 'libraryFee', 'sportsFee'].includes(field)) {
       if (value && !/^\d*\.?\d*$/.test(value)) {
@@ -119,7 +138,10 @@ export const FeeStructure = () => {
 
     if (!formData.className.trim()) {
       newErrors.className = 'Class name is required';
+    } else if (!classNames.includes(formData.className.trim())) {
+      newErrors.className = 'Please select a valid class from the list';
     }
+
     if (!formData.academicYear.trim()) {
       newErrors.academicYear = 'Academic year is required';
     }
@@ -536,17 +558,29 @@ export const FeeStructure = () => {
                       <span>Class Name</span>
                       <span className="text-red-500 text-base">*</span>
                     </label>
-                    <input
-                      type="text"
-                      value={formData.className}
-                      onChange={(e) => handleInputChange('className', e.target.value)}
-                      className={`w-full px-4 py-3.5 border-2 rounded-xl focus:ring-2 focus:outline-none transition-all duration-200 font-medium bg-gray-50 dark:bg-gray-900/50 ${
-                        errors.className
-                          ? 'border-red-500 focus:ring-red-200 focus:border-red-500'
-                          : 'border-gray-200 dark:border-gray-700 focus:ring-purple-200 focus:border-purple-500'
-                      }`}
-                      placeholder="e.g., Class 1, Class 2"
-                    />
+                    {classNamesLoading ? (
+                      <div className="w-full px-4 py-3.5 border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900/50 flex items-center">
+                        <Loader2 className="w-5 h-5 text-gray-400 animate-spin mr-3" />
+                        <span className="text-gray-500 dark:text-gray-400">Loading classes...</span>
+                      </div>
+                    ) : (
+                      <select
+                        value={formData.className}
+                        onChange={(e) => handleInputChange('className', e.target.value)}
+                        className={`w-full px-4 py-3.5 border-2 rounded-xl focus:ring-2 focus:outline-none transition-all duration-200 font-medium bg-gray-50 dark:bg-gray-900/50 ${
+                          errors.className
+                            ? 'border-red-500 focus:ring-red-200 focus:border-red-500'
+                            : 'border-gray-200 dark:border-gray-700 focus:ring-purple-200 focus:border-purple-500'
+                        }`}
+                      >
+                        <option value="">Select a class</option>
+                        {classNames.map((className, index) => (
+                          <option key={index} value={className}>
+                            {className}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                     {errors.className && (
                       <p className="text-red-500 text-xs flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />

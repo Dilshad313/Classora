@@ -16,67 +16,77 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getInstituteProfile, updateInstituteProfile, deleteInstituteLogo } from "../../../../services/instituteApi";
+import { useInstituteProfile } from "../../../../context/InstituteProfileContext";
 
 export const InstituteProfile = ({ onClose }) => {
+  const { instituteData, loading: contextLoading, setInstituteData, updateInstituteData, setLoading: setContextLoading } = useInstituteProfile();
   const [formData, setFormData] = useState({
-    instituteName: "",
-    tagline: "",
-    phone: "",
-    address: "",
-    country: "",
-    website: "",
+    instituteName: instituteData.instituteName || "",
+    tagline: instituteData.tagline || "",
+    phone: instituteData.phone || "",
+    address: instituteData.address || "",
+    country: instituteData.country || "",
+    website: instituteData.website || "",
   });
 
   const [logoFile, setLogoFile] = useState(null);
-  const [logoPreview, setLogoPreview] = useState(null);
-  const [existingLogoUrl, setExistingLogoUrl] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(instituteData.logoUrl || null);
+  const [existingLogoUrl, setExistingLogoUrl] = useState(instituteData.logoUrl || null);
 
-  const [loading, setLoading] = useState(false);
+  const [localLoading, setLocalLoading] = useState(contextLoading);
   const [saving, setSaving] = useState(false);
+  const [fetchAttempted, setFetchAttempted] = useState(false); // Track if the fetch has been attempted
 
   // ==========================
   // Fetch Profile
   // ==========================
   useEffect(() => {
     const fetchProfile = async () => {
+      if (fetchAttempted) return;
+
+      setFetchAttempted(true);
+      setContextLoading(true);
+      console.log('🔍 Fetching institute profile...');
+
       try {
-        setLoading(true);
-        console.log('🔍 Fetching institute profile...');
-        
         const data = await getInstituteProfile();
         console.log('📊 Profile data received:', data);
 
         if (data) {
-          setFormData({
+          const profileData = {
             instituteName: data.instituteName || "",
             tagline: data.tagline || "",
             phone: data.phone || "",
             address: data.address || "",
             country: data.country || "",
             website: data.website || "",
-          });
+            logoUrl: data.logoUrl || null
+          };
 
-          // Set logo URL from database
+          setInstituteData(profileData);
+          setFormData(profileData);
+
           if (data.logoUrl) {
             console.log('🖼️ Logo URL found:', data.logoUrl);
             setExistingLogoUrl(data.logoUrl);
             setLogoPreview(data.logoUrl);
           } else {
             console.log('ℹ️ No logo URL in database');
+            setExistingLogoUrl(null);
+            setLogoPreview(null);
           }
-
           toast.success("Profile loaded successfully");
         }
       } catch (err) {
         console.error("❌ Profile load error:", err);
         toast.error(err.message || "Failed to load profile");
       } finally {
-        setLoading(false);
+        setContextLoading(false);
       }
     };
 
     fetchProfile();
-  }, []);
+  }, [fetchAttempted, setInstituteData, setContextLoading]);
 
   // ==========================
   // Handle Form Changes
@@ -84,6 +94,9 @@ export const InstituteProfile = ({ onClose }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+
+    // Sync with context
+    updateInstituteData({ [name]: value });
   };
 
   // ==========================
@@ -157,11 +170,18 @@ export const InstituteProfile = ({ onClose }) => {
       if (!confirmDelete) return;
 
       toast.loading("Deleting logo...", { id: "deleteLogo" });
-      
+
       const updatedProfile = await deleteInstituteLogo();
-      
+
       console.log('✅ Logo deleted, updated profile:', updatedProfile);
-      
+
+      // Update context with the response data
+      const profileData = {
+        logoUrl: updatedProfile.logoUrl || null
+      };
+
+      updateInstituteData(profileData);
+
       setLogoFile(null);
       setLogoPreview(null);
       setExistingLogoUrl(null);
@@ -180,7 +200,7 @@ export const InstituteProfile = ({ onClose }) => {
     e.preventDefault();
 
     // Validate required fields
-    if (!formData.instituteName?.trim() || !formData.tagline?.trim() || 
+    if (!formData.instituteName?.trim() || !formData.tagline?.trim() ||
         !formData.phone?.trim() || !formData.address?.trim() || !formData.country?.trim()) {
       toast.error("Please fill all required fields");
       return;
@@ -205,42 +225,59 @@ export const InstituteProfile = ({ onClose }) => {
 
       console.log('✅ Profile updated successfully:', updatedData);
 
-      // Update state with response
-      setFormData({
+      // Update context with the response data
+      const profileData = {
         instituteName: updatedData.instituteName || formData.instituteName,
         tagline: updatedData.tagline || formData.tagline,
         phone: updatedData.phone || formData.phone,
         address: updatedData.address || formData.address,
         country: updatedData.country || formData.country,
         website: updatedData.website || formData.website,
-      });
+        logoUrl: updatedData.logoUrl || null
+      };
+
+      updateInstituteData(profileData);
+
+      // Update state with response - ensure we use the returned data
+      setFormData(prev => ({
+        ...prev,
+        instituteName: updatedData.instituteName || prev.instituteName,
+        tagline: updatedData.tagline || prev.tagline,
+        phone: updatedData.phone || prev.phone,
+        address: updatedData.address || prev.address,
+        country: updatedData.country || prev.country,
+        website: updatedData.website || prev.website,
+      }));
 
       // Update logo state
-      if (updatedData.logoUrl) {
-        console.log('🖼️ New logo URL received:', updatedData.logoUrl);
+      if (updatedData.logoUrl !== undefined) { // Check if logoUrl property exists in response
+        console.log('🖼️ Logo URL in response:', updatedData.logoUrl);
         setExistingLogoUrl(updatedData.logoUrl);
         setLogoPreview(updatedData.logoUrl);
         setLogoFile(null); // Clear the file after successful upload
-        
+
         // Clear file input
         const fileInput = document.getElementById('logo');
         if (fileInput) {
           fileInput.value = '';
         }
+      } else {
+        // If logoUrl is not in response, keep the current logo
+        console.log('ℹ️ Logo URL not in response, keeping current logo');
       }
 
       toast.success("Profile Updated Successfully!", { id: "updateProfile" });
 
     } catch (err) {
       console.error("❌ Profile update error:", err);
-      toast.error(err.message || "Update failed!", { id: "updateProfile" });
+      toast.error(err.message || "Update failed! Please try again.", { id: "updateProfile" });
     } finally {
       setSaving(false);
     }
   };
 
   // Loading state
-  if (loading) {
+  if (localLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-gray-50 to-indigo-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
         <div className="text-center">

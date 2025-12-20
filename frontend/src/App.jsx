@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from "react-hot-toast";
+import { InstituteProfileProvider } from './context/InstituteProfileContext';
 
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -219,7 +220,8 @@ function App() {
           },
         }}
       />
-     
+
+    <InstituteProfileProvider>
     <Router>
       <Routes>
         {/* Public Routes */}
@@ -431,6 +433,7 @@ function App() {
         <Route path="*" element={<SmartRedirect />} />
       </Routes>
     </Router>
+    </InstituteProfileProvider>
     </>
   );
 }

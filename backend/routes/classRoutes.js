@@ -11,7 +11,8 @@ import {
   deleteMaterial,
   getClassStats,
   bulkDeleteClasses,
-  updateClassStatus
+  updateClassStatus,
+  getAllClassNames
 } from '../controllers/classController.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { uploadMiddleware, handleMulterError } from '../middleware/upload.js';
@@ -62,6 +63,9 @@ router.use(authenticateToken);
 
 // Statistics route (must be before :id routes)
 router.get('/stats/summary', getClassStats);
+
+// Get all class names route
+router.get('/names', getAllClassNames);
 
 // Bulk operations
 router.post('/bulk-delete', bulkDeleteClasses);

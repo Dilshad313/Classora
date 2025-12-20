@@ -37,7 +37,7 @@ export const getInstituteProfile = async (req, res) => {
 export const updateInstituteProfile = async (req, res) => {
   try {
     console.log('📥 PUT /api/institute/profile');
-    
+
     const userId = req.user.id;
     const {
       instituteName,
@@ -56,6 +56,35 @@ export const updateInstituteProfile = async (req, res) => {
       });
     }
 
+    // Validate other required fields according to schema
+    if (!tagline?.trim()) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Tagline is required'
+      });
+    }
+
+    if (!phone?.trim()) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Phone number is required'
+      });
+    }
+
+    if (!address?.trim()) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Address is required'
+      });
+    }
+
+    if (!country?.trim()) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Country is required'
+      });
+    }
+
     // Get current profile to check for existing logo
     let profile = await InstituteProfile.getProfile(userId);
     let logoUrl = profile.logoUrl;
@@ -65,7 +94,7 @@ export const updateInstituteProfile = async (req, res) => {
     if (req.file) {
       try {
         console.log('🖼️ Processing logo upload...');
-        
+
         // Delete old logo from Cloudinary if exists
         if (logoPublicId) {
           await deleteFromCloudinary(logoPublicId);
@@ -73,12 +102,14 @@ export const updateInstituteProfile = async (req, res) => {
 
         // Upload new logo to Cloudinary
         const uploadResult = await uploadToCloudinary(req.file.buffer, 'institute-profiles');
-        
+
         logoUrl = uploadResult.url;
         logoPublicId = uploadResult.publicId;
-        
+
       } catch (uploadError) {
         console.error('❌ Logo upload error:', uploadError);
+        // If logo upload fails, try to continue with other updates
+        // But return an error since logo upload is part of the request
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
           success: false,
           message: `Failed to upload logo: ${uploadError.message}`
@@ -101,15 +132,34 @@ export const updateInstituteProfile = async (req, res) => {
     // Update the profile using the static method that handles creation if needed
     profile = await InstituteProfile.updateProfileByAdmin(userId, updateData);
 
+    // Double-check that the update was successful by fetching the updated profile
+    const updatedProfile = await InstituteProfile.findOne({ createdBy: userId });
+    if (!updatedProfile) {
+      console.error('❌ Profile not found after update');
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Failed to verify updated profile'
+      });
+    }
+
     console.log('✅ Institute profile updated');
 
     res.status(StatusCodes.OK).json({
       success: true,
       message: 'Institute profile updated successfully',
-      data: profile
+      data: updatedProfile
     });
   } catch (error) {
     console.error('❌ Update institute profile error:', error);
+    // Check if it's a validation error from Mongoose
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Validation error',
+        errors: errors
+      });
+    }
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: error.message || 'Failed to update institute profile'

@@ -15,12 +15,12 @@ const instituteProfileValidation = Joi.object({
 
   tagline: Joi.string()
     .trim()
-    .min(3)
+    .min(5)
     .max(500)
     .required()
     .messages({
       'string.empty': 'Tagline is required',
-      'string.min': 'Tagline must be at least 3 characters long',
+      'string.min': 'Tagline must be at least 5 characters long',
       'string.max': 'Tagline cannot exceed 500 characters',
       'any.required': 'Tagline is required'
     }),
@@ -29,7 +29,7 @@ const instituteProfileValidation = Joi.object({
     .trim()
     .min(5)
     .max(20)
-    .pattern(/^[\+]?[0-9\s\-\(\)]{5,}$/)
+    .pattern(/^[\+]?[0-9\s\-\(\)]{5,20}$/)
     .required()
     .messages({
       'string.empty': 'Phone number is required',
@@ -41,12 +41,12 @@ const instituteProfileValidation = Joi.object({
 
   address: Joi.string()
     .trim()
-    .min(5)
+    .min(10)
     .max(1000)
     .required()
     .messages({
       'string.empty': 'Address is required',
-      'string.min': 'Address must be at least 5 characters long',
+      'string.min': 'Address must be at least 10 characters long',
       'string.max': 'Address cannot exceed 1000 characters',
       'any.required': 'Address is required'
     }),

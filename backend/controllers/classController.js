@@ -638,6 +638,40 @@ export const bulkDeleteClasses = async (req, res) => {
 };
 
 /**
+ * Get all class names for current user
+ * @route GET /api/classes/names
+ */
+export const getAllClassNames = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    console.log(`📥 GET /api/classes/names for user: ${userId}`);
+
+    // Get all classes for the user
+    const classes = await Class.find({ createdBy: userId }, 'className').sort({ className: 1 });
+
+    // Extract unique class names (combining className and section if needed)
+    const classNames = classes.map(classObj => classObj.className);
+
+    // Remove duplicates if any
+    const uniqueClassNames = [...new Set(classNames)];
+
+    console.log(`✅ Found ${uniqueClassNames.length} unique class names`);
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'Class names retrieved successfully',
+      data: uniqueClassNames
+    });
+  } catch (error) {
+    console.error('❌ Get class names error:', error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: 'Failed to fetch class names'
+    });
+  }
+};
+
+/**
  * Update class status
  * @route PATCH /api/classes/:id/status
  */
@@ -646,9 +680,9 @@ export const updateClassStatus = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
     const { status } = req.body;
-    
+
     console.log(`📥 PATCH /api/classes/${id}/status`);
-    
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
@@ -669,14 +703,14 @@ export const updateClassStatus = async (req, res) => {
       { status },
       { new: true }
     );
-    
+
     if (!classData) {
       return res.status(StatusCodes.NOT_FOUND).json({
         success: false,
         message: 'Class not found'
       });
     }
-    
+
     console.log('✅ Class status updated:', status);
 
     res.status(StatusCodes.OK).json({
