@@ -1,7 +1,7 @@
 // pages/NewClasses.jsx
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { 
   Plus, 
   Users, 
@@ -24,62 +24,86 @@ import {
   AlertCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { createClass, uploadClassMaterial } from '../../../../services/classApi';
+import { createClass, updateClass, getClassById, uploadClassMaterial } from '../../../../services/classApi';
 import { getEmployees } from '../../../../services/employeesApi';
+import { getAllSubjects } from '../../../../services/subjectApi';
 
 const NewClasses = () => {
+  const { id } = useParams(); // Get class ID from URL for editing
+  const isEditMode = Boolean(id);
   const navigate = useNavigate();
+  const [pageTitle, setPageTitle] = useState('Create New Class');
   const [activeTab, setActiveTab] = useState('basic');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [subjects, setSubjects] = useState([]);
+  const [teachers, setTeachers] = useState([]);
   
   // Check for teachers on mount
   useEffect(() => {
-    const checkTeachers = async () => {
-      try {
-        const result = await getEmployees(); // Fetch all employees
-        const employees = result.data || [];
-        // Assuming 'teacher' role or just any employee for now based on "0 Teachers!" message
-        // Better to check if any exist. 
-        // If the system distinguishes roles, we might want to filter.
-        // But for now, if count is 0, show toast.
-        
-        if (employees.length === 0) {
-          toast((t) => (
-            <div className="flex flex-col gap-2 items-center">
-              <span className="font-medium text-center">
-                0 Teachers! Please add a Teacher first.
-              </span>
-              <button
-                onClick={() => {
-                  toast.dismiss(t.id);
-                  navigate('/dashboard/employee/add-new');
-                }}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
-              >
-                Ok, Add Teacher
-              </button>
-            </div>
-          ), {
-            duration: 6000,
-            position: 'top-center',
-            style: {
-              minWidth: '300px',
-            },
+    if (isEditMode) {
+      const fetchClassData = async () => {
+        try {
+          const classData = await getClassById(id);
+          setFormData({
+            className: classData.className || '',
+            subject: classData.subject || '',
+            teacher: classData.teacher || '',
+            room: classData.room || '',
+            scheduleType: classData.schedule?.type || 'regular',
+            startDate: classData.schedule?.startDate?.split('T')[0] || '',
+            endDate: classData.schedule?.endDate?.split('T')[0] || '',
+            days: classData.schedule?.days || [],
+            startTime: classData.schedule?.startTime || '',
+            endTime: classData.schedule?.endTime || '',
+            maxStudents: classData.maxStudents || '',
+            feeType: classData.fees?.type || 'free',
+            amount: classData.fees?.amount || '',
+            currency: classData.fees?.currency || 'USD',
+            description: classData.description || '',
+            materials: [], // Materials are not fetched for edit
           });
+          setPageTitle(`Edit Class: ${classData.className}`);
+        } catch (error) {
+          console.error('Failed to fetch class data:', error);
+          toast.error('Failed to load class data for editing.');
+          navigate('/dashboard/classes/all');
+        }
+      };
+      fetchClassData();
+    }
+  }, [id, isEditMode, navigate]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [subjectsRes, teachersRes] = await Promise.all([
+          getAllSubjects(),
+          getEmployees({ role: 'Teacher' }) // Assuming you can filter by role
+        ]);
+
+        if (subjectsRes.success) {
+          setSubjects(subjectsRes.data);
+        }
+
+        if (teachersRes.success) {
+          setTeachers(teachersRes.data);
+          if (teachersRes.data.length === 0) {
+            toast.error('No teachers found. Please add a teacher first.');
+          }
         }
       } catch (error) {
-        console.error('Failed to check teachers:', error);
+        console.error('Failed to fetch initial data:', error);
+        toast.error('Failed to load subjects or teachers.');
       }
     };
 
-    checkTeachers();
+    fetchData();
   }, [navigate]);
   
   const [formData, setFormData] = useState({
     // Basic Information
     className: '',
-    section: '',
     subject: '',
     teacher: '',
     room: '',
@@ -179,12 +203,13 @@ const NewClasses = () => {
       newErrors.className = 'Class name is required';
     }
 
-    if (!formData.section.trim()) {
-      newErrors.section = 'Section is required';
+
+    if (!formData.subject) {
+      newErrors.subject = 'Subject is required';
     }
 
-    if (!formData.subject.trim()) {
-      newErrors.subject = 'Subject is required';
+    if (!formData.teacher) {
+      newErrors.teacher = 'Teacher is required';
     }
 
     if (formData.feeType !== 'free' && !formData.amount) {
@@ -204,15 +229,14 @@ const NewClasses = () => {
     }
 
     setIsLoading(true);
-    const loadingToast = toast.loading('Creating class...');
+    const loadingToast = toast.loading(isEditMode ? 'Updating class...' : 'Creating class...');
 
     try {
       // Prepare class data
       const classData = {
         className: formData.className.trim(),
-        section: formData.section.trim(),
-        subject: formData.subject.trim(),
-        teacher: formData.teacher.trim() || 'Not assigned',
+        subject: formData.subject,
+        teacher: formData.teacher,
         room: formData.room.trim() || 'TBA',
         schedule: {
           type: formData.scheduleType,
@@ -231,8 +255,12 @@ const NewClasses = () => {
         description: formData.description.trim()
       };
 
-      // Create class
-      const createdClass = await createClass(classData);
+      // Create or update class
+      const response = isEditMode 
+        ? await updateClass(id, classData)
+        : await createClass(classData);
+
+      const createdClass = response; // Use the response directly
 
       // Upload materials if any
       if (formData.materials.length > 0) {
@@ -249,7 +277,7 @@ const NewClasses = () => {
       }
 
       toast.dismiss(loadingToast);
-      toast.success('Class created successfully!', {
+      toast.success(isEditMode ? 'Class updated successfully!' : 'Class created successfully!', {
         icon: '🎉',
         duration: 3000
       });
@@ -271,7 +299,6 @@ const NewClasses = () => {
   const handleReset = () => {
     setFormData({
       className: '',
-      section: '',
       subject: '',
       teacher: '',
       room: '',
@@ -316,7 +343,7 @@ const NewClasses = () => {
   const isTabComplete = (tabName) => {
     switch (tabName) {
       case 'basic':
-        return formData.className && formData.section && formData.subject;
+        return formData.className && formData.subject && formData.teacher;
       case 'schedule':
         return formData.days.length > 0;
       case 'students':
@@ -367,7 +394,7 @@ const NewClasses = () => {
                 <GraduationCap className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-1">Create New Class</h1>
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-1">{pageTitle}</h1>
                 <p className="text-gray-600 dark:text-gray-400">Add a new class to your institution</p>
               </div>
             </div>
@@ -438,40 +465,23 @@ const NewClasses = () => {
                     )}
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Section <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.section}
-                      onChange={(e) => handleInputChange('section', e.target.value)}
-                      placeholder="e.g., A, B, Morning Batch"
-                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white transition-all ${
-                        errors.section ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    />
-                    {errors.section && (
-                      <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                        <AlertCircle className="w-4 h-4" />
-                        {errors.section}
-                      </p>
-                    )}
-                  </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Subject <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
+                    <select
                       value={formData.subject}
                       onChange={(e) => handleInputChange('subject', e.target.value)}
-                      placeholder="e.g., Mathematics, Science, English"
                       className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white transition-all ${
                         errors.subject ? 'border-red-500' : 'border-gray-300'
                       }`}
-                    />
+                    >
+                      <option value="">Select Subject</option>
+                      {subjects.map(subject => (
+                        <option key={subject._id} value={subject.name}>{subject.name}</option>
+                      ))}
+                    </select>
                     {errors.subject && (
                       <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
                         <AlertCircle className="w-4 h-4" />
@@ -482,18 +492,32 @@ const NewClasses = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Teacher
+                      Teacher <span className="text-red-500">*</span>
                     </label>
-                    <div className="relative">
-                      <User className="w-5 h-5 absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="text"
-                        value={formData.teacher}
-                        onChange={(e) => handleInputChange('teacher', e.target.value)}
-                        placeholder="Enter teacher name"
-                        className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white transition-all"
-                      />
-                    </div>
+                    <select
+                      value={formData.teacher}
+                      onChange={(e) => handleInputChange('teacher', e.target.value)}
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white transition-all ${
+                        errors.teacher ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    >
+                      <option value="">Select Teacher</option>
+                      {teachers.map(teacher => (
+                        <option
+                          key={teacher._id}
+                          value={teacher.employeeName}
+                          className="text-gray-800 bg-white dark:bg-gray-700 dark:text-white"
+                        >
+                          {teacher.employeeName}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.teacher && (
+                      <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {errors.teacher}
+                      </p>
+                    )}
                   </div>
 
                   <div className="md:col-span-2">

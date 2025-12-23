@@ -251,6 +251,8 @@ function App() {
           {/* Classes Routes */}
           <Route path="classes/all" element={<AllClasses/>} />
           <Route path="classes/new" element={<NewClasses/>} />
+          <Route path="classes/:id/edit" element={<NewClasses />} />
+          <Route path="classes/:id" element={<AllStudents />} />
 
           {/* Subjects Routes */}
           <Route path="subjects/classes" element={<ClassesWithSubject/>} />

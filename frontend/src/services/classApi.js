@@ -328,7 +328,7 @@ export const getClassStats = async () => {
   try {
     console.log('🔗 Fetching class statistics');
     
-    const response = await fetch(`${API_BASE_URL}/classes/stats`, {
+    const response = await fetch(`${API_BASE_URL}/classes/stats/summary`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

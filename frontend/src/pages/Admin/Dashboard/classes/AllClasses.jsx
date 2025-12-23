@@ -37,7 +37,12 @@ const AllClasses = () => {
   const location = useLocation();
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState({
+    totalClasses: 0,
+    activeClasses: 0,
+    totalStudents: 0,
+    averageStudentsPerClass: 0
+  });
   const [searchTerm, setSearchTerm] = useState(() => {
     const params = new URLSearchParams(location.search);
     return params.get('search') || '';
@@ -83,8 +88,14 @@ const AllClasses = () => {
   // Fetch stats
   const fetchStats = async () => {
     try {
-      const statsData = await getClassStats();
-      setStats(statsData);
+      const data = await getClassStats();
+      const averageStudentsPerClass = data.totalClasses > 0
+        ? data.totalStudents / data.totalClasses
+        : 0;
+      setStats({
+        ...data,
+        averageStudentsPerClass
+      });
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
@@ -307,9 +318,9 @@ const AllClasses = () => {
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Avg Attendance</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Avg Students/Class</p>
                   <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">
-                    {stats.avgAttendance?.toFixed(1) || 0}%
+                    {stats.averageStudentsPerClass?.toFixed(1) || 0}
                   </p>
                 </div>
                 <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-xl">
