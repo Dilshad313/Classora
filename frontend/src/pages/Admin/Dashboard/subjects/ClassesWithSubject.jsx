@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Plus, 
@@ -21,8 +21,10 @@ import {
   Calendar,
   Clock,
   CheckCircle,
-  XCircle
+  XCircle,
+  AlertCircle // Added AlertCircle icon
 } from 'lucide-react';
+import toast from 'react-hot-toast'; // Added toast for notifications
 import { 
   fetchClassesWithSubjects, 
   fetchSubjectStats, 
@@ -49,6 +51,10 @@ const ClassesWithSubject = () => {
     requiredSubjects: 0,
     optionalSubjects: 0
   });
+  
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null); // Stores {id, name} of class to delete
+  const [selectedClassForView, setSelectedClassForView] = useState(null); // For View Details modal
 
   // Load data on mount
   useEffect(() => {
@@ -101,9 +107,14 @@ const ClassesWithSubject = () => {
   };
 
   const handleDeleteClass = async (id, className) => {
-    if (!window.confirm(`Are you sure you want to remove subjects from "${className}"?\n\nThis action cannot be undone.`)) {
-      return;
-    }
+    setShowDeleteConfirm({ id, name: className });
+  };
+
+  const confirmDelete = async () => {
+    if (!showDeleteConfirm) return;
+    
+    const { id, name } = showDeleteConfirm;
+    const loadingToast = toast.loading(`Removing subjects from "${name}"...`);
     
     try {
       setDeleting(id);
@@ -116,13 +127,24 @@ const ClassesWithSubject = () => {
       const newStats = await fetchSubjectStats();
       setStats(newStats);
       
-      alert('✅ Subject assignment deleted successfully');
+      toast.success(`Successfully removed subjects from "${name}"`, { id: loadingToast });
     } catch (error) {
       console.error('❌ Delete error:', error);
-      alert(`Failed to delete: ${error.message}`);
+      toast.error(`Failed to delete: ${error.message}`, { id: loadingToast });
     } finally {
       setDeleting(null);
+      setShowDeleteConfirm(null);
     }
+  };
+
+  const handleEdit = (classItem) => {
+    setOpenMenuId(null);
+    navigate(`/dashboard/subjects/assign?edit=${classItem.id}&classId=${classItem.classId}`);
+  };
+
+  const handleViewDetails = (classItem) => {
+    setOpenMenuId(null);
+    setSelectedClassForView(classItem);
   };
 
   const handleRefresh = () => {
@@ -366,7 +388,9 @@ const ClassesWithSubject = () => {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-bold text-gray-900 dark:text-white text-lg truncate">{classItem.className}</h3>
+                          <h3 className="font-bold text-gray-900 dark:text-white text-lg truncate">
+                            {classItem.className.split('- Section')[0].trim()}
+                          </h3>
                           {classItem.status && (
                             <span className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${getStatusColor(classItem.status)}`}>
                               {getStatusIcon(classItem.status)}
@@ -383,9 +407,42 @@ const ClassesWithSubject = () => {
                         </div>
                       </div>
                       <div className="relative">
-                        <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                          <MoreVertical className="w-4 h-4 text-gray-400" />
+                        <button 
+                          onClick={() => setOpenMenuId(openMenuId === classItem.id ? null : classItem.id)}
+                          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                        >
+                          <MoreVertical className="w-5 h-5 text-gray-400" />
                         </button>
+                        
+                        {openMenuId === classItem.id && (
+                          <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 py-2 z-50 animate-in fade-in zoom-in duration-200">
+                            <button
+                              onClick={() => handleViewDetails(classItem)}
+                              className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors text-left"
+                            >
+                              <Eye className="w-4 h-4 text-blue-500" />
+                              <span>View Details</span>
+                            </button>
+                            <button
+                              onClick={() => handleEdit(classItem)}
+                              className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors text-left"
+                            >
+                              <Edit3 className="w-4 h-4 text-purple-500" />
+                              <span>Edit</span>
+                            </button>
+                            <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+                            <button
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                handleDeleteClass(classItem.id, classItem.className);
+                              }}
+                              className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              <span>Remove</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -440,15 +497,12 @@ const ClassesWithSubject = () => {
                     </div>
                   </div>
 
-                  {/* Actions */}
+                  {/* Actions Footer */}
                   <div className="p-5 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 rounded-b-2xl">
                     <div className="flex items-center justify-between">
                       <button 
                         className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium px-3 py-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                        onClick={() => {
-                          // Navigate to class details or subject details
-                          alert(`Viewing details for ${classItem.className}`);
-                        }}
+                        onClick={() => handleViewDetails(classItem)}
                       >
                         <Eye className="w-4 h-4" />
                         <span>View Details</span>
@@ -457,10 +511,7 @@ const ClassesWithSubject = () => {
                       <div className="flex items-center space-x-1">
                         <button 
                           className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                          onClick={() => {
-                            // Navigate to edit page
-                            navigate(`/dashboard/subjects/assign?edit=${classItem.id}&classId=${classItem.classId}`);
-                          }}
+                          onClick={() => handleEdit(classItem)}
                           title="Edit Subjects"
                         >
                           <Edit3 className="w-4 h-4" />
@@ -543,8 +594,153 @@ const ClassesWithSubject = () => {
           </div>
         )}
       </div>
+
+      {/* View Details Modal */}
+      {selectedClassForView && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden border border-gray-100 dark:border-gray-700 transform animate-in zoom-in slide-in-from-bottom-8 duration-300">
+            {/* Modal Header */}
+            <div className="relative p-8 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/10 dark:to-pink-900/10">
+              <button 
+                onClick={() => setSelectedClassForView(null)}
+                className="absolute top-6 right-6 p-2 hover:bg-white dark:hover:bg-gray-700 rounded-full shadow-sm transition-all hover:rotate-90"
+              >
+                <XCircle className="w-6 h-6 text-gray-400 hover:text-red-500" />
+              </button>
+              
+              <div className="flex items-center gap-5">
+                <div className="p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
+                  <BookMarked className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {selectedClassForView.className.split('- Section')[0].trim()}
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
+                    Detailed Subject Configuration
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-8 overflow-y-auto max-h-[calc(90vh-180px)] custom-scrollbar">
+              {/* Info Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
+                <div className="p-4 bg-gray-50 dark:bg-gray-900/40 rounded-2xl border border-gray-100 dark:border-gray-700">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold mb-1">Teacher</p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{selectedClassForView.teacher}</p>
+                </div>
+                <div className="p-4 bg-gray-50 dark:bg-gray-900/40 rounded-2xl border border-gray-100 dark:border-gray-700">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold mb-1">Total Marks</p>
+                  <p className="text-sm font-bold text-green-600 dark:text-green-400">{selectedClassForView.totalMarks}</p>
+                </div>
+                <div className="p-4 bg-gray-50 dark:bg-gray-900/40 rounded-2xl border border-gray-100 dark:border-gray-700">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold mb-1">Subject Count</p>
+                  <p className="text-sm font-bold text-purple-600 dark:text-purple-400">{selectedClassForView.subjects?.length || 0}</p>
+                </div>
+              </div>
+
+              {/* Subjects Table */}
+              <div className="bg-gray-50 dark:bg-gray-900/40 rounded-3xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+                <div className="px-6 py-4 bg-white dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-700">
+                  <h4 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-purple-500" />
+                    Assigned Subjects
+                  </h4>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="text-left border-b border-gray-100 dark:border-gray-800">
+                        <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">#</th>
+                        <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Subject Name</th>
+                        <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Marks</th>
+                        <th className="px-6 py-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center">Type</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                      {selectedClassForView.subjects?.map((subject, idx) => (
+                        <tr key={idx} className="hover:bg-white dark:hover:bg-gray-800 transition-colors">
+                          <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 font-mono">{idx + 1}</td>
+                          <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-white">{subject.subjectName}</td>
+                          <td className="px-6 py-4 text-sm text-right">
+                            <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg font-bold">
+                              {subject.totalMarks}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-md ${
+                              subject.isRequired 
+                                ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' 
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                            }`}>
+                              {subject.isRequired ? 'Required' : 'Optional'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-8 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-4">
+              <button
+                onClick={() => setSelectedClassForView(null)}
+                className="px-8 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-2xl font-bold transition-all hover:scale-105 active:scale-95"
+              >
+                Close Window
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedClassForView(null);
+                  handleEdit(selectedClassForView);
+                }}
+                className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-2xl font-bold shadow-lg shadow-purple-200 dark:shadow-purple-900/20 transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
+              >
+                <Edit3 className="w-5 h-5" />
+                <span>Edit Subjects</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-md w-full p-8 border border-gray-100 dark:border-gray-700 transform animate-in zoom-in slide-in-from-bottom-4 duration-300">
+            <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertTriangle className="w-10 h-10 text-red-600 dark:text-red-400" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-2">Remove Subjects?</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-center mb-8">
+              Are you sure you want to remove all subjects assigned to <span className="font-bold text-gray-900 dark:text-white">"{showDeleteConfirm.name.split('- Section')[0].trim()}"</span>? This action cannot be undone.
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => setShowDeleteConfirm(null)}
+                className="px-6 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-200 dark:shadow-red-900/20 transition-all hover:scale-105 flex items-center justify-center gap-2"
+              >
+                <Trash2 className="w-5 h-5" />
+                <span>Remove</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default ClassesWithSubject;
+

@@ -27,6 +27,11 @@ const classSchema = new mongoose.Schema({
     trim: true,
     default: 'Not assigned'
   },
+  teacherId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Employee',
+    default: null
+  },
   room: {
     type: String,
     trim: true,
@@ -187,6 +192,7 @@ classSchema.index({ createdBy: 1, status: 1 });
 classSchema.index({ className: 1, section: 1 });
 classSchema.index({ subject: 1 });
 classSchema.index({ teacher: 1 });
+classSchema.index({ teacherId: 1 });
 classSchema.index({ status: 1 });
 
 // Pre-save middleware to update student count

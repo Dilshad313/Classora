@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast'; // Ensure toast is imported
 import { 
-  Plus, 
   Trash2, 
   Save,
   BookOpen,
@@ -14,12 +13,18 @@ import {
   Loader2,
   AlertTriangle,
   RefreshCw,
-  X // Added X icon
+  X,
+  Plus // Added Plus icon
 } from 'lucide-react';
-import { fetchClassesForDropdown, submitSubjectAssignment } from '../../../../services/subjectApi';
+import { fetchClassesForDropdown, submitSubjectAssignment, getSubjectsByClass } from '../../../../services/subjectApi';
 
 const AssignSubject = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const editModeId = searchParams.get('edit');
+  const classIdParam = searchParams.get('classId');
+
   const [subjects, setSubjects] = useState([
     {
       id: Date.now(),
@@ -31,6 +36,7 @@ const AssignSubject = () => {
 
   const [selectedClass, setSelectedClass] = useState('');
   const [classes, setClasses] = useState([]);
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -102,7 +108,8 @@ const AssignSubject = () => {
         }
       } catch (error) {
         console.error('❌ Failed to load classes:', error);
-        setApiError(`Error: ${error.message}. Please try again.`);
+        toast.error(`Failed to load classes: ${error.message}`);
+        setApiError(error.message);
         
         // Retry logic
         if (retryCount < 3) {
@@ -118,13 +125,54 @@ const AssignSubject = () => {
     loadClasses();
   }, [retryCount]);
 
+  // Handle Edit Mode Pre-filling
+  useEffect(() => {
+    const prefillData = async () => {
+      if (!editModeId || !classIdParam) return;
+
+      try {
+        setLoading(true);
+        console.log(`🔄 Pre-filling data for class: ${classIdParam}`);
+        
+        const response = await getSubjectsByClass(classIdParam);
+        
+        if (response.success && response.data) {
+          const { subjects: existingSubjects, teacher } = response.data;
+          
+          setSelectedClass(classIdParam);
+          setSelectedTeacher(teacher);
+          
+          if (existingSubjects && existingSubjects.length > 0) {
+            setSubjects(existingSubjects.map(s => ({
+              id: s._id || Date.now() + Math.random(),
+              subjectName: s.subjectName || '',
+              totalMarks: s.totalMarks || '',
+              isRequired: s.isRequired
+            })));
+          }
+        }
+      } catch (error) {
+        console.error('❌ Prefill error:', error);
+        toast.error('Failed to load existing subjects for editing');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (classes.length > 0) {
+      prefillData();
+    }
+  }, [editModeId, classIdParam, classes]);
   const handleAddSubject = () => {
-    setSubjects(prev => [...prev, {
-      id: Date.now(),
-      subjectName: '',
-      totalMarks: '',
-      isRequired: true
-    }]);
+    setSubjects(prev => [
+      ...prev,
+      {
+        id: Date.now(),
+        subjectName: '',
+        totalMarks: '',
+        isRequired: true
+      }
+    ]);
   };
 
   const handleRemoveSubject = (id) => {
@@ -153,21 +201,15 @@ const AssignSubject = () => {
     }
   };
 
-  const handleRequiredToggle = (id) => {
-    setSubjects(prev => 
-      prev.map(subject => 
-        subject.id === id 
-          ? { ...subject, isRequired: !subject.isRequired }
-          : subject
-      )
-    );
-  };
-
   const validateForm = () => {
     const newErrors = {};
 
     if (!selectedClass) {
       newErrors.class = 'Please select a class';
+    }
+
+    if (selectedClass && !selectedTeacher?._id) {
+      newErrors.teacher = 'Teacher is not assigned to the selected class';
     }
 
     // Validate each subject
@@ -206,6 +248,7 @@ const AssignSubject = () => {
       // Format data for API
       const payload = {
         classId: selectedClass,
+        update: !!editModeId,
         subjects: subjects.map(s => ({
           subjectName: s.subjectName.trim(),
           totalMarks: parseInt(s.totalMarks),
@@ -217,14 +260,24 @@ const AssignSubject = () => {
 
       await submitSubjectAssignment(payload);
       
-      alert('✅ Subjects assigned successfully!');
-      
-      // Navigate to classes list
-      navigate('/dashboard/subjects/classes');
+      toast.success(editModeId ? '✅ Subjects updated successfully!' : '✅ Subjects assigned successfully!');
+
+      if (editModeId) {
+        // After editing, navigate back
+        setTimeout(() => navigate('/dashboard/subjects/classes'), 1500);
+      } else {
+        setSubjects([{
+          id: Date.now(),
+          subjectName: '',
+          totalMarks: '',
+          isRequired: true
+        }]);
+      }
       
     } catch (error) {
       console.error('❌ Submit error:', error);
-      setApiError(`Failed to assign subjects: ${error.message}`);
+      toast.error(error.message || 'Failed to assign subjects');
+      setApiError(error.message);
     } finally {
       setSubmitting(false);
     }
@@ -232,6 +285,7 @@ const AssignSubject = () => {
 
   const handleReset = () => {
     setSelectedClass('');
+    setSelectedTeacher(null);
     setSubjects([{
       id: Date.now(),
       subjectName: '',
@@ -254,7 +308,7 @@ const AssignSubject = () => {
 
   const getSelectedClassName = () => {
     const selected = classes.find(c => c._id === selectedClass);
-    return selected ? selected.fullName || `${selected.name} - Section ${selected.section}` : '';
+    return selected ? selected.name : '';
   };
 
   return (
@@ -277,7 +331,7 @@ const AssignSubject = () => {
             Subjects
           </button>
           <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-900 dark:text-white font-semibold">Assign Subjects</span>
+          <span className="text-gray-900 dark:text-white font-semibold">{editModeId ? 'Edit Assignment' : 'Assign Subjects'}</span>
         </div>
 
         {/* Header */}
@@ -294,8 +348,12 @@ const AssignSubject = () => {
                 <BookMarked className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-1">Assign Subjects</h1>
-                <p className="text-gray-600 dark:text-gray-400">Create and assign subjects to classes</p>
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-1">
+                  {editModeId ? 'Edit Subjects' : 'Assign Subjects'}
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400">
+                  {editModeId ? 'Modify existing subject assignments' : 'Create and assign subjects to classes'}
+                </p>
               </div>
             </div>
             <button
@@ -310,25 +368,7 @@ const AssignSubject = () => {
         </div>
 
         {/* API Error Message */}
-        {apiError && (
-          <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-4">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-red-800 dark:text-red-300 font-medium">Error</p>
-                <p className="text-red-700 dark:text-red-400 text-sm mt-1">{apiError}</p>
-                {apiError.includes('No classes available') && (
-                  <button
-                    onClick={() => navigate('/dashboard/classes')}
-                    className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
-                  >
-                    Go to Classes
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+
 
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700">
           {/* Divider */}
@@ -338,20 +378,13 @@ const AssignSubject = () => {
                 <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
                   <BookOpen className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                 </div>
-                Create Subjects
+                {editModeId ? 'Update Subjects' : 'Create Subjects'}
               </h2>
             </div>
           </div>
 
           {/* Form Content */}
           <div className="p-8">
-            {/* Required/Optional Indicator */}
-            <div className="flex items-center space-x-4 mb-6">
-              <span className="text-red-500 text-sm font-medium">Required*</span>
-              <span className="text-gray-400">•</span>
-              <span className="text-gray-500 text-sm">Optional</span>
-            </div>
-
             {/* General Errors */}
             {errors.general && (
               <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
@@ -377,6 +410,8 @@ const AssignSubject = () => {
                   value={selectedClass}
                   onChange={(e) => {
                     setSelectedClass(e.target.value);
+                    const selected = classes.find(c => c._id === e.target.value);
+                    setSelectedTeacher(selected?.teacherDetails || null);
                     if (errors.class) {
                       setErrors(prev => ({ ...prev, class: '' }));
                     }
@@ -391,8 +426,7 @@ const AssignSubject = () => {
                   </option>
                   {classes.map(classItem => (
                     <option key={classItem._id} value={classItem._id}>
-                      {classItem.fullName || `${classItem.name} - Section ${classItem.section}`}
-                      {classItem.teacher && classItem.teacher !== 'Unassigned' && ` (${classItem.teacher})`}
+                      {classItem.name}
                     </option>
                   ))}
                 </select>
@@ -406,6 +440,12 @@ const AssignSubject = () => {
                 <p className="mt-1 text-sm text-red-600 flex items-center space-x-1">
                   <AlertCircle className="w-4 h-4" />
                   <span>{errors.class}</span>
+                </p>
+              )}
+              {errors.teacher && (
+                <p className="mt-1 text-sm text-red-600 flex items-center space-x-1">
+                  <AlertCircle className="w-4 h-4" />
+                  <span>{errors.teacher}</span>
                 </p>
               )}
               {!loading && classes.length === 0 && !apiError && (
@@ -434,6 +474,40 @@ const AssignSubject = () => {
                 </div>
               </div>
 
+              {selectedClass && (
+                <div className="border-2 border-gray-200 dark:border-gray-600 rounded-2xl p-6 bg-gray-50 dark:bg-gray-900/30">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Teacher Name</label>
+                      <input
+                        type="text"
+                        value={selectedTeacher?.employeeName || ''}
+                        readOnly
+                        className="w-full px-4 py-3 border rounded-xl dark:bg-gray-900/50 dark:text-white dark:border-gray-600"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Teacher Email</label>
+                      <input
+                        type="text"
+                        value={selectedTeacher?.emailAddress || ''}
+                        readOnly
+                        className="w-full px-4 py-3 border rounded-xl dark:bg-gray-900/50 dark:text-white dark:border-gray-600"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Teacher Mobile</label>
+                      <input
+                        type="text"
+                        value={selectedTeacher?.mobileNo || ''}
+                        readOnly
+                        className="w-full px-4 py-3 border rounded-xl dark:bg-gray-900/50 dark:text-white dark:border-gray-600"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {subjects.map((subject, index) => (
                 <div key={subject.id} className="border-2 border-gray-200 dark:border-gray-600 rounded-2xl p-6 bg-gray-50 dark:bg-gray-900/30 hover:border-purple-300 dark:hover:border-purple-700 transition-all">
                   <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
@@ -443,32 +517,19 @@ const AssignSubject = () => {
                         <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/40 rounded-lg flex items-center justify-center">
                           <span className="text-purple-700 dark:text-purple-300 font-bold">{index + 1}</span>
                         </div>
-                        <label className="flex items-center space-x-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={subject.isRequired}
-                            onChange={() => handleRequiredToggle(subject.id)}
-                            className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
-                          />
-                          <span className={`text-sm font-medium ${
-                            subject.isRequired ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'
-                          }`}>
-                            {subject.isRequired ? 'Required*' : 'Optional'}
-                          </span>
-                        </label>
+                        <span className="text-sm font-medium text-red-500">Required*</span>
                       </div>
                     </div>
 
                     {/* Subject Name */}
                     <div className="md:col-span-5">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Subject Name {subject.isRequired && <span className="text-red-500">*</span>}
+                        Subject Name <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
                         value={subject.subjectName}
                         onChange={(e) => handleSubjectChange(subject.id, 'subjectName', e.target.value)}
-                        placeholder="e.g., Mathematics, English, Science"
                         className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-900/50 dark:text-white dark:border-gray-600 transition-all ${
                           errors[`subject_${subject.id}`] ? 'border-red-500' : 'border-gray-300'
                         }`}
@@ -484,13 +545,12 @@ const AssignSubject = () => {
                     {/* Total Marks */}
                     <div className="md:col-span-3">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Total Marks {subject.isRequired && <span className="text-red-500">*</span>}
+                        Total Marks <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="number"
                         value={subject.totalMarks}
                         onChange={(e) => handleSubjectChange(subject.id, 'totalMarks', e.target.value)}
-                        placeholder="100"
                         min="1"
                         max="1000"
                         step="1"
@@ -524,18 +584,20 @@ const AssignSubject = () => {
                   </div>
                 </div>
               ))}
-            </div>
 
-            {/* Add More Button */}
-            <div className="mt-6">
-              <button
-                onClick={handleAddSubject}
-                disabled={submitting}
-                className="flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl transition-all font-semibold shadow-lg hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              >
-                <Plus className="w-5 h-5" />
-                <span>Add More Subject</span>
-              </button>
+              {/* Add More Subject Button */}
+              <div className="flex justify-center mt-8">
+                <button
+                  type="button"
+                  onClick={handleAddSubject}
+                  className="group flex items-center gap-2 px-8 py-4 bg-white dark:bg-gray-900 border-2 border-dashed border-purple-300 dark:border-purple-700 rounded-2xl text-purple-600 dark:text-purple-400 font-bold hover:border-purple-500 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all active:scale-95 shadow-sm hover:shadow-md"
+                >
+                  <div className="p-1 bg-purple-100 dark:bg-purple-900/50 rounded-lg group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                    <Plus className="w-6 h-6" />
+                  </div>
+                  <span>Add More Subject</span>
+                </button>
+              </div>
             </div>
 
             {/* Action Buttons */}
@@ -564,18 +626,18 @@ const AssignSubject = () => {
                 </button>
                 <button
                   onClick={handleSubmit}
-                  disabled={submitting || loading || !selectedClass || subjects.some(s => !s.subjectName.trim() || !s.totalMarks)}
+                  disabled={submitting || loading || !selectedClass || !selectedTeacher?._id || subjects.some(s => !s.subjectName.trim() || !s.totalMarks)}
                   className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl transition-all font-semibold shadow-lg hover:shadow-xl flex items-center justify-center gap-2 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
                   {submitting ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Assigning...</span>
+                      <span>{editModeId ? 'Updating...' : 'Assigning...'}</span>
                     </>
                   ) : (
                     <>
                       <Save className="w-5 h-5" />
-                      <span>Assign Subjects</span>
+                      <span>{editModeId ? 'Update Subjects' : 'Assign Subjects'}</span>
                     </>
                   )}
                 </button>

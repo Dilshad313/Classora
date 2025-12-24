@@ -45,7 +45,7 @@ const NewClasses = () => {
           const classData = await getClassById(id);
           setFormData({
             className: classData.className || '',
-            teacher: classData.teacher || '',
+            teacher: classData.teacherId || '',
             room: classData.room || '',
             scheduleType: classData.schedule?.type || 'regular',
             startDate: classData.schedule?.startDate?.split('T')[0] || '',
@@ -216,10 +216,13 @@ const NewClasses = () => {
     const loadingToast = toast.loading(isEditMode ? 'Updating class...' : 'Creating class...');
 
     try {
+      const teacherObj = teachers.find(t => t._id === formData.teacher);
+
       // Prepare class data
       const classData = {
         className: formData.className.trim(),
-        teacher: formData.teacher,
+        teacher: teacherObj?.employeeName || '',
+        teacherId: formData.teacher,
         room: formData.room.trim() || 'TBA',
         schedule: {
           type: formData.scheduleType,
@@ -465,7 +468,7 @@ const NewClasses = () => {
                       {teachers.map(teacher => (
                         <option
                           key={teacher._id}
-                          value={teacher.employeeName}
+                          value={teacher._id}
                           className="text-gray-800 bg-white dark:bg-gray-700 dark:text-white"
                         >
                           {teacher.employeeName}

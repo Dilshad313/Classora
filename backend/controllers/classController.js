@@ -2,6 +2,7 @@
 
 import mongoose from 'mongoose';
 import Class from '../models/Class.js';
+import Employee from '../models/Employee.js';
 import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinaryUpload.js';
 import { StatusCodes } from 'http-status-codes';
 
@@ -129,6 +130,7 @@ export const createClass = async (req, res) => {
       section,
       subject,
       teacher,
+      teacherId,
       room,
       schedule,
       maxStudents,
@@ -167,6 +169,7 @@ export const createClass = async (req, res) => {
       section: normalizedSection,
       subject: subject?.trim() || 'N/A',
       teacher: teacher?.trim() || 'Not assigned',
+      teacherId: teacherId || null,
       room: room?.trim() || 'TBA',
       schedule: {
         type: schedule?.type || 'regular',
@@ -185,6 +188,26 @@ export const createClass = async (req, res) => {
       description: description?.trim() || '',
       createdBy: userId
     };
+
+    if (teacherId) {
+      if (!mongoose.Types.ObjectId.isValid(teacherId)) {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          success: false,
+          message: 'Invalid teacher ID'
+        });
+      }
+
+      const teacherDoc = await Employee.findById(teacherId).select('employeeName');
+      if (!teacherDoc) {
+        return res.status(StatusCodes.NOT_FOUND).json({
+          success: false,
+          message: 'Teacher not found'
+        });
+      }
+
+      classData.teacherId = teacherDoc._id;
+      classData.teacher = teacherDoc.employeeName;
+    }
 
     const newClass = await Class.create(classData);
     
@@ -246,6 +269,7 @@ export const updateClass = async (req, res) => {
       section,
       subject,
       teacher,
+      teacherId,
       room,
       schedule,
       maxStudents,
@@ -280,6 +304,29 @@ export const updateClass = async (req, res) => {
     if (section) existingClass.section = section.trim();
     if (subject) existingClass.subject = subject.trim();
     if (teacher !== undefined) existingClass.teacher = teacher.trim() || 'Not assigned';
+    if (teacherId !== undefined) {
+      if (teacherId === null || teacherId === '') {
+        existingClass.teacherId = null;
+      } else {
+        if (!mongoose.Types.ObjectId.isValid(teacherId)) {
+          return res.status(StatusCodes.BAD_REQUEST).json({
+            success: false,
+            message: 'Invalid teacher ID'
+          });
+        }
+
+        const teacherDoc = await Employee.findById(teacherId).select('employeeName');
+        if (!teacherDoc) {
+          return res.status(StatusCodes.NOT_FOUND).json({
+            success: false,
+            message: 'Teacher not found'
+          });
+        }
+
+        existingClass.teacherId = teacherDoc._id;
+        existingClass.teacher = teacherDoc.employeeName;
+      }
+    }
     if (room !== undefined) existingClass.room = room.trim() || 'TBA';
     if (maxStudents !== undefined) existingClass.maxStudents = parseInt(maxStudents) || 0;
     if (description !== undefined) existingClass.description = description.trim();

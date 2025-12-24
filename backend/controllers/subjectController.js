@@ -18,20 +18,56 @@ export const getAvailableClasses = async (req, res) => {
       createdBy: userId,
       status: { $ne: 'cancelled' }
     })
-    .select('className section teacher subject')
+    .select('className section teacher teacherId subject')
+    .populate('teacherId', 'employeeName emailAddress mobileNo')
     .sort({ className: 1, section: 1 });
     
     console.log(`✅ Found ${classes.length} classes for user ${userId}`);
 
-    const transformedClasses = classes.map(cls => ({
-      _id: cls._id,
-      name: cls.className,
-      section: cls.section,
-      teacher: cls.teacher || 'Unassigned',
-      subject: cls.subject || '',
-      fullName: `${cls.className} - Section ${cls.section}`,
-      studentCount: cls.studentCount || 0
-    }));
+    const missingTeacherNames = Array.from(
+      new Set(
+        classes
+          .filter(cls => !cls.teacherId && cls.teacher && cls.teacher !== 'Unassigned' && cls.teacher !== 'Not assigned')
+          .map(cls => cls.teacher)
+      )
+    );
+
+    const employeesByName = new Map();
+    if (missingTeacherNames.length > 0) {
+      const employees = await Employee.find({ employeeName: { $in: missingTeacherNames } })
+        .select('_id employeeName emailAddress mobileNo');
+      employees.forEach(emp => {
+        employeesByName.set(emp.employeeName, emp);
+      });
+    }
+
+    const transformedClasses = classes.map(cls => {
+      const fallbackTeacher = (!cls.teacherId && cls.teacher && employeesByName.get(cls.teacher))
+        ? employeesByName.get(cls.teacher)
+        : null;
+
+      return {
+        _id: cls._id,
+        name: cls.className,
+        section: cls.section,
+        teacher: cls.teacher || 'Unassigned',
+        teacherId: (cls.teacherId?._id || cls.teacherId) || fallbackTeacher?._id || null,
+        teacherDetails: cls.teacherId && typeof cls.teacherId === 'object' ? {
+          _id: cls.teacherId._id,
+          employeeName: cls.teacherId.employeeName,
+          emailAddress: cls.teacherId.emailAddress,
+          mobileNo: cls.teacherId.mobileNo
+        } : (fallbackTeacher ? {
+          _id: fallbackTeacher._id,
+          employeeName: fallbackTeacher.employeeName,
+          emailAddress: fallbackTeacher.emailAddress,
+          mobileNo: fallbackTeacher.mobileNo
+        } : null),
+        subject: cls.subject || '',
+        fullName: `${cls.className} - Section ${cls.section}`,
+        studentCount: cls.studentCount || 0
+      };
+    });
 
     res.status(StatusCodes.OK).json({
       success: true,
@@ -58,7 +94,7 @@ export const assignSubjects = async (req, res) => {
     console.log('Request body:', JSON.stringify(req.body, null, 2));
     
     const userId = req.user.id;
-    const { classId, teacher, subjects } = req.body;
+    const { classId, subjects, update } = req.body;
 
     // Validate required fields
     if (!classId) {
@@ -77,11 +113,20 @@ export const assignSubjects = async (req, res) => {
 
     // Validate each subject
     const validationErrors = [];
+    const incomingSubjectNames = new Set();
+    
     subjects.forEach((subject, index) => {
       if (!subject.subjectName || !subject.subjectName.trim()) {
         validationErrors.push(`Subject ${index + 1}: Name is required`);
+      } else {
+        const name = subject.subjectName.trim().toLowerCase();
+        if (incomingSubjectNames.has(name)) {
+          validationErrors.push(`Subject ${index + 1}: Duplicate subject name in request`);
+        }
+        incomingSubjectNames.add(name);
       }
-      if (subject.totalMarks === undefined || subject.totalMarks === null || subject.totalMarks < 0) {
+      
+      if (subject.totalMarks === undefined || subject.totalMarks === null || Number.isNaN(Number(subject.totalMarks)) || Number(subject.totalMarks) <= 0) {
         validationErrors.push(`Subject ${index + 1}: Valid total marks are required`);
       }
     });
@@ -107,15 +152,26 @@ export const assignSubjects = async (req, res) => {
       });
     }
 
-    // Verify teacher if provided
-    if (teacher) {
-      const teacherExists = await Employee.findById(teacher);
-      if (!teacherExists) {
-        return res.status(StatusCodes.NOT_FOUND).json({
-          success: false,
-          message: 'Teacher not found'
-        });
+    // Teacher must be derived from the selected class
+    let derivedTeacherId = classExists.teacherId || null;
+    if (derivedTeacherId && !mongoose.Types.ObjectId.isValid(derivedTeacherId)) {
+      derivedTeacherId = null;
+    }
+
+    if (!derivedTeacherId && classExists.teacher && classExists.teacher !== 'Not assigned') {
+      const resolvedTeacher = await Employee.findOne({ employeeName: classExists.teacher }).select('_id');
+      if (resolvedTeacher) {
+        derivedTeacherId = resolvedTeacher._id;
+        classExists.teacherId = resolvedTeacher._id;
+        await classExists.save();
       }
+    }
+
+    if (!derivedTeacherId) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Teacher is not assigned to the selected class'
+      });
     }
 
     // Check if assignment already exists for this class
@@ -124,23 +180,44 @@ export const assignSubjects = async (req, res) => {
       createdBy: userId 
     });
 
+    const formattedSubjects = subjects.map(s => ({
+      subjectName: s.subjectName.trim(),
+      totalMarks: Number(s.totalMarks),
+      isRequired: s.isRequired !== undefined ? s.isRequired : true
+    }));
+
     if (assignment) {
-      // Update existing assignment
-      assignment.subjects = subjects;
-      if (teacher) assignment.teacher = teacher;
+      if (update) {
+        // Full update: Replace subjects
+        assignment.subjects = formattedSubjects;
+        console.log('✅ Subject assignment replaced (update mode)');
+      } else {
+        // Append mode: Check for subjects that already exist
+        const existingNames = new Set(assignment.subjects.map(s => s.subjectName.toLowerCase()));
+        const duplicates = formattedSubjects.filter(s => existingNames.has(s.subjectName.toLowerCase()));
+
+        if (duplicates.length > 0) {
+          return res.status(StatusCodes.CONFLICT).json({
+            success: false,
+            message: `Some subjects already exist for this class: ${duplicates.map(d => d.subjectName).join(', ')}`
+          });
+        }
+
+        assignment.subjects.push(...formattedSubjects);
+        console.log('✅ Subject assignment updated (append mode)');
+      }
+      assignment.teacher = derivedTeacherId;
       await assignment.save();
-      console.log('✅ Subject assignment updated');
     } else {
-      // Create new assignment
       const assignmentData = {
         classId,
-        subjects,
-        createdBy: userId
+        subjects: formattedSubjects,
+        createdBy: userId,
+        teacher: derivedTeacherId
       };
-      if (teacher) assignmentData.teacher = teacher;
-      
+
       assignment = await SubjectAssignment.create(assignmentData);
-      console.log('✅ Subject assignment created');
+      console.log('✅ Subject assignment created with multiple subjects');
     }
 
     // Populate references
