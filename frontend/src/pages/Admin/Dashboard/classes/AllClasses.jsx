@@ -26,6 +26,7 @@ import {
 import toast from 'react-hot-toast';
 import {
   getAllClasses,
+  getClassById,
   deleteClass,
   bulkDeleteClasses,
   updateClassStatus,
@@ -52,6 +53,9 @@ const AllClasses = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [classToDelete, setClassToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewLoading, setViewLoading] = useState(false);
+  const [viewClass, setViewClass] = useState(null);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -231,6 +235,22 @@ const AllClasses = () => {
       : '';
 
     return time ? `${days} | ${time}` : days;
+  };
+
+  const openViewModal = async (classId) => {
+    setShowViewModal(true);
+    setViewLoading(true);
+    setViewClass(null);
+    try {
+      const classData = await getClassById(classId);
+      setViewClass(classData);
+    } catch (error) {
+      console.error('Error fetching class details:', error);
+      toast.error(error.message || 'Failed to load class details');
+      setShowViewModal(false);
+    } finally {
+      setViewLoading(false);
+    }
   };
 
   return (
@@ -461,9 +481,13 @@ const AllClasses = () => {
                           <h3 className="font-semibold text-gray-900 dark:text-white">
                             {classItem.className}
                           </h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {classItem.section} • {classItem.subject}
-                          </p>
+                          {((classItem.section && classItem.section !== 'N/A') || (classItem.subject && classItem.subject !== 'N/A')) && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              {[classItem.section, classItem.subject]
+                                .filter(v => v && v !== 'N/A')
+                                .join(' • ')}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -499,7 +523,7 @@ const AllClasses = () => {
                     {/* Actions */}
                     <div className="col-span-1 md:col-span-2 flex items-center justify-end gap-2">
                       <button
-                        onClick={() => navigate(`/dashboard/classes/${classItem._id}`)}
+                        onClick={() => openViewModal(classItem._id)}
                         className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                         title="View"
                       >
@@ -576,7 +600,8 @@ const AllClasses = () => {
               </div>
 
               <p className="text-gray-700 dark:text-gray-300 mb-6">
-                Are you sure you want to delete <strong>{classToDelete.className}</strong> ({classToDelete.section})?
+                Are you sure you want to delete <strong>{classToDelete.className}</strong>
+                {(classToDelete.section && classToDelete.section !== 'N/A') ? ` (${classToDelete.section})` : ''}?
                 All associated materials will also be deleted.
               </p>
 
@@ -609,6 +634,115 @@ const AllClasses = () => {
                   )}
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {showViewModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full p-6">
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Class Details
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Viewing class information
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowViewModal(false);
+                    setViewClass(null);
+                    setViewLoading(false);
+                  }}
+                  className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  title="Close"
+                >
+                  <XCircle className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                </button>
+              </div>
+
+              {viewLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-7 h-7 text-blue-600 animate-spin" />
+                  <span className="ml-3 text-gray-600 dark:text-gray-400">Loading details...</span>
+                </div>
+              ) : !viewClass ? (
+                <div className="py-10 text-center text-gray-600 dark:text-gray-400">
+                  No class details available.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-gray-50 dark:bg-gray-700/40 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                      <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Class Name</p>
+                      <p className="text-base font-semibold text-gray-900 dark:text-white mt-1">{viewClass.className}</p>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-700/40 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                      <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Status</p>
+                      <div className="mt-1">{getStatusBadge(viewClass.status)}</div>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-700/40 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                      <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Teacher</p>
+                      <p className="text-base font-medium text-gray-900 dark:text-white mt-1">{viewClass.teacher || 'Not assigned'}</p>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-700/40 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                      <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Room/Location</p>
+                      <p className="text-base font-medium text-gray-900 dark:text-white mt-1">{viewClass.room || 'TBA'}</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 dark:bg-gray-700/40 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Schedule</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{formatSchedule(viewClass.schedule)}</p>
+                    {(viewClass.schedule?.startDate || viewClass.schedule?.endDate) && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                        {viewClass.schedule?.startDate ? `Start: ${new Date(viewClass.schedule.startDate).toLocaleDateString()}` : ''}
+                        {viewClass.schedule?.startDate && viewClass.schedule?.endDate ? ' | ' : ''}
+                        {viewClass.schedule?.endDate ? `End: ${new Date(viewClass.schedule.endDate).toLocaleDateString()}` : ''}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-gray-50 dark:bg-gray-700/40 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                      <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Max Students</p>
+                      <p className="text-base font-medium text-gray-900 dark:text-white mt-1">
+                        {viewClass.maxStudents ? viewClass.maxStudents : 'Unlimited'}
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-700/40 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                      <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Fee</p>
+                      <p className="text-base font-medium text-gray-900 dark:text-white mt-1">
+                        {viewClass.fees?.type === 'free'
+                          ? 'Free'
+                          : `${viewClass.fees?.amount || 0} ${viewClass.fees?.currency || ''} (${viewClass.fees?.type || 'paid'})`}
+                      </p>
+                    </div>
+                  </div>
+
+                  {viewClass.description && (
+                    <div className="bg-gray-50 dark:bg-gray-700/40 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                      <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Description</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 mt-1 whitespace-pre-wrap">{viewClass.description}</p>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end pt-2">
+                    <button
+                      onClick={() => {
+                        setShowViewModal(false);
+                        setViewClass(null);
+                        setViewLoading(false);
+                      }}
+                      className="px-4 py-2 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

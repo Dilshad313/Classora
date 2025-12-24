@@ -137,33 +137,35 @@ export const createClass = async (req, res) => {
     } = req.body;
 
     // Validation
-    if (!className || !section || !subject) {
+    if (!className) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        message: 'Class name, section, and subject are required'
+        message: 'Class name is required'
       });
     }
+
+    const normalizedSection = section?.trim() || 'N/A';
 
     // Check for duplicate class (same name + section for this user)
     const existingClass = await Class.findOne({
       createdBy: userId,
       className: className.trim(),
-      section: section.trim(),
+      section: normalizedSection,
       status: { $ne: 'cancelled' }
     });
 
     if (existingClass) {
       return res.status(StatusCodes.CONFLICT).json({
         success: false,
-        message: `Class "${className}" with section "${section}" already exists`
+        message: `Class "${className}" with section "${normalizedSection}" already exists`
       });
     }
 
     // Create class object
     const classData = {
       className: className.trim(),
-      section: section.trim(),
-      subject: subject.trim(),
+      section: normalizedSection,
+      subject: subject?.trim() || 'N/A',
       teacher: teacher?.trim() || 'Not assigned',
       room: room?.trim() || 'TBA',
       schedule: {

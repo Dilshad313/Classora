@@ -26,7 +26,6 @@ import {
 import toast from 'react-hot-toast';
 import { createClass, updateClass, getClassById, uploadClassMaterial } from '../../../../services/classApi';
 import { getEmployees } from '../../../../services/employeesApi';
-import { getAllSubjects } from '../../../../services/subjectApi';
 
 const NewClasses = () => {
   const { id } = useParams(); // Get class ID from URL for editing
@@ -36,7 +35,6 @@ const NewClasses = () => {
   const [activeTab, setActiveTab] = useState('basic');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [subjects, setSubjects] = useState([]);
   const [teachers, setTeachers] = useState([]);
   
   // Check for teachers on mount
@@ -47,7 +45,6 @@ const NewClasses = () => {
           const classData = await getClassById(id);
           setFormData({
             className: classData.className || '',
-            subject: classData.subject || '',
             teacher: classData.teacher || '',
             room: classData.room || '',
             scheduleType: classData.schedule?.type || 'regular',
@@ -77,14 +74,7 @@ const NewClasses = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [subjectsRes, teachersRes] = await Promise.all([
-          getAllSubjects(),
-          getEmployees({ role: 'Teacher' }) // Assuming you can filter by role
-        ]);
-
-        if (subjectsRes.success) {
-          setSubjects(subjectsRes.data);
-        }
+        const teachersRes = await getEmployees({ role: 'Teacher' });
 
         if (teachersRes.success) {
           setTeachers(teachersRes.data);
@@ -94,7 +84,7 @@ const NewClasses = () => {
         }
       } catch (error) {
         console.error('Failed to fetch initial data:', error);
-        toast.error('Failed to load subjects or teachers.');
+        toast.error('Failed to load teachers.');
       }
     };
 
@@ -104,7 +94,6 @@ const NewClasses = () => {
   const [formData, setFormData] = useState({
     // Basic Information
     className: '',
-    subject: '',
     teacher: '',
     room: '',
     
@@ -203,11 +192,6 @@ const NewClasses = () => {
       newErrors.className = 'Class name is required';
     }
 
-
-    if (!formData.subject) {
-      newErrors.subject = 'Subject is required';
-    }
-
     if (!formData.teacher) {
       newErrors.teacher = 'Teacher is required';
     }
@@ -235,7 +219,6 @@ const NewClasses = () => {
       // Prepare class data
       const classData = {
         className: formData.className.trim(),
-        subject: formData.subject,
         teacher: formData.teacher,
         room: formData.room.trim() || 'TBA',
         schedule: {
@@ -299,7 +282,6 @@ const NewClasses = () => {
   const handleReset = () => {
     setFormData({
       className: '',
-      subject: '',
       teacher: '',
       room: '',
       scheduleType: 'regular',
@@ -343,7 +325,7 @@ const NewClasses = () => {
   const isTabComplete = (tabName) => {
     switch (tabName) {
       case 'basic':
-        return formData.className && formData.subject && formData.teacher;
+        return formData.className && formData.teacher;
       case 'schedule':
         return formData.days.length > 0;
       case 'students':
@@ -466,29 +448,7 @@ const NewClasses = () => {
                   </div>
 
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Subject <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={formData.subject}
-                      onChange={(e) => handleInputChange('subject', e.target.value)}
-                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white transition-all ${
-                        errors.subject ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    >
-                      <option value="">Select Subject</option>
-                      {subjects.map(subject => (
-                        <option key={subject._id} value={subject.name}>{subject.name}</option>
-                      ))}
-                    </select>
-                    {errors.subject && (
-                      <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-                        <AlertCircle className="w-4 h-4" />
-                        {errors.subject}
-                      </p>
-                    )}
-                  </div>
+                  
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
