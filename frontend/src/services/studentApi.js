@@ -69,19 +69,54 @@ const handleFormDataApiCall = async (url, formData, method = 'POST') => {
 
     if (!response.ok) {
       let errorMessage = `HTTP error! status: ${response.status}`;
+      let errorData = null;
+      
       try {
-        const errorData = await response.json();
+        errorData = await response.json();
         errorMessage = errorData.message || errorMessage;
       } catch (e) {
         errorMessage = response.statusText || errorMessage;
       }
-      throw new Error(errorMessage);
+      
+      // Create error with additional context for 409 conflicts
+      const error = new Error(errorMessage);
+      error.status = response.status;
+      error.data = errorData;
+      
+      // Check if it's a duplicate registration/admission number error
+      const errorLower = errorMessage.toLowerCase();
+      if (response.status === 409 && (
+          errorLower.includes('registration') || 
+          errorLower.includes('admission') ||
+          errorLower.includes('already exists')
+        )) {
+        error.field = 'registrationNo';
+        error.isDuplicate = true;
+      }
+      
+      throw error;
     }
 
     const result = await response.json();
 
     if (!result.success) {
-      throw new Error(result.message || 'API call failed');
+      const errorMessage = result.message || 'API call failed';
+      const error = new Error(errorMessage);
+      error.status = response.status || 400;
+      error.data = result;
+      
+      // Check if it's a duplicate registration/admission number error
+      const errorLower = errorMessage.toLowerCase();
+      if ((response.status === 409 || error.status === 409) && (
+          errorLower.includes('registration') || 
+          errorLower.includes('admission') ||
+          errorLower.includes('already exists')
+        )) {
+        error.field = 'registrationNo';
+        error.isDuplicate = true;
+      }
+      
+      throw error;
     }
 
     return result.data;

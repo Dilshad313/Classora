@@ -19,7 +19,8 @@ import {
   X,
   Home,
   ChevronRight,
-  RefreshCw
+  RefreshCw,
+  AlertTriangle
 } from 'lucide-react';
 import { getStudents, deleteStudent, getStudentStats } from '../../../../services/studentApi';
 import toast from 'react-hot-toast';
@@ -42,6 +43,7 @@ const AllStudents = () => {
     inactive: 0,
     avgAttendance: 0
   });
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
 
   const classes = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
 
@@ -79,17 +81,26 @@ const AllStudents = () => {
     }
   };
 
-  const handleDeleteStudent = async (id, name) => {
-    if (window.confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) {
-      try {
-        await deleteStudent(id);
-        toast.success('Student deleted successfully');
-        fetchStudents();
-        fetchStats();
-      } catch (error) {
-        console.error('Failed to delete student', error);
-        toast.error(error.message || 'Failed to delete student');
-      }
+  const handleDeleteStudent = (id, name) => {
+    setShowDeleteConfirm({ id, name });
+  };
+
+  const confirmDelete = async () => {
+    if (!showDeleteConfirm) return;
+    
+    const { id, name } = showDeleteConfirm;
+    const loadingToast = toast.loading(`Deleting "${name}"...`);
+    
+    try {
+      await deleteStudent(id);
+      toast.success(`Successfully deleted "${name}"`, { id: loadingToast });
+      fetchStudents();
+      fetchStats();
+    } catch (error) {
+      console.error('Failed to delete student', error);
+      toast.error(error.message || 'Failed to delete student', { id: loadingToast });
+    } finally {
+      setShowDeleteConfirm(null);
     }
   };
 
@@ -97,6 +108,44 @@ const AllStudents = () => {
     fetchStudents();
     fetchStats();
     toast.success('Data refreshed');
+  };
+
+  const handleExport = () => {
+    try {
+      // Create CSV content
+      const headers = ['Name', 'Registration No', 'Class', 'Section', 'Email', 'Mobile', 'Status', 'Date of Admission'];
+      const rows = filteredStudents.map(student => [
+        student.studentName || '',
+        student.registrationNo || '',
+        student.selectClass || '',
+        student.section || '',
+        student.email || '',
+        student.mobileNo || '',
+        student.status || '',
+        student.dateOfAdmission ? new Date(student.dateOfAdmission).toLocaleDateString() : ''
+      ]);
+
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell.toString().replace(/"/g, '""')}"`).join(','))
+      ].join('\n');
+
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `students_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success('Students exported successfully');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export students');
+    }
   };
 
   const getStatusColor = (status) => {
@@ -307,7 +356,10 @@ const AllStudents = () => {
                 </button>
               </div>
 
-              <button className="flex items-center space-x-2 px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-all font-medium">
+              <button 
+                onClick={handleExport}
+                className="flex items-center space-x-2 px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-all font-medium"
+              >
                 <Download className="w-4 h-4" />
                 <span className="hidden sm:inline">Export</span>
               </button>
@@ -332,8 +384,24 @@ const AllStudents = () => {
               >
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 p-6 border-b border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                      {getInitials(student.studentName)}
+                    <div className="relative">
+                      {student.picture?.url ? (
+                        <img
+                          src={student.picture.url}
+                          alt={student.studentName}
+                          className="w-16 h-16 rounded-2xl object-cover shadow-lg border-2 border-white dark:border-gray-600"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            const fallback = e.target.parentElement.querySelector('.avatar-fallback');
+                            if (fallback) fallback.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div 
+                        className={`w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg avatar-fallback ${student.picture?.url ? 'hidden' : ''}`}
+                      >
+                        {getInitials(student.studentName)}
+                      </div>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(student.status)}`}>
                       {student.status === 'active' ? 'Active' : 'Inactive'}
@@ -341,9 +409,7 @@ const AllStudents = () => {
                   </div>
                   <h3 className="font-bold text-gray-900 dark:text-white text-xl mb-1">{student.studentName}</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">{student.registrationNo}</p>
-                  {student.admissionNumber && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Admission: {student.admissionNumber}</p>
-                  )}
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Admission: {student.registrationNo}</p>
                 </div>
 
                 <div className="p-6 space-y-3">
@@ -442,13 +508,29 @@ const AllStudents = () => {
                   <tr key={student._id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-sm">
-                          {getInitials(student.studentName)}
+                        <div className="relative">
+                          {student.picture?.url ? (
+                            <img
+                              src={student.picture.url}
+                              alt={student.studentName}
+                              className="w-10 h-10 rounded-xl object-cover border-2 border-gray-200 dark:border-gray-600"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                const fallback = e.target.parentElement.querySelector('.avatar-fallback');
+                                if (fallback) fallback.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          <div 
+                            className={`w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-sm avatar-fallback ${student.picture?.url ? 'hidden' : ''}`}
+                          >
+                            {getInitials(student.studentName)}
+                          </div>
                         </div>
                         <div>
                           <p className="font-semibold text-gray-900 dark:text-white">{student.studentName}</p>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {student.admissionNumber || student.registrationNo}
+                            {student.registrationNo}
                           </p>
                         </div>
                       </div>
@@ -493,6 +575,36 @@ const AllStudents = () => {
             </table>
           </div>
         ) : null}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-md w-full p-8 border border-gray-100 dark:border-gray-700 transform animate-in zoom-in slide-in-from-bottom-4 duration-300">
+              <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                <AlertTriangle className="w-10 h-10 text-red-600 dark:text-red-400" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-2">Delete Student?</h3>
+              <p className="text-gray-600 dark:text-gray-400 text-center mb-8">
+                Are you sure you want to delete <span className="font-bold text-gray-900 dark:text-white">"{showDeleteConfirm.name}"</span>? This action cannot be undone.
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  onClick={() => setShowDeleteConfirm(null)}
+                  className="px-6 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-200 dark:shadow-red-900/20 transition-all hover:scale-105 flex items-center justify-center gap-2"
+                >
+                  <Trash2 className="w-5 h-5" />
+                  <span>Delete</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Empty State */}
         {!loading && filteredStudents.length === 0 && (

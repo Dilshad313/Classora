@@ -122,6 +122,8 @@ export const createStudent = async (req, res) => {
       registrationNo,
       dateOfAdmission,
       selectClass,
+      email,
+      password,
       discountInFee,
       mobileNo,
       dateOfBirth,
@@ -149,19 +151,28 @@ export const createStudent = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!studentName || !registrationNo || !dateOfAdmission || !selectClass) {
+    if (!studentName || !registrationNo || !dateOfAdmission || !selectClass || !email || !password) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        message: 'Student name, registration number, date of admission, and class are required'
+        message: 'Student name, registration number, date of admission, class, email, and password are required'
+      });
+    }
+
+    // Normalize registration number
+    const normalizedRegNo = registrationNo.trim().toUpperCase();
+    
+    // Validate registration number is not empty after normalization
+    if (!normalizedRegNo) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Registration number cannot be empty'
       });
     }
 
     // Check if registration number already exists
+    // Only check registrationNo field, not admissionNumber, as they serve different purposes
     const existingStudent = await Student.findOne({ 
-      $or: [
-        { registrationNo: registrationNo.trim().toUpperCase() },
-        { admissionNumber: registrationNo.trim().toUpperCase() }
-      ]
+      registrationNo: normalizedRegNo
     });
     
     if (existingStudent) {
@@ -171,7 +182,7 @@ export const createStudent = async (req, res) => {
       });
     }
 
-    // Generate admission number
+    // Generate admission number (function handles uniqueness internally)
     const admissionNumber = await Student.generateAdmissionNumber();
 
     // Handle picture upload
@@ -213,29 +224,29 @@ export const createStudent = async (req, res) => {
       }
     }
 
-    // Generate username and password
+    // Generate username
     const nameParts = studentName.toLowerCase().split(' ');
     const firstName = nameParts[0];
     const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1].charAt(0) : '';
-    const username = `${firstName}${lastName}${registrationNo.toLowerCase()}`.replace(/\s+/g, '');
-    
+    let username = `${firstName}${lastName}${normalizedRegNo.toLowerCase()}`.replace(/\s+/g, '');
+
     // Check if username already exists
     const existingUsername = await Student.findOne({ username });
     if (existingUsername) {
       // If username exists, append random number
       const randomSuffix = Math.floor(Math.random() * 1000);
-      username = `${firstName}${lastName}${registrationNo.toLowerCase()}${randomSuffix}`.replace(/\s+/g, '');
+      username = `${firstName}${lastName}${normalizedRegNo.toLowerCase()}${randomSuffix}`.replace(/\s+/g, '');
     }
-
-    const password = `${studentName.split(' ')[0]}@${new Date().getFullYear()}`;
 
     // Create student
     const student = await Student.create({
       studentName: studentName.trim(),
-      registrationNo: registrationNo.trim().toUpperCase(),
+      registrationNo: normalizedRegNo,
       admissionNumber,
       dateOfAdmission,
       selectClass,
+      email: email.trim(),
+      password: password,
       section,
       discountInFee: parseFloat(discountInFee) || 0,
       mobileNo: mobileNo || '',
@@ -263,7 +274,6 @@ export const createStudent = async (req, res) => {
       picture: pictureData,
       documents,
       username,
-      password,
       rollNumber: `${Math.floor(Math.random() * 300) + 1}/236`
     });
 
@@ -378,7 +388,7 @@ export const updateStudent = async (req, res) => {
       'fatherName', 'fatherMobile', 'fatherOccupation', 'motherName', 'motherMobile',
       'motherOccupation', 'orphanStudent', 'caste', 'osc', 'identificationMark',
       'previousSchool', 'religion', 'previousIdBoardRollNo', 'selectFamily',
-      'disease', 'additionalNote', 'totalSiblings', 'section', 'discountInFee'
+      'disease', 'additionalNote', 'totalSiblings', 'section', 'discountInFee', 'email'
     ];
 
     updateFields.forEach(field => {
@@ -390,6 +400,12 @@ export const updateStudent = async (req, res) => {
         }
       }
     });
+
+    // Handle password update separately to hash it
+    if (req.body.password) {
+      const salt = await bcrypt.genSalt(12);
+      student.password = await bcrypt.hash(req.body.password, salt);
+    }
 
     await student.save();
 
@@ -613,7 +629,7 @@ export const getLoginCredentials = async (req, res) => {
     }
 
     const students = await Student.find(filter)
-      .select('studentName registrationNo selectClass section username password')
+      .select('studentName registrationNo selectClass section username password email')
       .sort({ selectClass: 1, studentName: 1 });
 
     res.status(StatusCodes.OK).json({
@@ -640,7 +656,11 @@ export const updateLoginCredentials = async (req, res) => {
 
     const updateData = {};
     if (username) updateData.username = username.trim().toLowerCase();
-    if (password) updateData.password = password;
+    if (password) {
+      // Hash the password before saving
+      const salt = await bcrypt.genSalt(12);
+      updateData.password = await bcrypt.hash(password, salt);
+    }
 
     const student = await Student.findByIdAndUpdate(
       req.params.id,

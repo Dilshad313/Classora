@@ -23,6 +23,7 @@ import AssignSubject from './pages/Admin/Dashboard/subjects/AssignSubject';
 
 import AllStudents from './pages/Admin/Dashboard/students/AllStudents';
 import AddStudents from './pages/Admin/Dashboard/students/AddStudents';
+import ViewStudent from './pages/Admin/Dashboard/students/ViewStudent';
 import ManageFamily from './pages/Admin/Dashboard/students/ManageFamily';
 import ActiveInactive from './pages/Admin/Dashboard/students/ActiveInactive';
 import AdmissionLetter from './pages/Admin/Dashboard/students/AdmissionLetter';
@@ -261,6 +262,8 @@ function App() {
           {/* Students Routes */}
           <Route path="students/all" element={<AllStudents/>} />
           <Route path="students/add-new" element={<AddStudents/>} />
+          <Route path="students/view/:id" element={<ViewStudent/>} />
+          <Route path="students/edit/:id" element={<AddStudents/>} />
           <Route path="students/families" element={<ManageFamily/>} />
           <Route path="students/status" element={<ActiveInactive/>} />
           <Route path="students/admission-letter" element={<AdmissionLetter/>} />

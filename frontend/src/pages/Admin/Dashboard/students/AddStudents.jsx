@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Plus, 
-  X, 
-  Upload, 
-  User, 
-  Phone, 
-  MapPin, 
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import {
+  Plus,
+  X,
+  Upload,
+  User,
+  Phone,
+  MapPin,
   Calendar,
   BookOpen,
   Users,
@@ -23,13 +23,19 @@ import {
   Cross,
   Stethoscope,
   StickyNote,
-  Home
+  Home,
+  Mail,
+  Lock,
+  Save
 } from 'lucide-react';
-import { createStudent } from '../../../../services/studentApi';
+import { createStudent, updateStudent, getStudentById } from '../../../../services/studentApi';
+import { classApi } from '../../../../services/classApi';
 import toast from 'react-hot-toast';
 
 const AddStudents = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEditMode = !!id;
   const [formData, setFormData] = useState({
     studentName: '',
     picture: null,
@@ -60,15 +66,104 @@ const AddStudents = () => {
     disease: '',
     additionalNote: '',
     totalSiblings: '',
-    section: 'A'
+    email: '',
+    password: ''
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [classes, setClasses] = useState([]);
+  const [loadingClasses, setLoadingClasses] = useState(true);
+  const [loading, setLoading] = useState(isEditMode);
+  const [existingPicture, setExistingPicture] = useState(null);
+  const [existingDocuments, setExistingDocuments] = useState([]);
 
-  const classes = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
-  const sections = ['A', 'B', 'C', 'D'];
+
+  useEffect(() => {
+    fetchClasses();
+    if (isEditMode) {
+      fetchStudentData();
+    }
+  }, [id]);
+
+  const fetchStudentData = async () => {
+    try {
+      setLoading(true);
+      const data = await getStudentById(id);
+      
+      // Format date fields
+      const formatDate = (date) => {
+        if (!date) return '';
+        const d = new Date(date);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
+      setFormData({
+        studentName: data.studentName || '',
+        picture: null,
+        dateOfAdmission: formatDate(data.dateOfAdmission) || '',
+        selectClass: data.selectClass || '',
+        discountInFee: data.discountInFee || '',
+        mobileNo: data.mobileNo || '',
+        dateOfBirth: formatDate(data.dateOfBirth) || '',
+        gender: data.gender || '',
+        bloodGroup: data.bloodGroup || '',
+        address: data.address || '',
+        fatherName: data.fatherName || '',
+        fatherMobile: data.fatherMobile || '',
+        fatherOccupation: data.fatherOccupation || '',
+        motherName: data.motherName || '',
+        motherMobile: data.motherMobile || '',
+        motherOccupation: data.motherOccupation || '',
+        documents: [],
+        registrationNo: data.registrationNo || '',
+        orphanStudent: data.orphanStudent || '',
+        caste: data.caste || '',
+        osc: data.osc || '',
+        identificationMark: data.identificationMark || '',
+        previousSchool: data.previousSchool || '',
+        religion: data.religion || '',
+        previousIdBoardRollNo: data.previousIdBoardRollNo || '',
+        selectFamily: data.selectFamily || '',
+        disease: data.disease || '',
+        additionalNote: data.additionalNote || '',
+        totalSiblings: data.totalSiblings || '',
+        email: data.email || '',
+        password: ''
+      });
+
+      if (data.picture?.url) {
+        setExistingPicture(data.picture.url);
+      }
+      if (data.documents && data.documents.length > 0) {
+        setExistingDocuments(data.documents);
+      }
+    } catch (error) {
+      console.error('Failed to load student data', error);
+      toast.error('Failed to load student data');
+      navigate('/dashboard/students/all');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchClasses = async () => {
+    try {
+      const response = await classApi.getAllClassNames();
+      setClasses(response);
+    } catch (error) {
+      console.error('Error fetching classes:', error);
+      toast.error('Failed to load classes. Using default classes.');
+      // Fallback to default classes if API fails
+      setClasses(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']);
+    } finally {
+      setLoadingClasses(false);
+    }
+  };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -114,13 +209,23 @@ const AddStudents = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    const requiredFields = ['studentName', 'registrationNo', 'dateOfAdmission', 'selectClass'];
+    const requiredFields = ['studentName', 'registrationNo', 'dateOfAdmission', 'selectClass', 'email'];
+    
+    // Password is only required when adding new student
+    if (!isEditMode) {
+      requiredFields.push('password');
+    }
 
     requiredFields.forEach(field => {
       if (!formData[field] || formData[field].toString().trim() === '') {
         newErrors[field] = 'This field is required';
       }
     });
+
+    // Validate email format
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
 
     // Validate registration number format
     if (formData.registrationNo && !/^[A-Z0-9]+$/.test(formData.registrationNo.toUpperCase())) {
@@ -145,16 +250,24 @@ const AddStudents = () => {
     }
 
     setIsSubmitting(true);
-    const loadingToast = toast.loading('Adding student...');
+    const loadingToast = toast.loading(isEditMode ? 'Updating student...' : 'Adding student...');
 
     try {
+      // Extract class number from class name (e.g., "Class 2" -> "2")
+      const extractClassNumber = (className) => {
+        if (!className) return '';
+        const match = className.match(/(\d+)/);
+        return match ? match[0] : className;
+      };
+
       // Prepare data for API
       const studentData = {
         studentName: formData.studentName.trim(),
         registrationNo: formData.registrationNo.trim().toUpperCase(),
         dateOfAdmission: formData.dateOfAdmission,
-        selectClass: formData.selectClass,
-        section: formData.section,
+        selectClass: extractClassNumber(formData.selectClass),
+        email: formData.email.trim(),
+        password: formData.password,
         discountInFee: formData.discountInFee || 0,
         mobileNo: formData.mobileNo || '',
         dateOfBirth: formData.dateOfBirth || '',
@@ -180,17 +293,73 @@ const AddStudents = () => {
         totalSiblings: formData.totalSiblings || 0
       };
 
-      await createStudent(studentData, formData.picture, formData.documents);
+      if (isEditMode) {
+        await updateStudent(id, studentData, formData.picture, formData.documents);
+        toast.success('Student updated successfully!', { id: loadingToast });
+      } else {
+        await createStudent(studentData, formData.picture, formData.documents);
+        toast.success('Student added successfully!', { id: loadingToast });
+      }
       
-      toast.success('Student added successfully!', { id: loadingToast });
       navigate('/dashboard/students/all');
     } catch (error) {
       console.error('Error adding student:', error);
-      toast.error(error.message || 'Failed to add student. Please try again.', { id: loadingToast });
+      
+      // Handle duplicate registration/admission number error
+      const errorMessage = error.message || '';
+      const errorLower = errorMessage.toLowerCase();
+      const isDuplicateError = 
+        error.status === 409 || 
+        error.isDuplicate ||
+        error.field === 'registrationNo' ||
+        errorLower.includes('registration') || 
+        errorLower.includes('admission') ||
+        errorLower.includes('already exists');
+      
+      if (isDuplicateError) {
+        // Set error on registration number field
+        setErrors(prev => ({
+          ...prev,
+          registrationNo: 'This registration number is already in use. Please use a different one.'
+        }));
+        
+        // Scroll to registration number field after a short delay to ensure DOM is updated
+        setTimeout(() => {
+          // Use the ID to find the registration input
+          const registrationInput = document.getElementById('registrationNo-input') ||
+                                   document.querySelector('input[name="registrationNo"]') ||
+                                   document.querySelector('input[placeholder="STU001"]');
+          
+          if (registrationInput) {
+            registrationInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => {
+              registrationInput.focus();
+              registrationInput.select();
+            }, 300);
+          }
+        }, 100);
+        
+        toast.error('Registration number already exists. Please use a different registration number.', { 
+          id: loadingToast,
+          duration: 5000 
+        });
+      } else {
+        toast.error(error.message || 'Failed to add student. Please try again.', { id: loadingToast });
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6">
+        <div className="max-w-5xl mx-auto flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6">
@@ -230,8 +399,8 @@ const AddStudents = () => {
               <UserPlus className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Add New Student</h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">Fill in the student information to create a new record</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{isEditMode ? 'Edit Student' : 'Add New Student'}</h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">{isEditMode ? 'Update student information' : 'Fill in the student information to create a new record'}</p>
             </div>
           </div>
         </div>
@@ -281,11 +450,14 @@ const AddStudents = () => {
                       <Hash className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <input
                         type="text"
+                        id="registrationNo-input"
+                        name="registrationNo"
                         value={formData.registrationNo}
                         onChange={(e) => handleInputChange('registrationNo', e.target.value.toUpperCase())}
+                        disabled={isEditMode}
                         className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 ${
                           errors.registrationNo ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-                        }`}
+                        } ${isEditMode ? 'opacity-60 cursor-not-allowed' : ''}`}
                         placeholder="STU001"
                       />
                     </div>
@@ -359,7 +531,7 @@ const AddStudents = () => {
                       >
                         <option value="">Select Class</option>
                         {classes.map(className => (
-                          <option key={className} value={className}>Class {className}</option>
+                          <option key={className} value={className}>{className}</option>
                         ))}
                       </select>
                       <ChevronRight className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 dark:text-gray-500 pointer-events-none" />
@@ -374,21 +546,51 @@ const AddStudents = () => {
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                      Section
+                      Email <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <Users className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 z-10" />
-                      <select
-                        value={formData.section}
-                        onChange={(e) => handleInputChange('section', e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all appearance-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500"
-                      >
-                        {sections.map(section => (
-                          <option key={section} value={section}>Section {section}</option>
-                        ))}
-                      </select>
-                      <ChevronRight className="w-4 h-4 absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 text-gray-400 dark:text-gray-500 pointer-events-none" />
+                      <Mail className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 ${
+                          errors.email ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                        }`}
+                        placeholder="student@example.com"
+                      />
                     </div>
+                    {errors.email && (
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        {errors.email}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      Password {!isEditMode && <span className="text-red-500">*</span>}
+                      {isEditMode && <span className="text-gray-500 text-xs ml-2">(Leave blank to keep current password)</span>}
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+                      <input
+                        type="password"
+                        value={formData.password}
+                        onChange={(e) => handleInputChange('password', e.target.value)}
+                        className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 ${
+                          errors.password ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                        }`}
+                        placeholder={isEditMode ? "Enter new password (optional)" : "Enter password"}
+                      />
+                    </div>
+                    {errors.password && (
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        {errors.password}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -800,6 +1002,16 @@ const AddStudents = () => {
                       Student Photo
                     </label>
                     <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center hover:border-blue-400 dark:hover:border-blue-500 transition-colors bg-gray-50 dark:bg-gray-700/50">
+                      {existingPicture && !formData.picture && (
+                        <div className="mb-4">
+                          <img
+                            src={existingPicture}
+                            alt="Current photo"
+                            className="w-32 h-32 rounded-xl object-cover mx-auto border-2 border-gray-200 dark:border-gray-600"
+                          />
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Current photo</p>
+                        </div>
+                      )}
                       <input
                         type="file"
                         accept="image/*"
@@ -856,10 +1068,30 @@ const AddStudents = () => {
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Click to upload documents</span>
                         <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">PDF, DOC, JPG up to 5MB each</span>
                       </label>
+                      {existingDocuments.length > 0 && (
+                        <div className="mt-3 mb-3">
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Current documents:</p>
+                          <div className="space-y-1 max-h-20 overflow-y-auto">
+                            {existingDocuments.map((doc, index) => (
+                              <div key={index} className="flex items-center justify-between text-xs text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 p-2 rounded">
+                                <span className="truncate flex-1">{doc.name}</span>
+                                <a
+                                  href={doc.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-500 ml-2"
+                                >
+                                  View
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       {formData.documents && formData.documents.length > 0 && (
                         <div className="mt-3">
                           <p className="text-sm text-green-600 dark:text-green-400 font-medium mb-2">
-                            ✓ {formData.documents.length} file(s) selected
+                            ✓ {formData.documents.length} new file(s) selected
                           </p>
                           <div className="space-y-1 max-h-20 overflow-y-auto">
                             {formData.documents.map((doc, index) => (
@@ -896,22 +1128,22 @@ const AddStudents = () => {
               
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || loading}
                 className={`px-8 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 ${
-                  isSubmitting
+                  isSubmitting || loading
                     ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed text-gray-200 dark:text-gray-400'
                     : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
                 }`}
               >
-                {isSubmitting ? (
+                {isSubmitting || loading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white dark:border-gray-300 border-t-transparent dark:border-t-transparent rounded-full animate-spin" />
-                    <span>Adding Student...</span>
+                    <span>{isEditMode ? 'Updating Student...' : 'Adding Student...'}</span>
                   </>
                 ) : (
                   <>
-                    <Plus className="w-5 h-5" />
-                    <span>Add Student</span>
+                    {isEditMode ? <Save className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                    <span>{isEditMode ? 'Update Student' : 'Add Student'}</span>
                   </>
                 )}
               </button>

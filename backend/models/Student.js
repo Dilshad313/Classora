@@ -40,6 +40,19 @@ const studentSchema = new mongoose.Schema({
     type: String,
     default: 'A'
   },
+  email: {
+    type: String,
+    required: [true, 'Email is required'],
+    unique: true,
+    trim: true,
+    lowercase: true,
+    validate: {
+      validator: function(v) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      },
+      message: 'Please enter a valid email address'
+    }
+  },
   discountInFee: {
     type: Number,
     default: 0,
@@ -249,13 +262,44 @@ studentSchema.pre('save', function(next) {
 // Static method to generate admission number
 studentSchema.statics.generateAdmissionNumber = async function() {
   const currentYear = new Date().getFullYear();
-  const count = await this.countDocuments({
-    dateOfAdmission: {
-      $gte: new Date(`${currentYear}-01-01`),
-      $lte: new Date(`${currentYear}-12-31`)
+  const prefix = `ADM${currentYear}`;
+  
+  // Find the highest admission number for this year
+  const lastStudent = await this.findOne({
+    admissionNumber: { $regex: `^${prefix}` }
+  }).sort({ admissionNumber: -1 });
+  
+  let nextNumber = 1;
+  
+  if (lastStudent && lastStudent.admissionNumber) {
+    // Extract the number part from the last admission number
+    const match = lastStudent.admissionNumber.match(new RegExp(`^${prefix}(\\d+)$`));
+    if (match && match[1]) {
+      nextNumber = parseInt(match[1], 10) + 1;
     }
-  });
-  return `ADM${currentYear}${String(count + 1).padStart(4, '0')}`;
+  }
+  
+  // Ensure we generate a unique admission number
+  let attempts = 0;
+  const maxAttempts = 1000;
+  
+  while (attempts < maxAttempts) {
+    const admissionNumber = `${prefix}${String(nextNumber).padStart(4, '0')}`;
+    
+    // Check if this admission number already exists
+    const existing = await this.findOne({ admissionNumber: admissionNumber });
+    
+    if (!existing) {
+      return admissionNumber;
+    }
+    
+    // If it exists, try next number
+    nextNumber++;
+    attempts++;
+  }
+  
+  // Fallback: use timestamp if we can't generate a unique number
+  return `${prefix}${Date.now().toString().slice(-6)}`;
 };
 
 // Index for better query performance
