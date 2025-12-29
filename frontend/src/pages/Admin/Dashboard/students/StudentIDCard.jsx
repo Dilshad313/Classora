@@ -223,15 +223,29 @@ const StudentIDCard = () => {
                     <div className="flex flex-col items-center">
                       {/* Photo with realistic border */}
                       <div className="relative mb-4">
-                        <div className={`w-32 h-32 bg-gradient-to-br ${currentStyle.gradient} rounded-lg flex items-center justify-center text-white font-bold text-4xl shadow-xl border-4 border-white dark:border-gray-800 ring-4 ring-gray-200 dark:ring-gray-700`}>
-                          {getInitials(student.studentName)}
-                        </div>
-                        {/* Official stamp overlay */}
-                        <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-red-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg opacity-90">
-                          <span className="text-white text-[8px] font-bold text-center leading-tight">VERIFIED</span>
+                        <div className={`w-32 h-32 bg-gradient-to-br ${currentStyle.gradient} rounded-lg flex items-center justify-center text-white font-bold text-4xl shadow-xl border-4 border-white dark:border-gray-800 ring-4 ring-gray-200 dark:ring-gray-700 overflow-hidden`}>
+                          {student.picture?.url ? (
+                            <img 
+                              src={student.picture.url} 
+                              alt={student.studentName}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                // Fallback to initials if image fails to load
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          {/* Fallback initials - hidden by default when image is present */}
+                          <div style={{ display: student.picture?.url ? 'none' : 'flex' }}>
+                            {getInitials(student.studentName)}
+                          </div>
                         </div>
                       </div>
-                      
+                      {/* Official stamp overlay */}
+                      <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-red-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg opacity-90">
+                        <span className="text-white text-[8px] font-bold text-center leading-tight">VERIFIED</span>
+                      </div>
                       {/* Student Name */}
                       <div className="text-center mb-4 w-full">
                         <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{student.studentName}</h4>

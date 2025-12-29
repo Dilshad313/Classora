@@ -6,6 +6,14 @@ const handleApiCall = async (url, options = {}) => {
   try {
     const token = localStorage.getItem('token');
     
+    if (!token) {
+      console.error('No authentication token found');
+      const error = new Error('Authentication required. Please log in again.');
+      error.isAuthError = true;
+      error.status = 401;
+      throw error;
+    }
+    
     const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
@@ -17,8 +25,10 @@ const handleApiCall = async (url, options = {}) => {
 
     if (!response.ok) {
       let errorMessage = `HTTP error! status: ${response.status}`;
+      let errorData = null;
+      
       try {
-        const errorData = await response.json();
+        errorData = await response.json();
         errorMessage = errorData.message || errorMessage;
         
         // Handle specific error cases
@@ -28,6 +38,18 @@ const handleApiCall = async (url, options = {}) => {
       } catch (e) {
         errorMessage = response.statusText || errorMessage;
       }
+      
+      // Handle 401 errors - don't clear token or redirect automatically
+      // Just throw the error and let components handle it
+      // This prevents false positives where valid sessions are treated as expired
+      if (response.status === 401) {
+        const error = new Error(errorMessage);
+        error.status = 401;
+        error.data = errorData;
+        // Don't mark as auth error or clear token - let the component decide
+        throw error;
+      }
+      
       throw new Error(errorMessage);
     }
 
@@ -59,6 +81,14 @@ const handleFormDataApiCall = async (url, formData, method = 'POST') => {
   try {
     const token = localStorage.getItem('token');
     
+    if (!token) {
+      console.error('No authentication token found');
+      const error = new Error('Authentication required. Please log in again.');
+      error.isAuthError = true;
+      error.status = 401;
+      throw error;
+    }
+    
     const response = await fetch(url, {
       method: method,
       headers: {
@@ -76,6 +106,17 @@ const handleFormDataApiCall = async (url, formData, method = 'POST') => {
         errorMessage = errorData.message || errorMessage;
       } catch (e) {
         errorMessage = response.statusText || errorMessage;
+      }
+      
+      // Handle 401 errors - don't clear token or redirect automatically
+      // Just throw the error and let components handle it
+      // This prevents false positives where valid sessions are treated as expired
+      if (response.status === 401) {
+        const error = new Error(errorMessage);
+        error.status = 401;
+        error.data = errorData;
+        // Don't mark as auth error or clear token - let the component decide
+        throw error;
       }
       
       // Create error with additional context for 409 conflicts
@@ -244,6 +285,22 @@ export const updateStudentStatus = async (id, status) => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ status })
+  });
+};
+
+/**
+ * Bulk update student status
+ * @param {Array<string>} studentIds - Array of student IDs
+ * @param {string} status - New status (active/inactive)
+ * @returns {Promise<Object>} Update result
+ */
+export const bulkUpdateStudentStatus = async (studentIds, status) => {
+  return handleApiCall(`${API_BASE_URL}/students/bulk-status`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ studentIds, status })
   });
 };
 

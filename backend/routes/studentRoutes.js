@@ -11,7 +11,8 @@ import {
   updateLoginCredentials,
   promoteStudents,
   getBasicList,
-  getStudentStats
+  getStudentStats,
+  bulkUpdateStudentStatus
 } from '../controllers/studentController.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { uploadMiddleware, handleMulterError } from '../middleware/upload.js';
@@ -67,6 +68,7 @@ router.put(
   updateStudent
 );
 
+router.patch('/bulk-status', bulkUpdateStudentStatus);
 router.patch('/:id/status', updateStudentStatus);
 router.put('/:id/login-credentials', updateLoginCredentials);
 router.post('/promote', promoteStudents);

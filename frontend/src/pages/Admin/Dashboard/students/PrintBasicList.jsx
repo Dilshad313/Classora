@@ -14,6 +14,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { getBasicList } from '../../../../services/studentApi';
+import { classApi } from '../../../../services/classApi';
 import toast from 'react-hot-toast';
 
 const PrintBasicList = () => {
@@ -22,12 +23,30 @@ const PrintBasicList = () => {
   const [students, setStudents] = useState([]);
   const [summary, setSummary] = useState({ totalStudents: 0, totalFeeRemaining: 0 });
   const [loading, setLoading] = useState(true);
-
-  const classes = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+  const [classes, setClasses] = useState([]);
+  const [loadingClasses, setLoadingClasses] = useState(true);
 
   useEffect(() => {
     fetchBasicList();
   }, [selectedClass]);
+
+  useEffect(() => {
+    fetchClasses();
+  }, []);
+
+  const fetchClasses = async () => {
+    try {
+      setLoadingClasses(true);
+      const data = await classApi.getAllClassNames();
+      setClasses(data || []);
+    } catch (error) {
+      console.error('Failed to load classes', error);
+      toast.error('Failed to load classes');
+      setClasses([]);
+    } finally {
+      setLoadingClasses(false);
+    }
+  };
 
   const fetchBasicList = async () => {
     try {
@@ -186,13 +205,17 @@ const PrintBasicList = () => {
               <select
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
-                className="px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 font-medium min-w-[200px] transition-colors"
+                disabled={loadingClasses}
+                className="px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 font-medium min-w-[200px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="all" className="dark:bg-gray-800">All Classes</option>
                 {classes.map((cls) => (
-                  <option key={cls} value={cls} className="dark:bg-gray-800">Grade {cls}</option>
+                  <option key={cls} value={cls} className="dark:bg-gray-800">{cls}</option>
                 ))}
               </select>
+              {loadingClasses && (
+                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              )}
             </div>
 
             {/* Export Buttons */}
@@ -243,15 +266,25 @@ const PrintBasicList = () => {
           </div>
         )}
 
+        {/* Classes Loading State */}
+        {loadingClasses && !loading && (
+          <div className="flex justify-center items-center py-12">
+            <div className="text-center">
+              <Loader className="w-8 h-8 text-blue-600 dark:text-blue-400 animate-spin mx-auto mb-4" />
+              <p className="text-gray-600 dark:text-gray-400">Loading classes...</p>
+            </div>
+          </div>
+        )}
+
         {/* Students Table */}
-        {!loading && (
+        {!loading && !loadingClasses && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-300">
             {/* Table Header - Print Only */}
             <div className="hidden print:block p-6 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-2">CLASSORA INSTITUTE</h2>
               <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 text-center mb-1">Student Basic List</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-                {selectedClass === 'all' ? 'All Classes' : `Grade ${selectedClass}`} - Generated on {new Date().toLocaleDateString()}
+                {selectedClass === 'all' ? 'All Classes' : selectedClass} - Generated on {new Date().toLocaleDateString()}
               </p>
             </div>
 
@@ -320,6 +353,19 @@ const PrintBasicList = () => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!loading && !loadingClasses && students.length === 0 && (
+          <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border-2 border-gray-200 dark:border-gray-700">
+            <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/50 dark:to-indigo-900/50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Users className="w-12 h-12 text-blue-600 dark:text-blue-400" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">No Students Found</h3>
+            <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto text-lg">
+              No students found in the selected class
+            </p>
           </div>
         )}
       </div>

@@ -698,8 +698,12 @@ export const getAllClassNames = async (req, res) => {
     // Get all classes for the user
     const classes = await Class.find({ createdBy: userId }, 'className').sort({ className: 1 });
 
-    // Extract unique class names (combining className and section if needed)
-    const classNames = classes.map(classObj => classObj.className);
+    // Extract unique class names (get grade numbers to match student.selectClass)
+    const classNames = classes.map(classObj => {
+      // Extract grade number from className (e.g., "Grade 1" -> "1")
+      const match = classObj.className.match(/\d+/);
+      return match ? match[0] : classObj.className;
+    });
 
     // Remove duplicates if any
     const uniqueClassNames = [...new Set(classNames)];

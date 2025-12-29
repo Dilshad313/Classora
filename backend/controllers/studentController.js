@@ -837,3 +837,52 @@ export const getStudentStats = async (req, res) => {
     });
   }
 };
+
+/**
+ * Bulk update student status
+ * @route PATCH /api/students/bulk-status
+ */
+export const bulkUpdateStudentStatus = async (req, res) => {
+  try {
+    const { studentIds, status } = req.body;
+
+    if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Student IDs array is required'
+      });
+    }
+
+    if (!status || !['active', 'inactive'].includes(status)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Valid status (active/inactive) is required'
+      });
+    }
+
+    // Update students
+    const updateData = { status };
+    if (status === 'active') {
+      updateData.lastActive = new Date();
+    }
+
+    const result = await Student.updateMany(
+      { _id: { $in: studentIds } },
+      updateData
+    );
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: `${result.modifiedCount} students status updated to ${status} successfully`,
+      data: {
+        updatedCount: result.modifiedCount
+      }
+    });
+  } catch (error) {
+    console.error('Bulk update student status error:', error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: 'Failed to update student status'
+    });
+  }
+};
