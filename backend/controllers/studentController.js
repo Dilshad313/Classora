@@ -247,6 +247,7 @@ export const createStudent = async (req, res) => {
       selectClass,
       email: email.trim(),
       password: password,
+      plainPassword: password,
       section,
       discountInFee: parseFloat(discountInFee) || 0,
       mobileNo: mobileNo || '',
@@ -401,10 +402,12 @@ export const updateStudent = async (req, res) => {
       }
     });
 
-    // Handle password update separately to hash it
+    // Handle password update separately
     if (req.body.password) {
-      const salt = await bcrypt.genSalt(12);
-      student.password = await bcrypt.hash(req.body.password, salt);
+      // Don't hash here - the pre-save hook handles it
+      // If we hash here, the pre-save hook will hash the hash!
+      student.password = req.body.password;
+      student.plainPassword = req.body.password;
     }
 
     await student.save();
@@ -629,7 +632,7 @@ export const getLoginCredentials = async (req, res) => {
     }
 
     const students = await Student.find(filter)
-      .select('studentName registrationNo selectClass section username password email')
+      .select('studentName registrationNo selectClass section username password plainPassword email')
       .sort({ selectClass: 1, studentName: 1 });
 
     res.status(StatusCodes.OK).json({
@@ -660,6 +663,7 @@ export const updateLoginCredentials = async (req, res) => {
       // Hash the password before saving
       const salt = await bcrypt.genSalt(12);
       updateData.password = await bcrypt.hash(password, salt);
+      updateData.plainPassword = password;
     }
 
     const student = await Student.findByIdAndUpdate(
@@ -719,14 +723,13 @@ export const promoteStudents = async (req, res) => {
       });
     }
 
-    // Validate class
-    const validClasses = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
-    if (!validClasses.includes(promoteToClass)) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        message: 'Invalid class for promotion'
-      });
-    }
+    // Check if promoteToClass is provided (already checked above)
+    if (!promoteToClass) {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          success: false,
+          message: 'Promote to class is required'
+        });
+      }
 
     // Update students
     const result = await Student.updateMany(

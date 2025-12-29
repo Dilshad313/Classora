@@ -14,13 +14,15 @@ const handleApiCall = async (url, options = {}) => {
       throw error;
     }
     
+    const { headers: customHeaders = {}, ...otherOptions } = options;
+
     const response = await fetch(url, {
+      ...otherOptions,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
-        ...options.headers,
+        ...customHeaders,
       },
-      ...options,
     });
 
     if (!response.ok) {

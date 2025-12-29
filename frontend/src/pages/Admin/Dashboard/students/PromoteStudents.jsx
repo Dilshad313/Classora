@@ -14,6 +14,7 @@ import {
   Loader
 } from 'lucide-react';
 import { getStudents, promoteStudents, getStudentStats } from '../../../../services/studentApi';
+import { classApi } from '../../../../services/classApi';
 import toast from 'react-hot-toast';
 
 const PromoteStudents = () => {
@@ -32,12 +33,23 @@ const PromoteStudents = () => {
     inactive: 0
   });
 
-  const classes = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+  const [classes, setClasses] = useState([]);
 
   useEffect(() => {
+    fetchClasses();
     fetchStudents();
     fetchStats();
   }, [selectedClass]);
+
+  const fetchClasses = async () => {
+    try {
+      const data = await classApi.getAllClassNames();
+      setClasses(data || []);
+    } catch (error) {
+      console.error('Failed to load classes', error);
+      toast.error('Failed to load classes');
+    }
+  };
 
   const fetchStudents = async () => {
     try {
@@ -116,7 +128,7 @@ const PromoteStudents = () => {
     try {
       setPromoting(true);
       await promoteStudents(selectedStudents, promoteClass);
-      toast.success(`Successfully promoted ${selectedStudents.length} student(s) to Grade ${promoteClass}`);
+      toast.success(`Successfully promoted ${selectedStudents.length} student(s) to Class ${promoteClass}`);
       
       // Refresh data
       fetchStudents();
@@ -199,7 +211,7 @@ const PromoteStudents = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Promote To</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{promoteClass ? `Grade ${promoteClass}` : '-'}</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{promoteClass ? `Class ${promoteClass}` : '-'}</p>
               </div>
               <div className="w-14 h-14 bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900 dark:to-purple-800 rounded-xl flex items-center justify-center">
                 <GraduationCap className="w-7 h-7 text-purple-600 dark:text-purple-300" />
@@ -247,7 +259,7 @@ const PromoteStudents = () => {
                     >
                       <option value="" className="dark:bg-gray-800">All Classes</option>
                       {classes.map((cls) => (
-                        <option key={cls} value={cls} className="dark:bg-gray-800">Grade {cls}</option>
+                        <option key={cls} value={cls} className="dark:bg-gray-800">Class {cls}</option>
                       ))}
                     </select>
                   </div>
@@ -289,7 +301,7 @@ const PromoteStudents = () => {
                   >
                     <option value="" className="dark:bg-gray-800">Select Class</option>
                     {classes.map((cls) => (
-                      <option key={cls} value={cls} className="dark:bg-gray-800">Grade {cls}</option>
+                      <option key={cls} value={cls} className="dark:bg-gray-800">Class {cls}</option>
                     ))}
                   </select>
                 </div>
@@ -377,7 +389,7 @@ const PromoteStudents = () => {
                             </td>
                             <td className="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white">{student.registrationNo}</td>
                             <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{student.studentName}</td>
-                            <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">Grade {student.selectClass} - {student.section}</td>
+                            <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">Class {student.selectClass} - {student.section}</td>
                             <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{student.rollNumber || 'N/A'}</td>
                           </tr>
                         ))

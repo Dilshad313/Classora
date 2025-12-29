@@ -75,7 +75,7 @@ const PrintBasicList = () => {
       s.registrationNo,
       s.studentName,
       s.fatherName || 'N/A',
-      `Grade ${s.selectClass} - ${s.section}`,
+      `Class ${s.selectClass} - ${s.section}`,
       `₹${s.feeRemaining || 0}`,
       s.mobileNo || 'N/A'
     ]);
@@ -92,7 +92,7 @@ const PrintBasicList = () => {
       s.registrationNo,
       s.studentName,
       s.fatherName || '',
-      `Grade ${s.selectClass} - ${s.section}`,
+      `Class ${s.selectClass} - ${s.section}`,
       s.feeRemaining || 0,
       s.mobileNo || ''
     ]);
@@ -116,7 +116,7 @@ const PrintBasicList = () => {
       s.registrationNo,
       s.studentName,
       s.fatherName || 'N/A',
-      `Grade ${s.selectClass} - ${s.section}`,
+      `Class ${s.selectClass} - ${s.section}`,
       `₹${s.feeRemaining || 0}`,
       s.mobileNo || 'N/A'
     ]);
@@ -210,7 +210,7 @@ const PrintBasicList = () => {
               >
                 <option value="all" className="dark:bg-gray-800">All Classes</option>
                 {classes.map((cls) => (
-                  <option key={cls} value={cls} className="dark:bg-gray-800">{cls}</option>
+                  <option key={cls} value={cls} className="dark:bg-gray-800">Class {cls}</option>
                 ))}
               </select>
               {loadingClasses && (
@@ -284,7 +284,7 @@ const PrintBasicList = () => {
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-2">CLASSORA INSTITUTE</h2>
               <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 text-center mb-1">Student Basic List</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-                {selectedClass === 'all' ? 'All Classes' : selectedClass} - Generated on {new Date().toLocaleDateString()}
+                {selectedClass === 'all' ? 'All Classes' : `Class ${selectedClass}`} - Generated on {new Date().toLocaleDateString()}
               </p>
             </div>
 
@@ -314,7 +314,7 @@ const PrintBasicList = () => {
                         <td className="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white">{student.registrationNo}</td>
                         <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{student.studentName}</td>
                         <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{student.fatherName || 'N/A'}</td>
-                        <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">Grade {student.selectClass} - {student.section}</td>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">Class {student.selectClass} - {student.section}</td>
                         <td className="px-6 py-4 text-sm">
                           <span className={`font-bold ${(student.feeRemaining || 0) > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
                             ₹{(student.feeRemaining || 0).toLocaleString()}

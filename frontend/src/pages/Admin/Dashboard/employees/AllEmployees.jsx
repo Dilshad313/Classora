@@ -19,9 +19,15 @@ import {
   X,
   Home,
   ChevronRight,
-  DollarSign
+  DollarSign,
+  AlertTriangle,
+  XCircle,
+  Save
 } from 'lucide-react';
 import { employeeApi } from '../../../../services/employeesApi';
+import toast from 'react-hot-toast';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const AllEmployees = () => {
   const navigate = useNavigate();
@@ -39,6 +45,8 @@ const AllEmployees = () => {
     active: 0,
     inactive: 0
   });
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState(null);
 
   useEffect(() => {
     fetchEmployees();
@@ -58,26 +66,76 @@ const AllEmployees = () => {
       }
     } catch (error) {
       console.error('Error fetching employees:', error);
-      alert('Error fetching employees. Please try again.');
+      toast.error('Error fetching employees. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteEmployee = async (id) => {
-    if (window.confirm('Are you sure you want to delete this employee?')) {
-      try {
-        const result = await employeeApi.deleteEmployee(id);
-        if (result.success) {
-          alert('Employee deleted successfully');
-          fetchEmployees(); // Refresh the list
-        } else {
-          alert(result.message || 'Error deleting employee');
-        }
-      } catch (error) {
-        console.error('Error deleting employee:', error);
-        alert('Error deleting employee. Please try again.');
+  const handleDelete = (employee) => {
+    setEmployeeToDelete(employee);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!employeeToDelete) return;
+
+    try {
+      const result = await employeeApi.deleteEmployee(employeeToDelete._id);
+      if (result.success) {
+        toast.success('Employee deleted successfully');
+        fetchEmployees();
+      } else {
+        toast.error(result.message || 'Error deleting employee');
       }
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+      toast.error('Error deleting employee. Please try again.');
+    } finally {
+      setIsDeleteModalOpen(false);
+      setEmployeeToDelete(null);
+    }
+  };
+
+  const handleExport = () => {
+    try {
+      const doc = new jsPDF();
+      
+      // Add title
+      doc.setFontSize(18);
+      doc.text('Employees List', 14, 20);
+      
+      // Add date
+      doc.setFontSize(10);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
+      
+      // Prepare table data
+      const tableData = employees.map(emp => [
+        emp.employeeId || 'N/A',
+        emp.employeeName,
+        emp.employeeRole,
+        emp.mobileNo,
+        emp.emailAddress || 'N/A',
+        `₹${emp.monthlySalary?.toLocaleString() || '0'}`,
+        emp.status === 'active' ? 'Active' : 'Inactive'
+      ]);
+      
+      // Add table
+      doc.autoTable({
+        startY: 35,
+        head: [['ID', 'Name', 'Role', 'Phone', 'Email', 'Salary', 'Status']],
+        body: tableData,
+        theme: 'grid',
+        headStyles: { fillColor: [37, 99, 235] },
+        styles: { fontSize: 8 }
+      });
+      
+      // Save PDF
+      doc.save(`employees_${new Date().toISOString().split('T')[0]}.pdf`);
+      toast.success('Employee list exported successfully');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export employee list');
     }
   };
 
@@ -238,7 +296,10 @@ const AllEmployees = () => {
                   <List className="w-5 h-5" />
                 </button>
               </div>
-              <button className="flex items-center space-x-2 px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-all font-medium">
+              <button 
+                onClick={handleExport}
+                className="flex items-center space-x-2 px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-all font-medium"
+              >
                 <Download className="w-4 h-4" />
                 <span className="hidden sm:inline">Export</span>
               </button>
@@ -262,9 +323,17 @@ const AllEmployees = () => {
               >
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 p-6 border-b border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                      {getInitials(employee.employeeName)}
-                    </div>
+                    {employee.picture?.url ? (
+                      <img 
+                        src={employee.picture.url} 
+                        alt={employee.employeeName}
+                        className="w-16 h-16 rounded-2xl object-cover shadow-lg"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                        {getInitials(employee.employeeName)}
+                      </div>
+                    )}
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(employee.status)}`}>
                       {employee.status === 'active' ? 'Active' : 'Inactive'}
                     </span>
@@ -311,18 +380,26 @@ const AllEmployees = () => {
                   </div>
                 </div>
                 <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex items-center justify-between">
-                  <button className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold text-sm transition-colors">
+                  <button 
+                    onClick={() => navigate(`/dashboard/employee/${employee._id}`)}
+                    className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold text-sm transition-colors"
+                  >
                     <Eye className="w-4 h-4" />
                     <span>View Details</span>
                   </button>
                  
                   <div className="flex items-center space-x-2">
-                    <button className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition-all">
+                    <button 
+                      onClick={() => navigate(`/dashboard/employee/edit/${employee._id}`)}
+                      className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition-all"
+                      title="Edit employee"
+                    >
                       <Edit3 className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleDeleteEmployee(employee._id)}
+                      onClick={() => handleDelete(employee)}
                       className="p-2 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-gray-700 rounded-lg transition-all"
+                      title="Delete employee"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -352,9 +429,17 @@ const AllEmployees = () => {
                     <tr key={employee._id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 rounded-xl flex items-center justify-center text-white font-bold text-sm">
-                            {getInitials(employee.employeeName)}
-                          </div>
+                          {employee.picture?.url ? (
+                            <img 
+                              src={employee.picture.url} 
+                              alt={employee.employeeName}
+                              className="w-10 h-10 rounded-xl object-cover"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 rounded-xl flex items-center justify-center text-white font-bold text-sm">
+                              {getInitials(employee.employeeName)}
+                            </div>
+                          )}
                           <div>
                             <p className="font-semibold text-gray-900 dark:text-white">{employee.employeeName}</p>
                             <p className="text-sm text-gray-500 dark:text-gray-400">{employee.emailAddress}</p>
@@ -372,15 +457,24 @@ const AllEmployees = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end space-x-2">
-                          <button className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition-all">
+                          <button 
+                            onClick={() => navigate(`/dashboard/employee/${employee._id}`)}
+                            className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition-all"
+                            title="View details"
+                          >
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition-all">
+                          <button 
+                            onClick={() => navigate(`/dashboard/employee/edit/${employee._id}`)}
+                            className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition-all"
+                            title="Edit employee"
+                          >
                             <Edit3 className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteEmployee(employee._id)}
+                            onClick={() => handleDelete(employee)}
                             className="p-2 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-gray-700 rounded-lg transition-all"
+                            title="Delete employee"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -412,6 +506,42 @@ const AllEmployees = () => {
               <UserPlus className="w-5 h-5" />
               <span>Add New Employee</span>
             </button>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {isDeleteModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all">
+              <div className="flex items-center justify-center w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full mx-auto mb-4">
+                <AlertTriangle className="w-8 h-8 text-red-600 dark:text-red-400" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white text-center mb-2">
+                Delete Employee
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
+                Are you sure you want to delete {employeeToDelete?.employeeName}? This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setIsDeleteModalOpen(false);
+                    setEmployeeToDelete(null);
+                  }}
+                  className="flex-1 px-4 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-semibold flex items-center justify-center gap-2"
+                >
+                  <XCircle className="w-5 h-5" />
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all font-semibold flex items-center justify-center gap-2"
+                >
+                  <Trash2 className="w-5 h-5" />
+                  Delete
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

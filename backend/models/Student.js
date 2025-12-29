@@ -33,8 +33,7 @@ const studentSchema = new mongoose.Schema({
   },
   selectClass: {
     type: String,
-    required: [true, 'Class is required'],
-    enum: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
+    required: [true, 'Class is required']
   },
   section: {
     type: String,
@@ -173,6 +172,9 @@ const studentSchema = new mongoose.Schema({
   password: {
     type: String,
     minlength: [6, 'Password must be at least 6 characters long']
+  },
+  plainPassword: {
+    type: String
   },
 
   // Status and Tracking

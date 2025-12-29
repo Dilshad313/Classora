@@ -33,13 +33,15 @@ export const getAllEmployees = async (req, res) => {
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
-    const [employees, total] = await Promise.all([
+    const [employees, total, activeCount, inactiveCount] = await Promise.all([
       Employee.find(query)
         .select('-password')
         .sort({ employeeName: 1 })
         .skip(skip)
         .limit(parseInt(limit)),
-      Employee.countDocuments(query)
+      Employee.countDocuments(query),
+      Employee.countDocuments({ status: 'active' }),
+      Employee.countDocuments({ status: 'inactive' })
     ]);
     
     console.log(`✅ Found ${employees.length} employees`);
@@ -51,7 +53,12 @@ export const getAllEmployees = async (req, res) => {
       total,
       totalPages: Math.ceil(total / parseInt(limit)),
       currentPage: parseInt(page),
-      data: employees
+      data: employees,
+      stats: {
+        total: total,
+        active: activeCount,
+        inactive: inactiveCount
+      }
     });
   } catch (error) {
     console.error('❌ Get employees error:', error);

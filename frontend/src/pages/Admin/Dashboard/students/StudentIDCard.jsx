@@ -242,15 +242,12 @@ const StudentIDCard = () => {
                           </div>
                         </div>
                       </div>
-                      {/* Official stamp overlay */}
-                      <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-red-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg opacity-90">
-                        <span className="text-white text-[8px] font-bold text-center leading-tight">VERIFIED</span>
-                      </div>
+
                       {/* Student Name */}
                       <div className="text-center mb-4 w-full">
                         <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{student.studentName}</h4>
                         <div className={`inline-block px-4 py-1 bg-gradient-to-r ${currentStyle.gradient} rounded-full`}>
-                          <span className="text-white text-xs font-bold">Grade {student.selectClass} - {student.section}</span>
+                          <span className="text-white text-xs font-bold">Class {student.selectClass} - {student.section}</span>
                         </div>
                       </div>
                     </div>
