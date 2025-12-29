@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Home,
   ChevronRight,
@@ -24,9 +24,14 @@ import { employeeApi, convertToFormData } from '../../../../services/employeesAp
 
 const AddEmployees = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get('edit');
+  const isEditMode = !!editId;
+  
   const [activeSection, setActiveSection] = useState('required');
   const [imagePreview, setImagePreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   // Form state
   const [formData, setFormData] = useState({
     // Basic Information (Required)
@@ -50,6 +55,53 @@ const AddEmployees = () => {
     homeAddress: ''
   });
   const [errors, setErrors] = useState({});
+
+  // Fetch employee data when in edit mode
+  useEffect(() => {
+    if (isEditMode && editId) {
+      fetchEmployeeData(editId);
+    }
+  }, [isEditMode, editId]);
+
+  const fetchEmployeeData = async (id) => {
+    setIsLoading(true);
+    try {
+      const employee = await employeeApi.getEmployeeById(id);
+      if (employee) {
+        setFormData({
+          employeeName: employee.employeeName || '',
+          picture: null, // Keep as null, we'll show existing image separately
+          mobileNo: employee.mobileNo || '',
+          dateOfJoining: employee.dateOfJoining ? new Date(employee.dateOfJoining).toISOString().split('T')[0] : '',
+          employeeRole: employee.employeeRole || '',
+          monthlySalary: employee.monthlySalary?.toString() || '',
+          fatherHusbandName: employee.fatherHusbandName || '',
+          nationalId: employee.nationalId || '',
+          education: employee.education || '',
+          gender: employee.gender || '',
+          religion: employee.religion || '',
+          bloodGroup: employee.bloodGroup || '',
+          experience: employee.experience || '',
+          emailAddress: employee.emailAddress || '',
+          dateOfBirth: employee.dateOfBirth ? new Date(employee.dateOfBirth).toISOString().split('T')[0] : '',
+          homeAddress: employee.homeAddress || ''
+        });
+        
+        // Set image preview if employee has a picture
+        if (employee.picture?.url) {
+          setImagePreview(employee.picture.url);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching employee:', error);
+      alert('Error loading employee data. Please try again.');
+      navigate('/dashboard/employee/all');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
   // Employee roles
   const employeeRoles = [
     'Teacher',
@@ -145,40 +197,27 @@ const AddEmployees = () => {
     if (!validateForm()) {
       return;
     }
+    
     setIsSubmitting(true);
     try {
-      // Convert form data to FormData for file upload
       const formDataToSend = convertToFormData(formData);
-      const result = await employeeApi.createEmployee(formDataToSend);
-      if (result.success) {
-        alert('Employee added successfully!');
-        // Reset form
-        setFormData({
-          employeeName: '',
-          picture: null,
-          mobileNo: '',
-          dateOfJoining: '',
-          employeeRole: '',
-          monthlySalary: '',
-          fatherHusbandName: '',
-          nationalId: '',
-          education: '',
-          gender: '',
-          religion: '',
-          bloodGroup: '',
-          experience: '',
-          emailAddress: '',
-          dateOfBirth: '',
-          homeAddress: ''
-        });
-        setImagePreview(null);
+      
+      let result;
+      if (isEditMode) {
+        result = await employeeApi.updateEmployee(editId, formDataToSend);
+      } else {
+        result = await employeeApi.createEmployee(formDataToSend);
+      }
+      
+      if (result.success || result) {
+        alert(`Employee ${isEditMode ? 'updated' : 'added'} successfully!`);
         navigate('/dashboard/employee/all');
       } else {
-        alert(result.message || 'Error adding employee');
+        alert(result.message || `Error ${isEditMode ? 'updating' : 'adding'} employee`);
       }
     } catch (error) {
-      console.error('Error adding employee:', error);
-      alert('Error adding employee. Please try again.');
+      console.error(`Error ${isEditMode ? 'updating' : 'adding'} employee:`, error);
+      alert(`Error ${isEditMode ? 'updating' : 'adding'} employee. Please try again.`);
     } finally {
       setIsSubmitting(false);
     }
@@ -222,7 +261,7 @@ const AddEmployees = () => {
           <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
           <span className="text-blue-600 dark:text-blue-400 font-semibold">Employees</span>
           <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-          <span className="text-gray-900 dark:text-white font-semibold">Add New Employee</span>
+          <span className="text-gray-900 dark:text-white font-semibold">{isEditMode ? 'Edit Employee' : 'Add New Employee'}</span>
         </div>
         {/* Header */}
         <div className="mb-8">
@@ -231,8 +270,8 @@ const AddEmployees = () => {
               <UserPlus className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Add New Employee</h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">Fill in the employee details below</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{isEditMode ? 'Edit Employee' : 'Add New Employee'}</h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">{isEditMode ? 'Update the employee details below' : 'Fill in the employee details below'}</p>
             </div>
           </div>
         </div>
@@ -268,7 +307,13 @@ const AddEmployees = () => {
           </div>
         </div>
         {/* Form */}
-        <form onSubmit={handleSubmit}>
+        {isLoading ? (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
+            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Loading employee data...</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
           {/* Required Section */}
           {activeSection === 'required' && (
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-8 mb-6">
@@ -668,13 +713,14 @@ const AddEmployees = () => {
                 ) : (
                   <>
                     <Save className="w-5 h-5" />
-                    <span>Save Employee</span>
+                    <span>{isEditMode ? 'Update Employee' : 'Save Employee'}</span>
                   </>
                 )}
               </button>
             </div>
           </div>
         </form>
+        )}
       </div>
     </div>
   );

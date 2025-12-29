@@ -47,6 +47,8 @@ const AllEmployees = () => {
   });
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [employeeToView, setEmployeeToView] = useState(null);
 
   useEffect(() => {
     fetchEmployees();
@@ -70,6 +72,11 @@ const AllEmployees = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleViewDetails = (employee) => {
+    setEmployeeToView(employee);
+    setIsViewModalOpen(true);
   };
 
   const handleDelete = (employee) => {
@@ -99,22 +106,29 @@ const AllEmployees = () => {
 
   const handleExport = () => {
     try {
+      if (!employees || employees.length === 0) {
+        toast.error('No employees to export');
+        return;
+      }
+
       const doc = new jsPDF();
       
       // Add title
       doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
       doc.text('Employees List', 14, 20);
       
       // Add date
       doc.setFontSize(10);
-      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Generated on: ${new Date().toLocaleDateString('en-GB')}`, 14, 28);
       
       // Prepare table data
       const tableData = employees.map(emp => [
         emp.employeeId || 'N/A',
-        emp.employeeName,
-        emp.employeeRole,
-        emp.mobileNo,
+        emp.employeeName || 'N/A',
+        emp.employeeRole || 'N/A',
+        emp.mobileNo || 'N/A',
         emp.emailAddress || 'N/A',
         `₹${emp.monthlySalary?.toLocaleString() || '0'}`,
         emp.status === 'active' ? 'Active' : 'Inactive'
@@ -126,16 +140,26 @@ const AllEmployees = () => {
         head: [['ID', 'Name', 'Role', 'Phone', 'Email', 'Salary', 'Status']],
         body: tableData,
         theme: 'grid',
-        headStyles: { fillColor: [37, 99, 235] },
-        styles: { fontSize: 8 }
+        headStyles: { 
+          fillColor: [37, 99, 235],
+          textColor: 255,
+          fontStyle: 'bold'
+        },
+        styles: { 
+          fontSize: 8, 
+          cellPadding: 3,
+          overflow: 'linebreak'
+        },
+        margin: { top: 35 }
       });
       
       // Save PDF
-      doc.save(`employees_${new Date().toISOString().split('T')[0]}.pdf`);
+      const fileName = `employees_${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(fileName);
       toast.success('Employee list exported successfully');
     } catch (error) {
       console.error('Export error:', error);
-      toast.error('Failed to export employee list');
+      toast.error(`Failed to export: ${error.message}`);
     }
   };
 
@@ -381,7 +405,7 @@ const AllEmployees = () => {
                 </div>
                 <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex items-center justify-between">
                   <button 
-                    onClick={() => navigate(`/dashboard/employee/${employee._id}`)}
+                    onClick={() => handleViewDetails(employee)}
                     className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold text-sm transition-colors"
                   >
                     <Eye className="w-4 h-4" />
@@ -390,7 +414,7 @@ const AllEmployees = () => {
                  
                   <div className="flex items-center space-x-2">
                     <button 
-                      onClick={() => navigate(`/dashboard/employee/edit/${employee._id}`)}
+                      onClick={() => navigate(`/dashboard/employee/add-new?edit=${employee._id}`)}
                       className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition-all"
                       title="Edit employee"
                     >
@@ -458,14 +482,14 @@ const AllEmployees = () => {
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end space-x-2">
                           <button 
-                            onClick={() => navigate(`/dashboard/employee/${employee._id}`)}
+                            onClick={() => handleViewDetails(employee)}
                             className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition-all"
                             title="View details"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button 
-                            onClick={() => navigate(`/dashboard/employee/edit/${employee._id}`)}
+                            onClick={() => navigate(`/dashboard/employee/add-new?edit=${employee._id}`)}
                             className="p-2 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition-all"
                             title="Edit employee"
                           >
@@ -506,6 +530,202 @@ const AllEmployees = () => {
               <UserPlus className="w-5 h-5" />
               <span>Add New Employee</span>
             </button>
+          </div>
+        )}
+
+        {/* View Details Modal */}
+        {isViewModalOpen && employeeToView && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full my-8">
+              {/* Modal Header */}
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 rounded-t-2xl flex items-center justify-between">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Eye className="w-6 h-6" />
+                  Employee Details
+                </h3>
+                <button
+                  onClick={() => {
+                    setIsViewModalOpen(false);
+                    setEmployeeToView(null);
+                  }}
+                  className="text-white hover:bg-white/20 p-2 rounded-lg transition-all"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6 space-y-6">
+                {/* Profile Section */}
+                <div className="flex items-center gap-4 pb-6 border-b border-gray-200 dark:border-gray-700">
+                  {employeeToView.picture?.url ? (
+                    <img 
+                      src={employeeToView.picture.url} 
+                      alt={employeeToView.employeeName}
+                      className="w-24 h-24 rounded-2xl object-cover border-4 border-blue-500"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-2xl">
+                      {getInitials(employeeToView.employeeName)}
+                    </div>
+                  )}
+                  <div>
+                    <h4 className="text-2xl font-bold text-gray-900 dark:text-white">{employeeToView.employeeName}</h4>
+                    <p className="text-lg text-gray-600 dark:text-gray-400">{employeeToView.employeeRole}</p>
+                    <span className={`inline-flex mt-2 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(employeeToView.status)}`}>
+                      {employeeToView.status === 'active' ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Details Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Employee ID */}
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Employee ID</label>
+                    <p className="text-base font-medium text-gray-900 dark:text-white">{employeeToView.employeeId || 'N/A'}</p>
+                  </div>
+
+                  {/* Mobile Number */}
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1">
+                      <Phone className="w-4 h-4" />
+                      Mobile Number
+                    </label>
+                    <p className="text-base font-medium text-gray-900 dark:text-white">{employeeToView.mobileNo}</p>
+                  </div>
+
+                  {/* Email */}
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1">
+                      <Mail className="w-4 h-4" />
+                      Email Address
+                    </label>
+                    <p className="text-base font-medium text-gray-900 dark:text-white">{employeeToView.emailAddress || 'N/A'}</p>
+                  </div>
+
+                  {/* Salary */}
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1">
+                      <DollarSign className="w-4 h-4" />
+                      Monthly Salary
+                    </label>
+                    <p className="text-base font-medium text-gray-900 dark:text-white">₹{employeeToView.monthlySalary?.toLocaleString()}</p>
+                  </div>
+
+                  {/* Date of Joining */}
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      Date of Joining
+                    </label>
+                    <p className="text-base font-medium text-gray-900 dark:text-white">
+                      {employeeToView.dateOfJoining ? new Date(employeeToView.dateOfJoining).toLocaleDateString('en-GB') : 'N/A'}
+                    </p>
+                  </div>
+
+                  {/* Date of Birth */}
+                  {employeeToView.dateOfBirth && (
+                    <div className="space-y-1">
+                      <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Date of Birth</label>
+                      <p className="text-base font-medium text-gray-900 dark:text-white">
+                        {new Date(employeeToView.dateOfBirth).toLocaleDateString('en-GB')}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Gender */}
+                  {employeeToView.gender && (
+                    <div className="space-y-1">
+                      <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Gender</label>
+                      <p className="text-base font-medium text-gray-900 dark:text-white">{employeeToView.gender}</p>
+                    </div>
+                  )}
+
+                  {/* Father/Husband Name */}
+                  {employeeToView.fatherHusbandName && (
+                    <div className="space-y-1">
+                      <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Father/Husband Name</label>
+                      <p className="text-base font-medium text-gray-900 dark:text-white">{employeeToView.fatherHusbandName}</p>
+                    </div>
+                  )}
+
+                  {/* National ID */}
+                  {employeeToView.nationalId && (
+                    <div className="space-y-1">
+                      <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">National ID</label>
+                      <p className="text-base font-medium text-gray-900 dark:text-white">{employeeToView.nationalId}</p>
+                    </div>
+                  )}
+
+                  {/* Education */}
+                  {employeeToView.education && (
+                    <div className="space-y-1">
+                      <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Education</label>
+                      <p className="text-base font-medium text-gray-900 dark:text-white">{employeeToView.education}</p>
+                    </div>
+                  )}
+
+                  {/* Religion */}
+                  {employeeToView.religion && (
+                    <div className="space-y-1">
+                      <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Religion</label>
+                      <p className="text-base font-medium text-gray-900 dark:text-white">{employeeToView.religion}</p>
+                    </div>
+                  )}
+
+                  {/* Blood Group */}
+                  {employeeToView.bloodGroup && (
+                    <div className="space-y-1">
+                      <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Blood Group</label>
+                      <p className="text-base font-medium text-gray-900 dark:text-white">{employeeToView.bloodGroup}</p>
+                    </div>
+                  )}
+
+                  {/* Experience */}
+                  {employeeToView.experience && (
+                    <div className="space-y-1">
+                      <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Experience</label>
+                      <p className="text-base font-medium text-gray-900 dark:text-white">{employeeToView.experience}</p>
+                    </div>
+                  )}
+
+                  {/* Home Address */}
+                  {employeeToView.homeAddress && (
+                    <div className="md:col-span-2 space-y-1">
+                      <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide flex items-center gap-1">
+                        <MapPin className="w-4 h-4" />
+                        Home Address
+                      </label>
+                      <p className="text-base font-medium text-gray-900 dark:text-white">{employeeToView.homeAddress}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 rounded-b-2xl flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setIsViewModalOpen(false);
+                    setEmployeeToView(null);
+                  }}
+                  className="px-6 py-2.5 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all font-semibold"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    setIsViewModalOpen(false);
+                    navigate(`/dashboard/employee/add-new?edit=${employeeToView._id}`);
+                  }}
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all font-semibold flex items-center gap-2"
+                >
+                  <Edit3 className="w-4 h-4" />
+                  Edit Employee
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
