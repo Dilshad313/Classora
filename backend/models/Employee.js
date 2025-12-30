@@ -38,7 +38,12 @@ const employeeSchema = new mongoose.Schema({
   religion: String,
   bloodGroup: String,
   experience: String,
-  emailAddress: String,
+  emailAddress: {
+    type: String,
+    required: [true, 'Email address is required'],
+    trim: true,
+    unique: true
+  },
   dateOfBirth: Date,
   homeAddress: String,
 
@@ -52,7 +57,11 @@ const employeeSchema = new mongoose.Schema({
     unique: true,
     sparse: true
   },
-  password: String,
+  password: {
+    type: String,
+    required: [true, 'Password is required'],
+    select: false
+  },
   department: String,
   status: {
     type: String,
@@ -63,6 +72,12 @@ const employeeSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+// Add indexes for better query performance
+employeeSchema.index({ emailAddress: 1 });
+employeeSchema.index({ employeeId: 1 });
+employeeSchema.index({ status: 1 });
+employeeSchema.index({ employeeRole: 1 });
 
 // Generate employee ID and username before saving
 employeeSchema.pre('save', async function(next) {
@@ -80,11 +95,6 @@ employeeSchema.pre('save', async function(next) {
       const firstName = nameParts[0];
       const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1].charAt(0) : '';
       this.username = `${firstName}${lastName}${this.employeeId}`.toLowerCase().replace(/\s+/g, '');
-    }
-
-    // Generate email if not present
-    if (!this.emailAddress && this.username) {
-      this.emailAddress = `${this.username}@school.com`;
     }
 
     // Auto-generate department based on role
@@ -106,15 +116,9 @@ employeeSchema.pre('save', async function(next) {
       this.department = roleToDept[this.employeeRole] || 'General';
     }
 
-    // Generate password if not present
-    if (!this.password && this.employeeName) {
-      const firstName = this.employeeName.split(' ')[0];
-      this.password = `${firstName}@${new Date().getFullYear()}`;
-    }
-
     // Hash password if it's modified or new
     if (this.isModified('password') && this.password) {
-      const salt = await bcrypt.genSalt(12);
+      const salt = await bcrypt.genSalt(10);
       this.password = await bcrypt.hash(this.password, salt);
     }
 

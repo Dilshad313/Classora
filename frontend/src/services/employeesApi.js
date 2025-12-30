@@ -151,13 +151,19 @@ export const createEmployee = async (employeeData) => {
   try {
     console.log('📤 Creating employee:', employeeData);
     
+    const isFormData = employeeData instanceof FormData;
+    const headers = {
+      'Authorization': `Bearer ${getAuthToken()}`
+    };
+    
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json';
+    }
+
     const response = await fetch(`${API_BASE_URL}/employees`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getAuthToken()}`
-      },
-      body: JSON.stringify(employeeData),
+      headers: headers,
+      body: isFormData ? employeeData : JSON.stringify(employeeData),
     });
 
     if (!response.ok) {
@@ -178,7 +184,7 @@ export const createEmployee = async (employeeData) => {
     }
 
     console.log('✅ Employee created successfully');
-    return result.data;
+    return result.data; // Return the employee data directly
   } catch (error) {
     console.error('❌ Error creating employee:', error);
     throw error;
@@ -195,13 +201,19 @@ export const updateEmployee = async (id, employeeData) => {
   try {
     console.log(`📤 Updating employee ${id}:`, employeeData);
     
+    const isFormData = employeeData instanceof FormData;
+    const headers = {
+      'Authorization': `Bearer ${getAuthToken()}`
+    };
+    
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json';
+    }
+    
     const response = await fetch(`${API_BASE_URL}/employees/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getAuthToken()}`
-      },
-      body: JSON.stringify(employeeData),
+      headers: headers,
+      body: isFormData ? employeeData : JSON.stringify(employeeData),
     });
 
     if (!response.ok) {
@@ -222,9 +234,49 @@ export const updateEmployee = async (id, employeeData) => {
     }
 
     console.log('✅ Employee updated successfully');
-    return result.data;
+    return result.data; // Return the employee data directly
   } catch (error) {
     console.error('❌ Error updating employee:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get employees for ID cards (active employees only)
+ * @returns {Promise<Object>} Employees data
+ */
+export const getEmployeesForIDCards = async () => {
+  try {
+    console.log('🔗 Fetching employees for ID cards');
+    
+    const response = await fetch(`${API_BASE_URL}/employees?status=active`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getAuthToken()}`
+      },
+    });
+
+    if (!response.ok) {
+      let errorMessage = `HTTP error! status: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch (e) {
+        errorMessage = response.statusText || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+    
+    if (result.success) {
+      return result;
+    } else {
+      throw new Error(result.message || 'Failed to fetch employees');
+    }
+  } catch (error) {
+    console.error('❌ Failed to fetch employees for ID cards:', error.message);
     throw error;
   }
 };
@@ -277,7 +329,8 @@ export const employeesApi = {
   getEmployeeById,
   createEmployee,
   updateEmployee,
-  deleteEmployee
+  deleteEmployee,
+  getEmployeesForIDCards
 };
 
 // Alias for consistency (singular form)

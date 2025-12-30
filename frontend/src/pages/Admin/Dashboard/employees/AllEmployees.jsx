@@ -22,12 +22,13 @@ import {
   DollarSign,
   AlertTriangle,
   XCircle,
-  Save
+  Save,
+  MapPin
 } from 'lucide-react';
 import { employeeApi } from '../../../../services/employeesApi';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 const AllEmployees = () => {
   const navigate = useNavigate();
@@ -134,8 +135,8 @@ const AllEmployees = () => {
         emp.status === 'active' ? 'Active' : 'Inactive'
       ]);
       
-      // Add table
-      doc.autoTable({
+      // Add table using autoTable
+      autoTable(doc, {
         startY: 35,
         head: [['ID', 'Name', 'Role', 'Phone', 'Email', 'Salary', 'Status']],
         body: tableData,

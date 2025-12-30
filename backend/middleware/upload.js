@@ -21,7 +21,7 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 2 * 1024 * 1024, // 2MB limit
+    fileSize: 5 * 1024 * 1024, // 5MB limit
     files: 1 // Only one file
   }
 });
@@ -38,6 +38,7 @@ const studentUpload = multer({
 
 // Create the upload middlewares
 const uploadMiddleware = upload.single('logo');
+const pictureUploadMiddleware = upload.single('picture');
 const studentUploadMiddleware = studentUpload.fields([
   { name: 'picture', maxCount: 1 },
   { name: 'documents', maxCount: 9 }
@@ -49,13 +50,19 @@ const handleMulterError = (error, req, res, next) => {
     if (error.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
         success: false,
-        message: 'File too large. Maximum size is 2MB for logo, 5MB for student files.'
+        message: 'File too large. Maximum size is 5MB.'
       });
     }
     if (error.code === 'LIMIT_FILE_COUNT') {
       return res.status(400).json({
         success: false,
         message: 'Too many files.'
+      });
+    }
+    if (error.code === 'LIMIT_UNEXPECTED_FILE') {
+      return res.status(400).json({
+        success: false,
+        message: `Unexpected file field: ${error.field}`
       });
     }
   }
@@ -73,6 +80,7 @@ const handleMulterError = (error, req, res, next) => {
 export {
   upload,
   uploadMiddleware,
+  pictureUploadMiddleware,
   studentUploadMiddleware,
   handleMulterError
 };

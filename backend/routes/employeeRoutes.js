@@ -10,7 +10,7 @@ import {
   updateEmployeeStatus
 } from '../controllers/employeeController.js';
 import { authenticateToken } from '../middleware/auth.js';
-import { uploadMiddleware, handleMulterError } from '../middleware/upload.js';
+import { uploadMiddleware, pictureUploadMiddleware, handleMulterError } from '../middleware/upload.js';
 
 const router = express.Router();
 
@@ -26,8 +26,8 @@ router.post('/bulk-delete', bulkDeleteEmployees);
 // CRUD routes
 router.get('/', getAllEmployees);
 router.get('/:id', getEmployeeById);
-router.post('/', uploadMiddleware, handleMulterError, createEmployee);
-router.put('/:id', uploadMiddleware, handleMulterError, updateEmployee);
+router.post('/', pictureUploadMiddleware, handleMulterError, createEmployee);
+router.put('/:id', pictureUploadMiddleware, handleMulterError, updateEmployee);
 router.delete('/:id', deleteEmployee);
 
 // Status update

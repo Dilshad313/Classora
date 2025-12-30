@@ -134,6 +134,7 @@ export const createEmployee = async (req, res) => {
       bloodGroup,
       experience,
       emailAddress,
+      password,
       dateOfBirth,
       homeAddress,
       department
@@ -144,6 +145,29 @@ export const createEmployee = async (req, res) => {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         message: 'Employee name is required'
+      });
+    }
+
+    if (!emailAddress?.trim()) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Email address is required'
+      });
+    }
+
+    // Check if email already exists (optimized with lean())
+    const existingEmployee = await Employee.findOne({ emailAddress: emailAddress.trim() }).lean();
+    if (existingEmployee) {
+      return res.status(StatusCodes.CONFLICT).json({
+        success: false,
+        message: 'Email address already exists'
+      });
+    }
+
+    if (!password || password.length < 6) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Password is required and must be at least 6 characters'
       });
     }
 
@@ -209,7 +233,8 @@ export const createEmployee = async (req, res) => {
       religion: religion?.trim() || '',
       bloodGroup: bloodGroup || '',
       experience: experience?.trim() || '',
-      emailAddress: emailAddress?.trim() || '',
+      emailAddress: emailAddress?.trim(),
+      password: password,
       dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
       homeAddress: homeAddress?.trim() || '',
       department: department?.trim() || ''
@@ -226,8 +251,8 @@ export const createEmployee = async (req, res) => {
     
     console.log('✅ Employee created:', employee._id);
 
-    // Return without password
-    const employeeResponse = await Employee.findById(employee._id).select('-password');
+    // Return without password (use lean for better performance)
+    const employeeResponse = await Employee.findById(employee._id).select('-password').lean();
 
     res.status(StatusCodes.CREATED).json({
       success: true,
@@ -249,7 +274,7 @@ export const createEmployee = async (req, res) => {
     if (error.code === 11000) {
       return res.status(StatusCodes.CONFLICT).json({
         success: false,
-        message: 'Employee with this ID or username already exists'
+        message: 'Employee with this ID or email already exists'
       });
     }
 
@@ -299,6 +324,7 @@ export const updateEmployee = async (req, res) => {
       bloodGroup,
       experience,
       emailAddress,
+      password,
       dateOfBirth,
       homeAddress,
       department,
@@ -319,6 +345,7 @@ export const updateEmployee = async (req, res) => {
     if (bloodGroup !== undefined) employee.bloodGroup = bloodGroup;
     if (experience !== undefined) employee.experience = experience.trim();
     if (emailAddress !== undefined) employee.emailAddress = emailAddress.trim();
+    if (password && password.trim()) employee.password = password; // Will be hashed by pre-save
     if (dateOfBirth !== undefined) employee.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : null;
     if (homeAddress !== undefined) employee.homeAddress = homeAddress.trim();
     if (department !== undefined) employee.department = department.trim();
@@ -354,7 +381,7 @@ export const updateEmployee = async (req, res) => {
     
     console.log('✅ Employee updated');
 
-    const employeeResponse = await Employee.findById(id).select('-password');
+    const employeeResponse = await Employee.findById(id).select('-password').lean();
 
     res.status(StatusCodes.OK).json({
       success: true,

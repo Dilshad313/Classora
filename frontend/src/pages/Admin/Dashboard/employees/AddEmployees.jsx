@@ -18,8 +18,10 @@ import {
   Heart,
   Mail,
   MapPin,
-  AlertCircle
+  AlertCircle,
+  Lock
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { employeeApi, convertToFormData } from '../../../../services/employeesApi';
 
 const AddEmployees = () => {
@@ -41,6 +43,8 @@ const AddEmployees = () => {
     dateOfJoining: '',
     employeeRole: '',
     monthlySalary: '',
+    emailAddress: '',
+    password: '',
    
     // Other Information (Optional)
     fatherHusbandName: '',
@@ -50,7 +54,6 @@ const AddEmployees = () => {
     religion: '',
     bloodGroup: '',
     experience: '',
-    emailAddress: '',
     dateOfBirth: '',
     homeAddress: ''
   });
@@ -75,6 +78,8 @@ const AddEmployees = () => {
           dateOfJoining: employee.dateOfJoining ? new Date(employee.dateOfJoining).toISOString().split('T')[0] : '',
           employeeRole: employee.employeeRole || '',
           monthlySalary: employee.monthlySalary?.toString() || '',
+          emailAddress: employee.emailAddress || '',
+          password: '', // Don't show existing password
           fatherHusbandName: employee.fatherHusbandName || '',
           nationalId: employee.nationalId || '',
           education: employee.education || '',
@@ -82,7 +87,6 @@ const AddEmployees = () => {
           religion: employee.religion || '',
           bloodGroup: employee.bloodGroup || '',
           experience: employee.experience || '',
-          emailAddress: employee.emailAddress || '',
           dateOfBirth: employee.dateOfBirth ? new Date(employee.dateOfBirth).toISOString().split('T')[0] : '',
           homeAddress: employee.homeAddress || ''
         });
@@ -91,11 +95,15 @@ const AddEmployees = () => {
         if (employee.picture?.url) {
           setImagePreview(employee.picture.url);
         }
+        
+        toast.success('Employee data loaded successfully');
       }
     } catch (error) {
       console.error('Error fetching employee:', error);
-      alert('Error loading employee data. Please try again.');
-      navigate('/dashboard/employee/all');
+      toast.error('Failed to load employee data. Redirecting...');
+      setTimeout(() => {
+        navigate('/dashboard/employee/all');
+      }, 2000);
     } finally {
       setIsLoading(false);
     }
@@ -177,6 +185,15 @@ const AddEmployees = () => {
     if (!formData.mobileNo.trim()) {
       newErrors.mobileNo = 'Mobile number is required';
     }
+    if (!formData.emailAddress.trim()) {
+      newErrors.emailAddress = 'Email address is required';
+    }
+    if (!isEditMode && !formData.password) {
+      newErrors.password = 'Password is required';
+    }
+    if (formData.password && formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
     if (!formData.dateOfJoining) {
       newErrors.dateOfJoining = 'Date of joining is required';
     }
@@ -188,6 +205,14 @@ const AddEmployees = () => {
     }
    
     setErrors(newErrors);
+    
+    // Show toast for validation errors
+    if (Object.keys(newErrors).length > 0) {
+      toast.error('Please fill in all required fields');
+      // Scroll to first error
+      setActiveSection('required');
+    }
+    
     return Object.keys(newErrors).length === 0;
   };
 
@@ -199,6 +224,8 @@ const AddEmployees = () => {
     }
     
     setIsSubmitting(true);
+    const loadingToast = toast.loading(isEditMode ? 'Updating employee...' : 'Adding employee...');
+    
     try {
       const formDataToSend = convertToFormData(formData);
       
@@ -209,15 +236,32 @@ const AddEmployees = () => {
         result = await employeeApi.createEmployee(formDataToSend);
       }
       
-      if (result.success || result) {
-        alert(`Employee ${isEditMode ? 'updated' : 'added'} successfully!`);
+      toast.dismiss(loadingToast);
+      
+      // Check if result exists (API returns the employee object directly on success)
+      if (result && result._id) {
+        toast.success(
+          isEditMode 
+            ? `Employee "${result.employeeName}" updated successfully!` 
+            : `Employee "${result.employeeName}" added successfully!`,
+          {
+            duration: 4000,
+            icon: '✅',
+          }
+        );
         navigate('/dashboard/employee/all');
       } else {
-        alert(result.message || `Error ${isEditMode ? 'updating' : 'adding'} employee`);
+        toast.error(result?.message || `Failed to ${isEditMode ? 'update' : 'add'} employee`);
       }
     } catch (error) {
+      toast.dismiss(loadingToast);
       console.error(`Error ${isEditMode ? 'updating' : 'adding'} employee:`, error);
-      alert(`Error ${isEditMode ? 'updating' : 'adding'} employee. Please try again.`);
+      
+      // Show specific error message
+      const errorMessage = error.message || `Failed to ${isEditMode ? 'update' : 'add'} employee. Please try again.`;
+      toast.error(errorMessage, {
+        duration: 5000,
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -231,6 +275,8 @@ const AddEmployees = () => {
       dateOfJoining: '',
       employeeRole: '',
       monthlySalary: '',
+      emailAddress: '',
+      password: '',
       fatherHusbandName: '',
       nationalId: '',
       education: '',
@@ -238,7 +284,6 @@ const AddEmployees = () => {
       religion: '',
       bloodGroup: '',
       experience: '',
-      emailAddress: '',
       dateOfBirth: '',
       homeAddress: ''
     });
@@ -389,6 +434,58 @@ const AddEmployees = () => {
                     <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
                       <AlertCircle className="w-4 h-4" />
                       {errors.picture}
+                    </p>
+                  )}
+                </div>
+
+                {/* Email Address */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Email Address <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+                    <input
+                      type="email"
+                      name="emailAddress"
+                      value={formData.emailAddress}
+                      onChange={handleInputChange}
+                      placeholder="john.doe@school.com"
+                      className={`w-full pl-11 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                        errors.emailAddress ? 'border-red-500' : 'border-gray-300 dark:border-gray-600 focus:border-blue-500'
+                      }`}
+                    />
+                  </div>
+                  {errors.emailAddress && (
+                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-4 h-4" />
+                      {errors.emailAddress}
+                    </p>
+                  )}
+                </div>
+
+                {/* Password */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    {isEditMode ? 'New Password' : 'Password'} <span className={isEditMode ? "text-gray-500 text-xs font-normal" : "text-red-500"}>{isEditMode ? '(Optional)' : '*'}</span>
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+                    <input
+                      type="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      placeholder={isEditMode ? "Leave empty to keep current" : "Min. 6 characters"}
+                      className={`w-full pl-11 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                        errors.password ? 'border-red-500' : 'border-gray-300 dark:border-gray-600 focus:border-blue-500'
+                      }`}
+                    />
+                  </div>
+                  {errors.password && (
+                    <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-4 h-4" />
+                      {errors.password}
                     </p>
                   )}
                 </div>
@@ -633,23 +730,7 @@ const AddEmployees = () => {
                     />
                   </div>
                 </div>
-                {/* Email Address */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Email Address
-                  </label>
-                  <div className="relative">
-                    <Mail className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
-                    <input
-                      type="email"
-                      name="emailAddress"
-                      value={formData.emailAddress}
-                      onChange={handleInputChange}
-                      placeholder="Email Address"
-                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                </div>
+
                 {/* Date of Birth */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
