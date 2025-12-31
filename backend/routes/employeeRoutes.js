@@ -7,7 +7,9 @@ import {
   deleteEmployee,
   getEmployeeStats,
   bulkDeleteEmployees,
-  updateEmployeeStatus
+  updateEmployeeStatus,
+  getEmployeeLoginCredentials,
+  updateEmployeeLoginCredentials
 } from '../controllers/employeeController.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { uploadMiddleware, pictureUploadMiddleware, handleMulterError } from '../middleware/upload.js';
@@ -19,6 +21,10 @@ router.use(authenticateToken);
 
 // Statistics route (must be before :id routes)
 router.get('/stats/summary', getEmployeeStats);
+
+// Login credentials routes
+router.get('/login-credentials', getEmployeeLoginCredentials);
+router.put('/:id/login-credentials', updateEmployeeLoginCredentials);
 
 // Bulk operations
 router.post('/bulk-delete', bulkDeleteEmployees);

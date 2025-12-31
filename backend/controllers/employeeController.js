@@ -70,6 +70,89 @@ export const getAllEmployees = async (req, res) => {
 };
 
 /**
+ * Get employee login credentials
+ * @route GET /api/employees/login-credentials
+ */
+export const getEmployeeLoginCredentials = async (req, res) => {
+  try {
+    const { department, search } = req.query;
+    console.log('📥 GET /api/employees/login-credentials');
+    const query = {};
+    if (department && department !== 'all') {
+      query.department = department;
+    }
+    if (search) {
+      query.$or = [
+        { employeeName: { $regex: search, $options: 'i' } },
+        { employeeId: { $regex: search, $options: 'i' } },
+        { username: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const employees = await Employee.find(query).select('+username +password');
+    console.log(`✅ Found ${employees.length} employee login credentials`);
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'Employee login credentials retrieved successfully',
+      data: employees,
+    });
+  } catch (error) {
+    console.error('❌ Get employee login credentials error:', error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: 'Failed to fetch employee login credentials',
+    });
+  }
+};
+
+/**
+ * Update employee login credentials
+ * @route PUT /api/employees/:id/login-credentials
+ */
+export const updateEmployeeLoginCredentials = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { username, password } = req.body;
+    console.log(`📥 PUT /api/employees/${id}/login-credentials`);
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Invalid employee ID',
+      });
+    }
+
+    const employee = await Employee.findById(id).select('+password');
+    if (!employee) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: 'Employee not found',
+      });
+    }
+
+    if (username !== undefined) employee.username = username;
+    if (password !== undefined) employee.password = password;
+
+    await employee.save();
+    console.log('✅ Employee login credentials updated');
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'Employee login credentials updated successfully',
+      data: employee,
+    });
+  } catch (error) {
+    console.error('❌ Update employee login credentials error:', error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: 'Failed to update employee login credentials',
+    });
+  }
+};
+
+
+/**
  * Get single employee by ID
  * @route GET /api/employees/:id
  */

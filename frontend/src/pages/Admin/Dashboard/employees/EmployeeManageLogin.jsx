@@ -18,6 +18,7 @@ import {
   Lock
 } from 'lucide-react';
 import { employeeApi } from '../../../../services/employeesApi';
+import toast from 'react-hot-toast';
 
 const EmployeeManageLogin = () => {
   const navigate = useNavigate();
@@ -26,12 +27,18 @@ const EmployeeManageLogin = () => {
   const [visiblePasswords, setVisiblePasswords] = useState({});
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
-  // Get unique departments
-  const departments = [...new Set(employees.map(e => e.department))].sort();
+  const [departments, setDepartments] = useState([]);
 
   useEffect(() => {
     fetchLoginCredentials();
   }, [selectedDepartment, searchTerm]);
+
+  useEffect(() => {
+    if (employees.length > 0) {
+      const uniqueDepartments = [...new Set(employees.map(e => e.department))].sort();
+      setDepartments(uniqueDepartments);
+    }
+  }, [employees]);
 
   const fetchLoginCredentials = async () => {
     setLoading(true);
@@ -46,7 +53,7 @@ const EmployeeManageLogin = () => {
       }
     } catch (error) {
       console.error('Error fetching login credentials:', error);
-      alert('Error fetching login credentials. Please try again.');
+      toast.error('Error fetching login credentials. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -62,6 +69,10 @@ const EmployeeManageLogin = () => {
 
   // Copy to clipboard
   const handleCopy = () => {
+    if (employees.length === 0) {
+      toast.error('No data to copy.');
+      return;
+    }
     const headers = ['ID', 'Employee Name', 'Department', 'Username', 'Password'];
     const rows = employees.map(e => [
       e.employeeId,
@@ -73,11 +84,15 @@ const EmployeeManageLogin = () => {
    
     const text = [headers, ...rows].map(row => row.join('\t')).join('\n');
     navigator.clipboard.writeText(text);
-    alert('Login credentials copied to clipboard!');
+    toast.success('Login credentials copied to clipboard!');
   };
 
   // Export to CSV
   const handleCSV = () => {
+    if (employees.length === 0) {
+      toast.error('No data to export.');
+      return;
+    }
     const headers = ['ID', 'Employee Name', 'Department', 'Username', 'Password'];
     const rows = employees.map(e => [
       e.employeeId,
@@ -96,10 +111,15 @@ const EmployeeManageLogin = () => {
     link.href = URL.createObjectURL(blob);
     link.download = `employee_login_credentials_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
+    toast.success('Exported to CSV');
   };
 
   // Export to Excel
   const handleExcel = () => {
+    if (employees.length === 0) {
+      toast.error('No data to export.');
+      return;
+    }
     const headers = ['ID', 'Employee Name', 'Department', 'Username', 'Password'];
     const rows = employees.map(e => [
       e.employeeId,
@@ -129,11 +149,7 @@ const EmployeeManageLogin = () => {
     link.href = URL.createObjectURL(blob);
     link.download = `employee_login_credentials_${new Date().toISOString().split('T')[0]}.xls`;
     link.click();
-  };
-
-  // Export to PDF
-  const handlePDF = () => {
-    window.print();
+    toast.success('Exported to Excel');
   };
 
   // Print
@@ -147,26 +163,29 @@ const EmployeeManageLogin = () => {
     if (newUsername === null) return;
     const newPassword = prompt('Enter new password:');
     if (newPassword === null) return;
+
+    const toastId = toast.loading('Updating login credentials...');
     try {
       const result = await employeeApi.updateLoginCredentials(employee._id, {
         username: newUsername,
         password: newPassword
       });
       if (result.success) {
-        alert('Login credentials updated successfully');
+        toast.success('Login credentials updated successfully', { id: toastId });
         fetchLoginCredentials(); // Refresh the list
       } else {
-        alert(result.message || 'Error updating login credentials');
+        toast.error(result.message || 'Error updating login credentials', { id: toastId });
       }
     } catch (error) {
       console.error('Error updating login credentials:', error);
-      alert('Error updating login credentials. Please try again.');
+      toast.error('Error updating login credentials. Please try again.', { id: toastId });
     }
   };
 
   // Handle delete
   const handleDelete = async (employee) => {
     if (window.confirm(`Are you sure you want to delete login credentials for ${employee.employeeName}?`)) {
+      const toastId = toast.loading('Deleting login credentials...');
       try {
         // Reset username and password
         const result = await employeeApi.updateLoginCredentials(employee._id, {
@@ -174,14 +193,14 @@ const EmployeeManageLogin = () => {
           password: ''
         });
         if (result.success) {
-          alert('Login credentials deleted successfully');
+          toast.success('Login credentials deleted successfully', { id: toastId });
           fetchLoginCredentials(); // Refresh the list
         } else {
-          alert(result.message || 'Error deleting login credentials');
+          toast.error(result.message || 'Error deleting login credentials', { id: toastId });
         }
       } catch (error) {
         console.error('Error deleting login credentials:', error);
-        alert('Error deleting login credentials. Please try again.');
+        toast.error('Error deleting login credentials. Please try again.', { id: toastId });
       }
     }
   };
@@ -263,13 +282,6 @@ const EmployeeManageLogin = () => {
             >
               <FileSpreadsheet className="w-4 h-4" />
               <span>Excel</span>
-            </button>
-            <button
-              onClick={handlePDF}
-              className="flex items-center gap-2 px-4 py-2.5 bg-red-600 dark:bg-red-500 hover:bg-red-700 dark:hover:bg-red-600 text-white rounded-xl transition-all font-medium shadow-lg hover:shadow-xl"
-            >
-              <Download className="w-4 h-4" />
-              <span>PDF</span>
             </button>
             <button
               onClick={handlePrint}

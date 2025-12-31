@@ -143,6 +143,67 @@ export const getEmployeeById = async (id) => {
 };
 
 /**
+ * Get employee login credentials
+ * @param {Object} filters - Filter options
+ * @returns {Promise<Object>} Employees login data
+ */
+export const getLoginCredentials = async (filters = {}) => {
+  try {
+    const queryParams = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) {
+        queryParams.append(key, filters[key]);
+      }
+    });
+    const url = `${API_BASE_URL}/employees/login-credentials${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    console.log(`🔗 Fetching login credentials from: ${url}`);
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getAuthToken()}`
+      },
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('❌ Failed to fetch login credentials:', error.message);
+    throw error;
+  }
+};
+
+/**
+ * Update employee login credentials
+ * @param {string} id - Employee ID
+ * @param {Object} credentials - { username, password }
+ * @returns {Promise<Object>} Updated employee
+ */
+export const updateLoginCredentials = async (id, credentials) => {
+  try {
+    console.log(`📤 Updating login credentials for ${id}`);
+    const response = await fetch(`${API_BASE_URL}/employees/${id}/login-credentials`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getAuthToken()}`
+      },
+      body: JSON.stringify(credentials),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('❌ Error updating login credentials:', error);
+    throw error;
+  }
+};
+
+/**
  * Create new employee
  * @param {Object} employeeData - Employee data
  * @returns {Promise<Object>} Created employee
@@ -330,7 +391,9 @@ export const employeesApi = {
   createEmployee,
   updateEmployee,
   deleteEmployee,
-  getEmployeesForIDCards
+  getEmployeesForIDCards,
+  getLoginCredentials,
+  updateLoginCredentials
 };
 
 // Alias for consistency (singular form)

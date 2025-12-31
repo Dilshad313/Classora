@@ -19,6 +19,9 @@ import {
   DollarSign
 } from 'lucide-react';
 import { employeeApi } from '../../../../services/employeesApi';
+import toast from 'react-hot-toast';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const JobLetter = () => {
   const navigate = useNavigate();
@@ -48,28 +51,26 @@ const JobLetter = () => {
       }
     } catch (error) {
       console.error('Error searching employees:', error);
-      alert('Error searching employees. Please try again.');
+      toast.error('Error searching employees. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleSearch = async (employee) => {
+    const toastId = toast.loading('Fetching job letter...');
     try {
-      const result = await employeeApi.getJobLetter(employee._id);
-     
-      if (result.success) {
-        setSelectedEmployee(result.data);
-      } else {
-        alert(result.message || 'Error fetching job letter');
-      }
+      const result = await employeeApi.getEmployeeById(employee._id);
+      setSelectedEmployee(result);
+      toast.success('Job letter fetched successfully!', { id: toastId });
     } catch (error) {
       console.error('Error fetching job letter:', error);
-      alert('Error fetching job letter. Please try again.');
+      toast.error('Error fetching job letter. Please try again.', { id: toastId });
     }
   };
 
   const getInitials = (name) => {
+    if (!name) return '';
     return name
       .split(' ')
       .map(n => n[0])
@@ -82,8 +83,31 @@ const JobLetter = () => {
     window.print();
   };
 
-  const handleDownload = () => {
-    alert('Download functionality would be implemented here');
+  const handleDownload = async () => {
+    if (!selectedEmployee) {
+      toast.error('No job letter to download.');
+      return;
+    }
+
+    const toastId = toast.loading('Generating PDF...');
+    const letterElement = document.getElementById('job-letter');
+
+    try {
+      const canvas = await html2canvas(letterElement, { scale: 2 });
+      const data = canvas.toDataURL('image/png');
+      
+      const pdf = new jsPDF('p', 'px', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(data, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`${selectedEmployee.employeeName}-Job-Letter.pdf`);
+      
+      toast.success('PDF downloaded successfully!', { id: toastId });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate PDF.', { id: toastId });
+    }
   };
 
   return (
@@ -119,7 +143,7 @@ const JobLetter = () => {
               <Search className="w-5 h-5 absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
               <input
                 type="text"
-                placeholder="Search Employee by Name, Employee ID, or Offer Number..."
+                placeholder="Search Employee by Name, Employee ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-12 pr-4 py-3.5 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full text-base transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
@@ -143,13 +167,17 @@ const JobLetter = () => {
                     onClick={() => handleSearch(employee)}
                     className="w-full flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all text-left border-2 border-transparent hover:border-blue-200 dark:hover:border-blue-800"
                   >
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                      {getInitials(employee.employeeName)}
-                    </div>
+                    {employee.picture && employee.picture.url ? (
+                      <img src={employee.picture.url} alt={employee.employeeName} className="w-12 h-12 object-cover rounded-xl flex-shrink-0" />
+                    ) : (
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                        {getInitials(employee.employeeName)}
+                      </div>
+                    )}
                     <div className="flex-1">
                       <p className="font-semibold text-gray-900 dark:text-white">{employee.employeeName}</p>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {employee.employeeId} • {employee.offerNumber} • {employee.employeeRole} - {employee.department}
+                        {employee.employeeId} • {employee.employeeRole} - {employee.department}
                       </p>
                     </div>
                   </button>
@@ -169,7 +197,7 @@ const JobLetter = () => {
         </div>
         {/* Job Letter Content */}
         {selectedEmployee && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border-2 border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div id="job-letter" className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border-2 border-gray-200 dark:border-gray-700 overflow-hidden">
             {/* Action Buttons */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between print:hidden">
               <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Job Offer Details</p>
@@ -212,9 +240,13 @@ const JobLetter = () => {
               <div className="flex flex-col md:flex-row gap-8 mb-8">
                 {/* Photo */}
                 <div className="flex-shrink-0 self-start">
-                  <div className="w-48 h-48 bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 rounded-2xl flex items-center justify-center text-white font-bold text-6xl shadow-xl border-4 border-white ring-4 ring-blue-100 dark:ring-blue-900">
-                    {getInitials(selectedEmployee.employee.name)}
-                  </div>
+                  {selectedEmployee.picture && selectedEmployee.picture.url ? (
+                    <img src={selectedEmployee.picture.url} alt={selectedEmployee.employeeName} className="w-48 h-48 object-cover rounded-2xl shadow-xl border-4 border-white ring-4 ring-blue-100 dark:ring-blue-900" />
+                  ) : (
+                    <div className="w-48 h-48 bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 rounded-2xl flex items-center justify-center text-white font-bold text-6xl shadow-xl border-4 border-white ring-4 ring-blue-100 dark:ring-blue-900">
+                      {getInitials(selectedEmployee.employeeName)}
+                    </div>
+                  )}
                 </div>
                 {/* Basic Info */}
                 <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -225,16 +257,7 @@ const JobLetter = () => {
                       </div>
                       <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Employee Name</p>
                     </div>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white ml-13">{selectedEmployee.employee.name}</p>
-                  </div>
-                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-5 rounded-xl border-2 border-purple-100 dark:border-purple-800">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 bg-purple-600 dark:bg-purple-500 rounded-lg flex items-center justify-center">
-                        <Hash className="w-5 h-5 text-white" />
-                      </div>
-                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Offer Number</p>
-                    </div>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white ml-13">{selectedEmployee.employee.offerNumber}</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white ml-13">{selectedEmployee.employeeName}</p>
                   </div>
                   <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-5 rounded-xl border-2 border-green-100 dark:border-green-800">
                     <div className="flex items-center gap-3 mb-2">
@@ -243,7 +266,7 @@ const JobLetter = () => {
                       </div>
                       <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Employee ID</p>
                     </div>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white ml-13">{selectedEmployee.employee.employeeId}</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white ml-13">{selectedEmployee.employeeId}</p>
                   </div>
                   <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 p-5 rounded-xl border-2 border-orange-100 dark:border-orange-800">
                     <div className="flex items-center gap-3 mb-2">
@@ -252,7 +275,7 @@ const JobLetter = () => {
                       </div>
                       <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Position</p>
                     </div>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white ml-13">{selectedEmployee.employee.role}</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white ml-13">{selectedEmployee.employeeRole}</p>
                   </div>
                 </div>
               </div>
@@ -267,8 +290,8 @@ const JobLetter = () => {
                     <div>
                       <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Date of Birth</p>
                       <p className="text-base font-bold text-gray-900 dark:text-white">
-                        {selectedEmployee.employee.dateOfBirth ?
-                          new Date(selectedEmployee.employee.dateOfBirth).toLocaleDateString('en-US', {
+                        {selectedEmployee.dateOfBirth ?
+                          new Date(selectedEmployee.dateOfBirth).toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric'
@@ -284,7 +307,7 @@ const JobLetter = () => {
                     <div>
                       <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Joining Date</p>
                       <p className="text-base font-bold text-gray-900 dark:text-white">
-                        {new Date(selectedEmployee.employee.joiningDate).toLocaleDateString('en-US', {
+                        {new Date(selectedEmployee.dateOfJoining).toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric'
@@ -298,7 +321,7 @@ const JobLetter = () => {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Phone Number</p>
-                      <p className="text-base font-bold text-gray-900 dark:text-white">{selectedEmployee.employee.phone}</p>
+                      <p className="text-base font-bold text-gray-900 dark:text-white">{selectedEmployee.mobileNo}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
@@ -307,7 +330,7 @@ const JobLetter = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Email Address</p>
-                      <p className="text-base font-bold text-gray-900 dark:text-white break-all">{selectedEmployee.employee.email}</p>
+                      <p className="text-base font-bold text-gray-900 dark:text-white break-all">{selectedEmployee.emailAddress}</p>
                     </div>
                   </div>
                 </div>
@@ -318,7 +341,7 @@ const JobLetter = () => {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Blood Group</p>
-                      <p className="text-base font-bold text-gray-900 dark:text-white">{selectedEmployee.employee.bloodGroup || 'Not provided'}</p>
+                      <p className="text-base font-bold text-gray-900 dark:text-white">{selectedEmployee.bloodGroup || 'Not provided'}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
@@ -327,7 +350,7 @@ const JobLetter = () => {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Department</p>
-                      <p className="text-base font-bold text-gray-900 dark:text-white">{selectedEmployee.employee.department}</p>
+                      <p className="text-base font-bold text-gray-900 dark:text-white">{selectedEmployee.department}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
@@ -335,8 +358,8 @@ const JobLetter = () => {
                       <Award className="w-5 h-5 text-teal-600 dark:text-teal-400" />
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Qualification</p>
-                      <p className="text-base font-bold text-gray-900 dark:text-white">{selectedEmployee.employee.qualification || 'Not provided'}</p>
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Education</p>
+                      <p className="text-base font-bold text-gray-900 dark:text-white">{selectedEmployee.education || 'Not provided'}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
@@ -345,7 +368,7 @@ const JobLetter = () => {
                     </div>
                     <div className="flex-1">
                       <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Address</p>
-                      <p className="text-base font-bold text-gray-900 dark:text-white">{selectedEmployee.employee.address || 'Not provided'}</p>
+                      <p className="text-base font-bold text-gray-900 dark:text-white">{selectedEmployee.homeAddress || 'Not provided'}</p>
                     </div>
                   </div>
                 </div>
@@ -360,7 +383,7 @@ const JobLetter = () => {
                   </h3>
                   <div>
                     <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Monthly Salary</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">₹{selectedEmployee.salary}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">₹{selectedEmployee.monthlySalary}</p>
                   </div>
                 </div>
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-2xl border-2 border-blue-200 dark:border-blue-800">
@@ -370,25 +393,7 @@ const JobLetter = () => {
                   </h3>
                   <div>
                     <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Total Experience</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{selectedEmployee.employee.experience || 'Not provided'}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Emergency Contact */}
-              <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-6 rounded-2xl border-2 border-amber-200 dark:border-amber-800 mb-8">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                  <User className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-                  Emergency Contact Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Contact Name</p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">{selectedEmployee.emergencyContact?.name || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">Contact Phone</p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">{selectedEmployee.emergencyContact?.phone || 'Not provided'}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{selectedEmployee.experience || 'Not provided'}</p>
                   </div>
                 </div>
               </div>
@@ -399,7 +404,7 @@ const JobLetter = () => {
                   <div className="text-center md:text-left">
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Issued on:</p>
                     <p className="font-bold text-gray-900 dark:text-white">
-                      {new Date(selectedEmployee.issuedDate).toLocaleDateString('en-US', {
+                      {new Date().toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric'

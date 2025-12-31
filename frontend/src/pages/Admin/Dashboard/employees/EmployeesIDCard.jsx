@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Home,
@@ -12,6 +12,9 @@ import {
   Briefcase
 } from 'lucide-react';
 import { employeeApi } from '../../../../services/employeesApi';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import toast from 'react-hot-toast';
 
 const EmployeesIDCard = () => {
   const navigate = useNavigate();
@@ -32,7 +35,7 @@ const EmployeesIDCard = () => {
       }
     } catch (error) {
       console.error('Error fetching employees for ID cards:', error);
-      alert('Error fetching employees for ID cards. Please try again.');
+      toast.error('Error fetching employees for ID cards. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -84,8 +87,39 @@ const EmployeesIDCard = () => {
     window.print();
   };
 
-  const handleDownload = () => {
-    alert('Download functionality would be implemented here');
+  const handleDownloadAll = async () => {
+    if (employees.length === 0) {
+      toast.error('No employee ID cards to download.');
+      return;
+    }
+
+    const toastId = toast.loading('Generating PDF...');
+
+    try {
+      const pdf = new jsPDF('p', 'px');
+      const cardElements = document.querySelectorAll('.employee-id-card');
+      
+      for (let i = 0; i < cardElements.length; i++) {
+        const card = cardElements[i];
+        const canvas = await html2canvas(card, { scale: 2 });
+        const data = canvas.toDataURL('image/png');
+        
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        if (i > 0) {
+          pdf.addPage();
+        }
+        
+        pdf.addImage(data, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      }
+      
+      pdf.save('All-Employee-ID-Cards.pdf');
+      toast.success('PDF downloaded successfully!', { id: toastId });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate PDF.', { id: toastId });
+    }
   };
 
   return (
@@ -121,7 +155,7 @@ const EmployeesIDCard = () => {
                 <span>Print All</span>
               </button>
               <button
-                onClick={handleDownload}
+                onClick={handleDownloadAll}
                 className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-500 transition-all font-medium shadow-lg"
               >
                 <Download className="w-5 h-5" />
@@ -175,7 +209,7 @@ const EmployeesIDCard = () => {
             {employees.map((employee) => (
               <div key={employee._id} className="flex justify-center">
                 {/* ID Card - Realistic Design */}
-                <div className="w-[350px] h-[550px] bg-white dark:bg-gray-800 rounded-lg shadow-2xl overflow-hidden border border-gray-300 dark:border-gray-600 transform hover:scale-102 transition-transform duration-300 relative">
+                <div id={`id-card-${employee._id}`} className="w-[350px] h-[550px] bg-white dark:bg-gray-800 rounded-lg shadow-2xl overflow-hidden border border-gray-300 dark:border-gray-600 transform hover:scale-102 transition-transform duration-300 relative employee-id-card">
                   {/* Decorative Corner Elements */}
                   <div className="absolute top-0 left-0 w-20 h-20 opacity-10">
                     <div className={`w-full h-full bg-gradient-to-br ${currentStyle.gradient} rounded-br-full`}></div>
@@ -200,9 +234,17 @@ const EmployeesIDCard = () => {
                     <div className="flex flex-col items-center">
                       {/* Photo with realistic border */}
                       <div className="relative mb-4">
-                        <div className={`w-32 h-32 bg-gradient-to-br ${currentStyle.gradient} rounded-lg flex items-center justify-center text-white font-bold text-4xl shadow-xl border-4 border-white ring-4 ring-gray-200 dark:ring-gray-600`}>
-                          {getInitials(employee.employeeName)}
-                        </div>
+                        {employee.picture && employee.picture.url ? (
+                          <img
+                            src={employee.picture.url}
+                            alt={employee.employeeName}
+                            className="w-32 h-32 object-cover rounded-lg shadow-xl border-4 border-white ring-4 ring-gray-200 dark:ring-gray-600"
+                          />
+                        ) : (
+                          <div className={`w-32 h-32 bg-gradient-to-br ${currentStyle.gradient} rounded-lg flex items-center justify-center text-white font-bold text-4xl shadow-xl border-4 border-white ring-4 ring-gray-200 dark:ring-gray-600`}>
+                            {getInitials(employee.employeeName)}
+                          </div>
+                        )}
                         {/* Official stamp overlay */}
                         <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-green-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg opacity-90">
                           <span className="text-white text-[8px] font-bold text-center leading-tight">STAFF</span>
