@@ -1,6 +1,8 @@
 // controllers/authController.js
 
 import Admin from "../models/Admin.js";
+import Student from "../models/Student.js";
+import Employee from "../models/Employee.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { StatusCodes } from 'http-status-codes';
@@ -210,6 +212,92 @@ export const getCurrentUser = async (req, res) => {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: "Server error"
+    });
+  }
+};
+
+// LOGIN USER (Student or Employee)
+export const loginUser = async (req, res) => {
+  try {
+    const { email, password, role } = req.body;
+
+    console.log(`📥 Login attempt for: ${email}, role: ${role}`);
+
+    // 1. Validate input
+    if (!email || !password || !role) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Email, password, and role are required",
+      });
+    }
+
+    // 2. Determine the model based on the role
+    let UserModel;
+    if (role === 'student') {
+      UserModel = Student;
+    } else if (role === 'employee') {
+      UserModel = Employee;
+    } else {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Invalid role specified",
+      });
+    }
+
+    // 3. Find the user by email
+    const user = await UserModel.findOne({ email: email.toLowerCase().trim() }).select('+password');
+
+    if (!user) {
+      console.log(`❌ User not found: ${email} with role ${role}`);
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        message: "Invalid email or password",
+      });
+    }
+
+    // 4. Compare password
+    const isMatch = await user.comparePassword(password);
+    console.log(`🔐 Password match for ${email}:`, isMatch);
+
+    if (!isMatch) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        message: "Invalid email or password",
+      });
+    }
+
+    // 5. Generate JWT token
+    const token = jwt.sign(
+      { id: user._id, email: user.email, role: role },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // 6. Prepare user data for the response (excluding password)
+    const userResponse = {
+        _id: user._id,
+        fullName: role === 'student' ? user.studentName : user.employeeName,
+        email: user.email,
+        role: role,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      };
+
+
+    console.log(`✅ Login successful for ${role}:`, user.email);
+
+    // 7. Send the response
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Login successful",
+      user: userResponse,
+      token,
+    });
+  } catch (error) {
+    console.error(`❌ Login error for role ${req.body.role}:`, error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: "Server error during login",
     });
   }
 };
