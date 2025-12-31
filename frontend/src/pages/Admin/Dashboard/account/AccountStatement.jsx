@@ -29,6 +29,7 @@ const AccountStatement = () => {
   const [loading, setLoading] = useState(false);
   const [statements, setStatements] = useState([]);
   const [totals, setTotals] = useState({ debit: 0, credit: 0, netBalance: 0 });
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
 
   // Fetch account statement data
   const fetchAccountStatement = async () => {
@@ -92,27 +93,36 @@ const AccountStatement = () => {
   };
 
   // Delete selected records
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (selectedRecords.length === 0) {
       toast.error('Please select records to delete');
       return;
     }
-   
-    if (window.confirm(`Are you sure you want to delete ${selectedRecords.length} record(s)?`)) {
-      try {
-        const result = await accountApi.deleteTransactions(selectedRecords);
-       
-        if (result.success) {
-          toast.success(result.message);
-          setSelectedRecords([]);
-          fetchAccountStatement(); // Refresh the data
-        } else {
-          toast.error(result.message || 'Failed to delete transactions');
-        }
-      } catch (error) {
-        console.error('Error deleting transactions:', error);
-        toast.error(error.message || 'Error deleting transactions');
+    
+    setShowDeleteConfirm(selectedRecords.length);
+  };
+
+  // Confirm delete
+  const confirmDelete = async () => {
+    if (!showDeleteConfirm) return;
+    
+    const loadingToast = toast.loading(`Deleting ${showDeleteConfirm} record(s)...`);
+    
+    try {
+      const result = await accountApi.deleteTransactions(selectedRecords);
+      
+      if (result.success) {
+        toast.success(result.message, { id: loadingToast });
+        setSelectedRecords([]);
+        fetchAccountStatement(); // Refresh the data
+      } else {
+        toast.error(result.message || 'Failed to delete transactions', { id: loadingToast });
       }
+    } catch (error) {
+      console.error('Error deleting transactions:', error);
+      toast.error(error.message || 'Error deleting transactions', { id: loadingToast });
+    } finally {
+      setShowDeleteConfirm(null);
     }
   };
 
@@ -565,6 +575,36 @@ const AccountStatement = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-md w-full p-8 border border-gray-100 dark:border-gray-700 transform animate-in zoom-in slide-in-from-bottom-4 duration-300">
+            <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Trash2 className="w-10 h-10 text-red-600 dark:text-red-400" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-2">Delete Transactions?</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-center mb-8">
+              Are you sure you want to delete <span className="font-bold text-gray-900 dark:text-white">{showDeleteConfirm} record(s)</span>? This action cannot be undone.
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => setShowDeleteConfirm(null)}
+                className="px-6 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-200 dark:shadow-red-900/20 transition-all hover:scale-105 flex items-center justify-center gap-2"
+              >
+                <Trash2 className="w-5 h-5" />
+                <span>Delete</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Print Styles */}
       <style jsx>{`
         @media print {

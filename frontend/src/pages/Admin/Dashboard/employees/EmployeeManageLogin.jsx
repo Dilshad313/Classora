@@ -28,6 +28,9 @@ const EmployeeManageLogin = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [departments, setDepartments] = useState([]);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [editingEmployee, setEditingEmployee] = useState(null);
 
   useEffect(() => {
     fetchLoginCredentials();
@@ -57,6 +60,13 @@ const EmployeeManageLogin = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Check if password is encrypted (bcrypt hash)
+  const isPasswordEncrypted = (password) => {
+    if (!password) return false;
+    // bcrypt hashes are typically 60 characters long and start with $2a$, $2b$, or $2x$
+    return password.length === 60 && password.startsWith('$2');
   };
 
   // Toggle password visibility
@@ -158,20 +168,25 @@ const EmployeeManageLogin = () => {
   };
 
   // Handle edit
-  const handleEdit = async (employee) => {
-    const newUsername = prompt('Enter new username:', employee.username);
-    if (newUsername === null) return;
-    const newPassword = prompt('Enter new password:');
-    if (newPassword === null) return;
+  const handleEdit = (employee) => {
+    setEditingEmployee(employee);
+    setShowEditModal(true);
+  };
+
+  // Handle save edit
+  const handleSaveEdit = async () => {
+    if (!editingEmployee) return;
 
     const toastId = toast.loading('Updating login credentials...');
     try {
-      const result = await employeeApi.updateLoginCredentials(employee._id, {
-        username: newUsername,
-        password: newPassword
+      const result = await employeeApi.updateLoginCredentials(editingEmployee._id, {
+        username: editingEmployee.username,
+        password: editingEmployee.password
       });
       if (result.success) {
         toast.success('Login credentials updated successfully', { id: toastId });
+        setShowEditModal(false);
+        setEditingEmployee(null);
         fetchLoginCredentials(); // Refresh the list
       } else {
         toast.error(result.message || 'Error updating login credentials', { id: toastId });
@@ -183,25 +198,31 @@ const EmployeeManageLogin = () => {
   };
 
   // Handle delete
-  const handleDelete = async (employee) => {
-    if (window.confirm(`Are you sure you want to delete login credentials for ${employee.employeeName}?`)) {
-      const toastId = toast.loading('Deleting login credentials...');
-      try {
-        // Reset username and password
-        const result = await employeeApi.updateLoginCredentials(employee._id, {
-          username: '',
-          password: ''
-        });
-        if (result.success) {
-          toast.success('Login credentials deleted successfully', { id: toastId });
-          fetchLoginCredentials(); // Refresh the list
-        } else {
-          toast.error(result.message || 'Error deleting login credentials', { id: toastId });
-        }
-      } catch (error) {
-        console.error('Error deleting login credentials:', error);
-        toast.error('Error deleting login credentials. Please try again.', { id: toastId });
+  const handleDelete = (employee) => {
+    setShowDeleteConfirm(employee);
+  };
+
+  // Confirm delete
+  const confirmDelete = async () => {
+    if (!showDeleteConfirm) return;
+
+    const toastId = toast.loading('Deleting login credentials...');
+    try {
+      // Reset username and password
+      const result = await employeeApi.updateLoginCredentials(showDeleteConfirm._id, {
+        username: '',
+        password: ''
+      });
+      if (result.success) {
+        toast.success('Login credentials deleted successfully', { id: toastId });
+        setShowDeleteConfirm(null);
+        fetchLoginCredentials(); // Refresh the list
+      } else {
+        toast.error(result.message || 'Error deleting login credentials', { id: toastId });
       }
+    } catch (error) {
+      console.error('Error deleting login credentials:', error);
+      toast.error('Error deleting login credentials. Please try again.', { id: toastId });
     }
   };
 
@@ -220,13 +241,13 @@ const EmployeeManageLogin = () => {
           <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
           <span className="text-blue-600 dark:text-blue-400 font-semibold">Employees</span>
           <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-          <span className="text-gray-900 dark:text-white font-semibold">Manage Login</span>
+          <span className="text-gray-900 dark:text-gray-100 font-semibold">Manage Login</span>
         </div>
         {/* Header */}
         <div className="mb-8 print:hidden">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Manage Employee Login</h1>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Manage Employee Login</h1>
               <p className="text-gray-600 dark:text-gray-400 mt-1">Manage employee login credentials and access</p>
             </div>
           </div>
@@ -304,7 +325,7 @@ const EmployeeManageLogin = () => {
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
             {/* Table Header - Print Only */}
             <div className="hidden print:block p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-2">CLASSORA INSTITUTE</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 text-center mb-2">CLASSORA INSTITUTE</h2>
               <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 text-center mb-1">Employee Login Credentials</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
                 {selectedDepartment === 'all' ? 'All Departments' : selectedDepartment} - Generated on {new Date().toLocaleDateString()}
@@ -327,7 +348,7 @@ const EmployeeManageLogin = () => {
                     employees.map((employee, index) => (
                       <tr
                         key={employee._id}
-                        className={`hover:bg-blue-50 dark:hover:bg-gray-700/50 transition-colors ${index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-750'}`}
+                        className={`transition-colors ${index % 2 === 0 ? 'bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-gray-700' : 'bg-gray-50 dark:bg-gray-750 hover:bg-blue-100 dark:hover:bg-gray-700'}`}
                       >
                         <td className="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white">{employee.employeeId}</td>
                         <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{employee.employeeName}</td>
@@ -394,7 +415,7 @@ const EmployeeManageLogin = () => {
                   </p>
                   <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                     <Lock className="w-4 h-4" />
-                    <span className="font-medium">Login credentials are confidential</span>
+                    <span className="font-medium text-gray-600 dark:text-gray-400">Login credentials are confidential</span>
                   </div>
                 </div>
               </div>
@@ -402,6 +423,97 @@ const EmployeeManageLogin = () => {
           </div>
         )}
       </div>
+
+      {/* Edit Modal */}
+      {showEditModal && editingEmployee && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-md w-full p-8 border border-gray-100 dark:border-gray-700 transform animate-in zoom-in slide-in-from-bottom-4 duration-300">
+            <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Edit2 className="w-10 h-10 text-blue-600 dark:text-blue-400" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-2">Edit Login Credentials</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-center mb-8">
+              Update login credentials for <span className="font-bold text-gray-900 dark:text-white">"{editingEmployee.employeeName}"</span>
+            </p>
+
+            <div className="space-y-4 mb-8">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Username</label>
+                <input
+                  type="text"
+                  value={editingEmployee.username}
+                  onChange={(e) => setEditingEmployee({...editingEmployee, username: e.target.value})}
+                  className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                  placeholder="Enter username"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Password</label>
+                <input
+                  type="password"
+                  value={editingEmployee.password}
+                  onChange={(e) => setEditingEmployee({...editingEmployee, password: e.target.value})}
+                  className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                  placeholder="Enter new password"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Enter a new password to update the current password.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingEmployee(null);
+                }}
+                className="px-6 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-200 dark:shadow-blue-900/20 transition-all hover:scale-105 flex items-center justify-center gap-2"
+              >
+                <Edit2 className="w-5 h-5" />
+                <span>Update</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-md w-full p-8 border border-gray-100 dark:border-gray-700 transform animate-in zoom-in slide-in-from-bottom-4 duration-300">
+            <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Trash2 className="w-10 h-10 text-red-600 dark:text-red-400" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-2">Delete Login Credentials?</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-center mb-8">
+              Are you sure you want to delete login credentials for <span className="font-bold text-gray-900 dark:text-white">"{showDeleteConfirm.employeeName}"</span>? This action cannot be undone.
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => setShowDeleteConfirm(null)}
+                className="px-6 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all hover:scale-105"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-200 dark:shadow-red-900/20 transition-all hover:scale-105 flex items-center justify-center gap-2"
+              >
+                <Trash2 className="w-5 h-5" />
+                <span>Delete</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Print Styles */}
       <style jsx>{`
         @media print {

@@ -89,13 +89,19 @@ export const getEmployeeLoginCredentials = async (req, res) => {
       ];
     }
 
-    const employees = await Employee.find(query).select('+username +password');
+    const employees = await Employee.find(query).select('+username +password +originalPassword');
     console.log(`✅ Found ${employees.length} employee login credentials`);
+
+    // Transform the data to return original password for display
+    const transformedEmployees = employees.map(emp => ({
+      ...emp.toObject(),
+      password: emp.originalPassword || emp.password // Return original password if available, otherwise encrypted
+    }));
 
     res.status(StatusCodes.OK).json({
       success: true,
       message: 'Employee login credentials retrieved successfully',
-      data: employees,
+      data: transformedEmployees,
     });
   } catch (error) {
     console.error('❌ Get employee login credentials error:', error);

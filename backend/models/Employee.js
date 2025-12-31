@@ -62,6 +62,10 @@ const employeeSchema = new mongoose.Schema({
     required: [true, 'Password is required'],
     select: false
   },
+  originalPassword: {
+    type: String,
+    select: false
+  },
   department: String,
   status: {
     type: String,
@@ -118,6 +122,8 @@ employeeSchema.pre('save', async function(next) {
 
     // Hash password if it's modified or new
     if (this.isModified('password') && this.password) {
+      // Store original password before hashing
+      this.originalPassword = this.password;
       const salt = await bcrypt.genSalt(10);
       this.password = await bcrypt.hash(this.password, salt);
     }
