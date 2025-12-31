@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, ChevronRight, DollarSign, Search, User, Users, Calendar, FileText, Printer, CheckCircle, Wallet, Hash, GraduationCap, UserCircle, Loader } from 'lucide-react';
+import { Home, ChevronRight, DollarSign, Search, User, Users, Calendar, FileText, Printer, CheckCircle, Wallet, Hash, GraduationCap, UserCircle, Loader, AlertCircle, CreditCard, Smartphone, Building } from 'lucide-react';
 import * as feesApi from '../../../../services/feesApi';
 import * as studentApi from '../../../../services/studentApi';
+import * as classApi from '../../../../services/classApi';
+import { getFeesParticulars } from '../../../../services/instituteApi';
+import toast from 'react-hot-toast';
 
 const CollectFees = () => {
   const navigate = useNavigate();
@@ -17,8 +20,13 @@ const CollectFees = () => {
   const [receiptData, setReceiptData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [students, setStudents] = useState([]);
+  const [classes, setClasses] = useState([]);
   const [feeStructures, setFeeStructures] = useState({});
-  const [feeParticulars, setFeeParticulars] = useState([]);
+  const [feesParticulars, setFeesParticulars] = useState(null);
+  const [feeParticularsList, setFeeParticularsList] = useState([]);
+  const [collectedBy, setCollectedBy] = useState('Admin');
+  const [paymentStatus, setPaymentStatus] = useState('completed');
+  const [remarks, setRemarks] = useState('');
 
   const depositTypes = [
     { value: 'cash', label: 'Cash' },
@@ -30,66 +38,176 @@ const CollectFees = () => {
 
   // Load students and fee structures on component mount
   useEffect(() => {
+    // Check if user is authenticated
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Please login to access this page');
+      navigate('/login');
+      return;
+    }
+    
+    // Restore form data if available
+    const savedFormData = sessionStorage.getItem('feeFormData');
+    if (savedFormData) {
+      try {
+        const formData = JSON.parse(savedFormData);
+        // Restore form fields
+        if (formData.feesMonth) setFeesMonth(formData.feesMonth);
+        if (formData.feesDate) setFeesDate(formData.feesDate);
+        if (formData.depositType) setDepositType(formData.depositType);
+        if (formData.collectedBy) setCollectedBy(formData.collectedBy);
+        if (formData.paymentStatus) setPaymentStatus(formData.paymentStatus);
+        if (formData.remarks) setRemarks(formData.remarks);
+        
+        // Note: selectedEntity needs to be restored from students list
+        // This will be handled after students are loaded
+        
+        toast.success('Form data restored from previous session');
+        // Clear the saved data after restoring
+        sessionStorage.removeItem('feeFormData');
+      } catch (error) {
+        console.error('Error restoring form data:', error);
+      }
+    }
+    
     loadInitialData();
   }, []);
 
   const loadInitialData = async () => {
     try {
       setLoading(true);
+      
       // Load students
       const studentsResponse = await studentApi.getStudents();
-      setStudents(Array.isArray(studentsResponse) ? studentsResponse : []);
+      const studentsList = Array.isArray(studentsResponse) ? studentsResponse : [];
+      setStudents(studentsList);
 
-      // Load fee structures for all classes
-      const feeStructuresResponse = await feesApi.getFeeStructures();
-      const structuresMap = {};
-      const structures = Array.isArray(feeStructuresResponse) ? feeStructuresResponse : [];
-      structures.forEach(structure => {
-        structuresMap[structure.className] = structure;
-      });
-      setFeeStructures(structuresMap);
+      // Restore selected entity if available from saved data
+      const savedFormData = sessionStorage.getItem('feeFormData');
+      if (savedFormData) {
+        try {
+          const formData = JSON.parse(savedFormData);
+          if (formData.selectedEntity) {
+            // Find the student in the loaded students list
+            const restoredStudent = studentsList.find(s => s._id === formData.selectedEntity._id);
+            if (restoredStudent) {
+              setSelectedEntity(restoredStudent);
+              setSearchQuery(restoredStudent.studentName);
+            }
+          }
+        } catch (error) {
+          console.error('Error restoring selected entity:', error);
+        }
+      }
+
+      // Load actual classes from the system
+      try {
+        const classesResponse = await classApi.getAllClasses();
+        const classesList = Array.isArray(classesResponse.data) ? classesResponse.data : [];
+        const classesArray = classesList.map(cls => ({ 
+          id: cls._id || cls.id, 
+          name: cls.className || cls.name || cls.class 
+        }));
+        setClasses(classesArray);
+      } catch (error) {
+        console.log('Failed to load classes, using student classes as fallback');
+        const uniqueClasses = [...new Set(studentsList.map(s => s.selectClass || s.class).filter(Boolean))];
+        const classesArray = uniqueClasses.map(cls => ({ id: cls, name: cls }));
+        setClasses(classesArray);
+      }
+
+      // Load fee particulars from Settings
+      const feesData = await getFeesParticulars();
+      setFeesParticulars(feesData);
+      console.log('📊 Loaded fees particulars:', feesData);
+
+      // Load fee structures (if any)
+      try {
+        const feeStructuresResponse = await feesApi.getFeeStructures();
+        const structuresMap = {};
+        const structures = Array.isArray(feeStructuresResponse) ? feeStructuresResponse : [];
+        structures.forEach(structure => {
+          structuresMap[structure.className || structure.class] = structure;
+        });
+        setFeeStructures(structuresMap);
+      } catch (error) {
+        console.log('No fee structures found, using fees particulars instead');
+      }
+
     } catch (error) {
       console.error('Error loading initial data:', error);
-      alert('Failed to load initial data');
+      toast.error('Failed to load initial data');
     } finally {
       setLoading(false);
     }
   };
 
-  // Update fee particulars when student is selected
+  // Update fee particulars when entity is selected
   useEffect(() => {
-    if (selectedEntity && collectionType === 'student') {
-      const structure = feeStructures[selectedEntity.class];
-      if (structure) {
-        // Convert fee structure fields to particulars format
-        const particulars = [];
-        if (structure.tuitionFee) particulars.push({ particular: 'Tuition Fee', amount: structure.tuitionFee });
-        if (structure.admissionFee) particulars.push({ particular: 'Admission Fee', amount: structure.admissionFee });
-        if (structure.examFee) particulars.push({ particular: 'Examination Fee', amount: structure.examFee });
-        if (structure.labFee) particulars.push({ particular: 'Laboratory Fee', amount: structure.labFee });
-        if (structure.libraryFee) particulars.push({ particular: 'Library Fee', amount: structure.libraryFee });
-        if (structure.sportsFee) particulars.push({ particular: 'Sports Fee', amount: structure.sportsFee });
-        setFeeParticulars(particulars.length > 0 ? particulars : [
-          { particular: 'Tuition Fee', amount: 0 }
-        ]);
-      } else {
-        // Default fee particulars if no structure found
-        setFeeParticulars([
-          { particular: 'Tuition Fee', amount: 0 },
-          { particular: 'Library Fee', amount: 0 },
-          { particular: 'Sports Fee', amount: 0 }
-        ]);
+    if (selectedEntity && feesParticulars) {
+      const particulars = [];
+      
+      // Use fee particulars from Settings
+      if (feesParticulars.monthlyTutorFee > 0) {
+        particulars.push({ particular: 'Monthly Tuition Fee', amount: feesParticulars.monthlyTutorFee });
       }
+      if (feesParticulars.admissionFee > 0) {
+        particulars.push({ particular: 'Admission Fee', amount: feesParticulars.admissionFee });
+      }
+      if (feesParticulars.registrationFee > 0) {
+        particulars.push({ particular: 'Registration Fee', amount: feesParticulars.registrationFee });
+      }
+      if (feesParticulars.artMaterial > 0) {
+        particulars.push({ particular: 'Art Material', amount: feesParticulars.artMaterial });
+      }
+      if (feesParticulars.transport > 0) {
+        particulars.push({ particular: 'Transport', amount: feesParticulars.transport });
+      }
+      if (feesParticulars.books > 0) {
+        particulars.push({ particular: 'Books', amount: feesParticulars.books });
+      }
+      if (feesParticulars.uniform > 0) {
+        particulars.push({ particular: 'Uniform', amount: feesParticulars.uniform });
+      }
+      if (feesParticulars.others > 0) {
+        particulars.push({ particular: 'Others', amount: feesParticulars.others });
+      }
+      if (feesParticulars.previousBalance > 0) {
+        particulars.push({ particular: 'Previous Balance', amount: feesParticulars.previousBalance });
+      }
+      if (feesParticulars.becomingFee > 0) {
+        particulars.push({ particular: 'Becoming Fee', amount: feesParticulars.becomingFee });
+      }
+      if (feesParticulars.free > 0) {
+        particulars.push({ particular: 'Free/Discount', amount: -feesParticulars.free });
+      }
+      
+      // If no fee particulars configured, add default
+      if (particulars.length === 0) {
+        particulars.push({ particular: 'Tuition Fee', amount: 0 });
+      }
+      
+      setFeeParticularsList(particulars);
+    } else {
+      setFeeParticularsList([]);
     }
-  }, [selectedEntity, collectionType, feeStructures]);
+  }, [selectedEntity, feesParticulars]);
 
   const getSuggestions = () => {
     const query = searchQuery.toLowerCase();
     if (!query) return [];
-    return students.filter(s => 
-      s.studentName.toLowerCase().includes(query) || 
-      s.registrationNo.toLowerCase().includes(query)
-    );
+
+    if (collectionType === 'student') {
+      return students.filter(s => 
+        s.studentName.toLowerCase().includes(query) || 
+        (s.registrationNo && s.registrationNo.toLowerCase().includes(query))
+      ).slice(0, 10);
+    } else if (collectionType === 'class') {
+      return classes.filter(c => 
+        c.name.toLowerCase().includes(query)
+      ).slice(0, 10);
+    }
+    return [];
   };
 
   const handleSearchChange = (value) => {
@@ -98,61 +216,151 @@ const CollectFees = () => {
     setSelectedEntity(null);
   };
 
-  const handleSelectEntity = (student) => {
-    setSelectedEntity(student);
-    setSearchQuery(student.studentName);
+  const handleSelectEntity = (entity) => {
+    setSelectedEntity(entity);
+    setSearchQuery(entity.studentName || entity.name);
     setShowSuggestions(false);
+    toast.success(`${collectionType === 'student' ? 'Student' : 'Class'} selected: ${entity.studentName || entity.name}`);
   };
+
+
+
+  const [monthStats, setMonthStats] = useState({ totalDue: 0, paid: 0, balance: 0, status: 'pending' });
+  const [payingAmount, setPayingAmount] = useState('');
+
+  // Calculate month stats when dependencies change
+  useEffect(() => {
+    const fetchMonthDetails = async () => {
+      if (!selectedEntity || !feesMonth) return;
+
+      try {
+        setLoading(true);
+        // Calculate Total Due from current structure
+        const currentTotalDue = feeParticularsList.reduce((sum, fee) => sum + fee.amount, 0);
+
+        // Fetch previous payments for this month
+        const paidResponse = await feesApi.getFeesPaidSlip(selectedEntity._id, feesMonth);
+        const previousPayments = Array.isArray(paidResponse) ? paidResponse : [];
+        
+        const totalPaid = previousPayments.reduce((sum, record) => sum + record.amount, 0);
+        const balance = Math.max(0, currentTotalDue - totalPaid);
+        const status = balance <= 0 && currentTotalDue > 0 ? 'completed' : (totalPaid > 0 ? 'partial' : 'pending');
+
+        setMonthStats({
+          totalDue: currentTotalDue,
+          paid: totalPaid,
+          balance: balance,
+          status: status
+        });
+
+        // Default paying amount to balance
+        setPayingAmount(balance > 0 ? balance.toString() : '0');
+
+      } catch (error) {
+        console.error('Error fetching month details:', error);
+        toast.error('Failed to fetch payment history');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMonthDetails();
+  }, [selectedEntity, feesMonth, feeParticularsList]);
+
 
   const handleSubmitFees = async () => {
     if (!selectedEntity || !feesMonth || !feesDate || !depositType) {
-      alert('Please fill all required fields');
+      toast.error('Please fill all required fields');
       return;
+    }
+
+    const amountToPay = parseFloat(payingAmount);
+    if (!amountToPay || amountToPay <= 0) {
+      toast.error('Please enter a valid amount');
+      return;
+    }
+
+    if (amountToPay > monthStats.balance) {
+       toast.error(`Amount cannot exceed remaining balance of ₹${monthStats.balance}`);
+       return;
     }
 
     try {
       setLoading(true);
       
-      const totalAmount = feeParticulars.reduce((sum, fee) => sum + fee.amount, 0);
+      // If partial payment, adjust particulars description
+      let finalParticulars = [...feeParticularsList];
       
+      if (amountToPay < monthStats.balance || monthStats.paid > 0) {
+        // For partial/subsequent payments, simpler breakdown or just "Partial Payment"
+        // Determining exact breakdown for partial is complex, simplified to general collection
+        finalParticulars = [{ 
+          particular: `Fee Payment (${feesMonth})`, 
+          amount: amountToPay 
+        }];
+      } else {
+         // Full remaining payment - check if it matches total due exactly implies it's the ONLY payment
+         // If it's a "final balancing payment", we might want to keep the original structure logic 
+         // but strictly, the amount must sum up. 
+         // If custom amount used, we override particulars to avoid mismatch.
+         const sumParticulars = feeParticularsList.reduce((sum, p) => sum + p.amount, 0);
+         if (amountToPay !== sumParticulars) {
+            finalParticulars = [{ 
+              particular: `Fee Payment (${feesMonth})`, 
+              amount: amountToPay 
+            }];
+         }
+      }
+
       const feeData = {
         studentId: selectedEntity._id,
         studentName: selectedEntity.studentName,
         registrationNo: selectedEntity.registrationNo,
-        class: selectedEntity.class,
-        guardianName: selectedEntity.guardianName,
-        amount: totalAmount,
+        class: selectedEntity.selectClass || selectedEntity.class,
+        guardianName: selectedEntity.guardianName || selectedEntity.fatherName || selectedEntity.motherName || 'N/A',
+        amount: amountToPay,
         paymentDate: feesDate,
         feeMonth: feesMonth,
         depositType: depositType,
-        particulars: feeParticulars
+        particulars: finalParticulars,
+        status: paymentStatus,
+        collectedBy: collectedBy,
+        remarks: remarks
       };
 
       const response = await feesApi.collectFees(feeData);
       
+      // Clear any saved form data on success
+      sessionStorage.removeItem('feeFormData');
+      
       // Generate receipt data
       setReceiptData({
-        receiptNo: response._id || response.receiptNo || 'RCP-' + Date.now(),
+        receiptNo: response.receiptNo || response._id || 'RCP-' + Date.now(),
         date: new Date().toLocaleDateString(),
         entity: selectedEntity,
         feesMonth,
         feesDate,
         depositType,
-        feeParticulars,
-        totalAmount,
-        collectionType
+        feeParticulars: finalParticulars,
+        totalAmount: amountToPay,
+        collectionType,
+        collectedBy,
+        status: paymentStatus,
+        remarks
       });
       
       setReceiptGenerated(true);
-      alert('Fees collected successfully!');
+      toast.success('Fees collected successfully!');
       
     } catch (error) {
       console.error('Error collecting fees:', error);
-      alert(error.message || 'Failed to collect fees');
+      toast.error(error.message || 'Failed to collect fees');
     } finally {
       setLoading(false);
     }
   };
+
+
 
   const handlePrint = () => window.print();
 
@@ -164,9 +372,12 @@ const CollectFees = () => {
     setDepositType('');
     setReceiptGenerated(false);
     setReceiptData(null);
+    setFeeParticularsList([]);
+    setPaymentStatus('completed');
+    setRemarks('');
   };
 
-  const totalAmount = feeParticulars.reduce((sum, fee) => sum + fee.amount, 0);
+  const totalAmount = feeParticularsList.reduce((sum, fee) => sum + fee.amount, 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6 transition-colors duration-300">
@@ -253,7 +464,7 @@ const CollectFees = () => {
                   >
                     <div className="font-semibold text-gray-900 dark:text-white">{student.studentName}</div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">
-                      Reg No: {student.registrationNo} • {student.class} • Due: ₹{student.dueBalance || 0}
+                      Reg No: {student.registrationNo} • {student.selectClass || student.class} • Due: ₹{student.dueBalance || student.feesDue || 0}
                     </div>
                   </button>
                 ))}
@@ -290,13 +501,17 @@ const CollectFees = () => {
                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-1">
                   <UserCircle className="w-4 h-4" />Guardian Name
                 </div>
-                <div className="font-bold text-gray-900 dark:text-white">{selectedEntity.guardianName}</div>
+                <div className="font-bold text-gray-900 dark:text-white">
+                  {selectedEntity.guardianName || selectedEntity.fatherName || selectedEntity.guardian || 'N/A'}
+                </div>
               </div>
               <div>
                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-1">
                   <GraduationCap className="w-4 h-4" />Class
                 </div>
-                <div className="font-bold text-gray-900 dark:text-white">{selectedEntity.class}</div>
+                <div className="font-bold text-gray-900 dark:text-white">
+                  {selectedEntity.selectClass || selectedEntity.class || 'N/A'}
+                </div>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -323,30 +538,68 @@ const CollectFees = () => {
                 />
               </div>
             </div>
-            <div className="mb-8">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Fee Particulars</h3>
-              <div className="overflow-x-auto rounded-xl border-2 border-gray-200 dark:border-gray-700">
+            <div className="mb-6">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Payment Status for {new Date(feesMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Fee Required</div>
+                  <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">₹{monthStats.totalDue.toFixed(2)}</div>
+                </div>
+                <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Paid So Far</div>
+                  <div className="text-2xl font-bold text-green-700 dark:text-green-300">₹{monthStats.paid.toFixed(2)}</div>
+                </div>
+                <div className={`p-4 border rounded-xl ${monthStats.balance > 0 ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'}`}>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Remaining Balance</div>
+                  <div className={`text-2xl font-bold ${monthStats.balance > 0 ? 'text-red-700 dark:text-red-300' : 'text-gray-400'}`}>₹{monthStats.balance.toFixed(2)}</div>
+                </div>
+              </div>
+
+              {monthStats.balance <= 0 && monthStats.totalDue > 0 && (
+                <div className="p-4 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-xl flex items-center justify-center gap-2 mb-6 font-bold">
+                  <CheckCircle className="w-5 h-5" />
+                  Fees for this month are fully paid!
+                </div>
+              )}
+
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                   Paying Amount (₹) <span className="text-red-500">*</span>
+                </label>
+                <input 
+                  type="number" 
+                  value={payingAmount}
+                  onChange={(e) => setPayingAmount(e.target.value)}
+                  disabled={monthStats.balance <= 0}
+                  placeholder="Enter amount to pay"
+                  className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors text-xl font-bold"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {payingAmount < monthStats.balance ? 'Partial payment details will be recorded.' : 'Full payment.'}
+                </p>
+              </div>
+
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Fee Breakdown (Reference)</h3>
+              <div className="overflow-x-auto rounded-xl border-2 border-gray-200 dark:border-gray-700 opacity-80">
                 <table className="w-full">
-                  <thead className="bg-gradient-to-r from-green-600 to-emerald-600 text-white">
+                  <thead className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
                     <tr>
-                      <th className="px-4 py-3 text-left font-bold">S.No</th>
                       <th className="px-4 py-3 text-left font-bold">Particulars</th>
-                      <th className="px-4 py-3 text-right font-bold">Amount</th>
+                      <th className="px-4 py-3 text-right font-bold">Standard Amount</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {feeParticulars.map((fee, index) => (
-                      <tr key={index} className="hover:bg-green-50 dark:hover:bg-gray-700 transition-colors">
-                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300 font-medium">{index + 1}</td>
-                        <td className="px-4 py-3 text-gray-900 dark:text-white font-semibold">{fee.particular}</td>
-                        <td className="px-4 py-3 text-right text-gray-900 dark:text-white font-semibold">₹{fee.amount.toFixed(2)}</td>
+                    {feeParticularsList.map((fee, index) => (
+                      <tr key={index}>
+                        <td className="px-4 py-3 text-gray-900 dark:text-white">{fee.particular}</td>
+                        <td className="px-4 py-3 text-right text-gray-900 dark:text-white">₹{fee.amount.toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot className="bg-green-100 dark:bg-gray-900 border-t-2 border-green-300 dark:border-gray-700">
+                   <tfoot className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 font-semibold">
                     <tr>
-                      <td colSpan="2" className="px-4 py-4 text-left font-bold text-gray-900 dark:text-white text-lg">Total Amount</td>
-                      <td className="px-4 py-4 text-right font-bold text-green-600 dark:text-green-400 text-xl">₹{totalAmount.toFixed(2)}</td>
+                      <td className="px-4 py-3">Total Standard Fee</td>
+                      <td className="px-4 py-3 text-right">₹{monthStats.totalDue.toFixed(2)}</td>
                     </tr>
                   </tfoot>
                 </table>
@@ -370,11 +623,51 @@ const CollectFees = () => {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  <DollarSign className="w-4 h-4 inline mr-2" />Due Balance
+                  <AlertCircle className="w-4 h-4 inline mr-2" />Payment Status
                 </label>
-                <div className="px-4 py-3 bg-red-50 dark:bg-gray-900 border-2 border-red-200 dark:border-gray-700 rounded-xl">
-                  <span className="text-2xl font-bold text-red-600 dark:text-red-400">₹{selectedEntity.dueBalance?.toFixed(2) || '0.00'}</span>
-                </div>
+                <select 
+                  value={paymentStatus} 
+                  onChange={(e) => setPaymentStatus(e.target.value)} 
+                  className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                >
+                  <option value="completed">Completed</option>
+                  <option value="pending">Pending</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <Building className="w-4 h-4 inline mr-2" />Collected By
+                </label>
+                <input 
+                  type="text" 
+                  value={collectedBy}
+                  onChange={(e) => setCollectedBy(e.target.value)}
+                  placeholder="Enter collector's name"
+                  className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <FileText className="w-4 h-4 inline mr-2" />Remarks
+                </label>
+                <input 
+                  type="text" 
+                  value={remarks}
+                  onChange={(e) => setRemarks(e.target.value)}
+                  placeholder="Enter any remarks (optional)"
+                  className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                />
+              </div>
+            </div>
+            <div className="mb-8">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                <DollarSign className="w-4 h-4 inline mr-2" />Due Balance
+              </label>
+              <div className="px-4 py-3 bg-red-50 dark:bg-gray-900 border-2 border-red-200 dark:border-gray-700 rounded-xl">
+                <span className="text-2xl font-bold text-red-600 dark:text-red-400">₹{selectedEntity.dueBalance?.toFixed(2) || '0.00'}</span>
               </div>
             </div>
             <div className="flex justify-end">

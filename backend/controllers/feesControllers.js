@@ -20,7 +20,7 @@ export const collectFees = async (req, res) => {
 
     // Validate required fields
     if (!studentId || !studentName || !registrationNo || !studentClass || 
-        !guardianName || !amount || !paymentDate || !feeMonth || !depositType) {
+        !guardianName || amount === undefined || amount === null || !paymentDate || !feeMonth || !depositType) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         message: 'All required fields must be provided'

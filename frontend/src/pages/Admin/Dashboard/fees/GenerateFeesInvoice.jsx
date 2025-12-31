@@ -18,6 +18,9 @@ import {
 } from 'lucide-react';
 import * as feesApi from '../../../../services/feesApi'; 
 import * as studentApi from '../../../../services/studentApi';
+import * as classApi from '../../../../services/classApi';
+import { getFeesParticulars } from '../../../../services/instituteApi';
+import toast from 'react-hot-toast';
 
 const GenerateFeesInvoice = () => {
   const navigate = useNavigate();
@@ -40,6 +43,7 @@ const GenerateFeesInvoice = () => {
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [feeStructures, setFeeStructures] = useState({});
+  const [feesParticulars, setFeesParticulars] = useState(null);
 
   // Load initial data
   useEffect(() => {
@@ -55,22 +59,55 @@ const GenerateFeesInvoice = () => {
       const studentsList = Array.isArray(studentsResponse) ? studentsResponse : [];
       setStudents(studentsList);
 
-      // Extract unique classes from students
-      const uniqueClasses = [...new Set(studentsList.map(s => s.selectClass || s.class))];
-      setClasses(uniqueClasses.map(cls => ({ id: cls, name: cls })));
+      // Load actual classes from the system
+      try {
+        const classesResponse = await classApi.getAllClasses();
+        const classesList = Array.isArray(classesResponse.data) ? classesResponse.data : [];
+        const classesArray = classesList.map(cls => ({ 
+          id: cls._id || cls.id, 
+          name: cls.className || cls.name || cls.class 
+        }));
+        setClasses(classesArray);
+        console.log('📚 Loaded classes from system:', classesArray);
+      } catch (error) {
+        console.log('❌ Failed to load classes from system, using student classes as fallback');
+        // Fallback to extracting classes from students
+        const uniqueClasses = [...new Set(studentsList.map(s => s.selectClass || s.class).filter(Boolean))];
+        const classesArray = uniqueClasses.map(cls => ({ id: cls, name: cls }));
+        
+        if (classesArray.length === 0) {
+          // Last resort: default classes
+          const defaultClasses = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+          classesArray.push(...defaultClasses.map(cls => ({ id: cls, name: cls })));
+          console.log('📚 Using default classes:', classesArray);
+        } else {
+          console.log('📚 Using student classes as fallback:', classesArray);
+        }
+        
+        setClasses(classesArray);
+      }
 
-      // Load fee structures
-      const feeStructuresResponse = await feesApi.getFeeStructures();
-      const structuresMap = {};
-      const structures = Array.isArray(feeStructuresResponse) ? feeStructuresResponse : [];
-      structures.forEach(structure => {
-        structuresMap[structure.className || structure.class] = structure;
-      });
-      setFeeStructures(structuresMap);
+      // Load fee particulars from Settings
+      const feesData = await getFeesParticulars();
+      setFeesParticulars(feesData);
+      console.log(' Loaded fees particulars:', feesData);
+
+      // Load fee structures (if any)
+      try {
+        const feeStructuresResponse = await feesApi.getFeeStructures();
+        const structuresMap = {};
+        const structures = Array.isArray(feeStructuresResponse) ? feeStructuresResponse : [];
+        structures.forEach(structure => {
+          structuresMap[structure.className || structure.class] = structure;
+        });
+        setFeeStructures(structuresMap);
+      } catch (error) {
+        console.log('No fee structures found, using fees particulars instead');
+      }
 
     } catch (error) {
       console.error('Error loading initial data:', error);
-      alert('Failed to load initial data');
+      toast.error('Failed to load initial data');
     } finally {
       setLoading(false);
     }
@@ -81,16 +118,22 @@ const GenerateFeesInvoice = () => {
     const query = formData.searchQuery.toLowerCase();
     if (!query) return [];
 
+    console.log('🔍 Searching for:', query, 'Type:', invoiceType, 'Available classes:', classes);
+
     switch(invoiceType) {
       case 'student':
-        return students.filter(s => 
+        const studentResults = students.filter(s => 
           s.studentName.toLowerCase().includes(query) || 
           (s.registrationNo && s.registrationNo.toLowerCase().includes(query))
-        ).slice(0, 10); // Limit to 10 results
+        ).slice(0, 10);
+        console.log('👨‍🎓 Student results:', studentResults);
+        return studentResults;
       case 'class':
-        return classes.filter(c => 
+        const classResults = classes.filter(c => 
           c.name.toLowerCase().includes(query)
         ).slice(0, 10);
+        console.log('🏫 Class results:', classResults);
+        return classResults;
       default:
         return [];
     }
@@ -113,14 +156,16 @@ const GenerateFeesInvoice = () => {
       searchQuery: invoiceType === 'student' ? entity.studentName : entity.name 
     }));
     setShowSuggestions(false);
+    toast.success(`${invoiceType === 'student' ? 'Student' : 'Class'} selected: ${entity.studentName || entity.name}`);
   };
 
   const handleGenerate = () => {
     if (!formData.feeMonth || !formData.dueDate || !selectedEntity) {
-      alert('Please fill all required fields');
+      toast.error('Please fill all required fields');
       return;
     }
     setInvoiceGenerated(true);
+    toast.success('Invoice generated successfully!');
   };
 
   const handlePrint = () => {
@@ -136,9 +181,30 @@ const GenerateFeesInvoice = () => {
   };
 
   const calculateTotalFee = (structure) => {
-    if (!structure) return 0;
-    return (structure.tuitionFee || 0) + (structure.admissionFee || 0) + (structure.examFee || 0) + 
-           (structure.labFee || 0) + (structure.libraryFee || 0) + (structure.sportsFee || 0);
+    if (!structure && !feesParticulars) return 0;
+    
+    // If we have fee structures, use them
+    if (structure) {
+      return (structure.tuitionFee || 0) + (structure.admissionFee || 0) + (structure.examFee || 0) + 
+             (structure.labFee || 0) + (structure.libraryFee || 0) + (structure.sportsFee || 0);
+    }
+    
+    // Otherwise use fees particulars from Settings
+    if (feesParticulars) {
+      return feesParticulars.monthlyTutorFee + 
+             feesParticulars.admissionFee + 
+             feesParticulars.registrationFee + 
+             feesParticulars.artMaterial + 
+             feesParticulars.transport + 
+             feesParticulars.books + 
+             feesParticulars.uniform + 
+             feesParticulars.others + 
+             feesParticulars.previousBalance + 
+             feesParticulars.becomingFee - 
+             feesParticulars.free;
+    }
+    
+    return 0;
   };
 
   const getFeeAmount = () => {
@@ -146,13 +212,55 @@ const GenerateFeesInvoice = () => {
     
     if (invoiceType === 'student') {
       const structure = feeStructures[selectedEntity.selectClass || selectedEntity.class];
-      return calculateTotalFee(structure) || 5000;
+      return calculateTotalFee(structure);
     } else if (invoiceType === 'class') {
       const structure = feeStructures[selectedEntity.name];
-      return calculateTotalFee(structure) || 5000;
+      return calculateTotalFee(structure);
     }
     
     return 0;
+  };
+
+  const getFeeBreakdown = () => {
+    if (!feesParticulars) return [];
+    
+    const breakdown = [];
+    
+    if (feesParticulars.monthlyTutorFee > 0) {
+      breakdown.push({ name: 'Monthly Tuition Fee', amount: feesParticulars.monthlyTutorFee });
+    }
+    if (feesParticulars.admissionFee > 0) {
+      breakdown.push({ name: 'Admission Fee', amount: feesParticulars.admissionFee });
+    }
+    if (feesParticulars.registrationFee > 0) {
+      breakdown.push({ name: 'Registration Fee', amount: feesParticulars.registrationFee });
+    }
+    if (feesParticulars.artMaterial > 0) {
+      breakdown.push({ name: 'Art Material', amount: feesParticulars.artMaterial });
+    }
+    if (feesParticulars.transport > 0) {
+      breakdown.push({ name: 'Transport', amount: feesParticulars.transport });
+    }
+    if (feesParticulars.books > 0) {
+      breakdown.push({ name: 'Books', amount: feesParticulars.books });
+    }
+    if (feesParticulars.uniform > 0) {
+      breakdown.push({ name: 'Uniform', amount: feesParticulars.uniform });
+    }
+    if (feesParticulars.others > 0) {
+      breakdown.push({ name: 'Others', amount: feesParticulars.others });
+    }
+    if (feesParticulars.previousBalance > 0) {
+      breakdown.push({ name: 'Previous Balance', amount: feesParticulars.previousBalance });
+    }
+    if (feesParticulars.becomingFee > 0) {
+      breakdown.push({ name: 'Becoming Fee', amount: feesParticulars.becomingFee });
+    }
+    if (feesParticulars.free > 0) {
+      breakdown.push({ name: 'Free/Discount', amount: -feesParticulars.free });
+    }
+    
+    return breakdown;
   };
 
   const feeAmount = getFeeAmount();
@@ -314,29 +422,35 @@ const GenerateFeesInvoice = () => {
                 />
                 
                 {/* Suggestions Dropdown */}
-                {showSuggestions && getSuggestions().length > 0 && (
+                {showSuggestions && (
                   <div className="absolute z-20 w-full mt-2 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                    {getSuggestions().map(entity => (
-                      <button
-                        key={entity._id || entity.id}
-                        onClick={() => handleSelectEntity(entity)}
-                        className="w-full px-4 py-3 text-left hover:bg-purple-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0"
-                      >
-                        <div className="font-semibold text-gray-900 dark:text-white">
-                          {entity.studentName || entity.name}
-                        </div>
-                        {invoiceType === 'student' && (
-                          <div className="text-sm text-gray-600 dark:text-gray-400">
-                            {entity.selectClass || entity.class} • Reg No: {entity.registrationNo} • Fee: ₹{calculateTotalFee(feeStructures[entity.selectClass || entity.class]) || 'N/A'}
+                    {getSuggestions().length > 0 ? (
+                      getSuggestions().map(entity => (
+                        <button
+                          key={entity._id || entity.id || entity.name}
+                          onClick={() => handleSelectEntity(entity)}
+                          className="w-full px-4 py-3 text-left hover:bg-purple-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                        >
+                          <div className="font-semibold text-gray-900 dark:text-white">
+                            {entity.studentName || entity.name}
                           </div>
-                        )}
-                        {invoiceType === 'class' && (
-                          <div className="text-sm text-gray-600 dark:text-gray-400">
-                            Class: {entity.name} • Fee: ₹{calculateTotalFee(feeStructures[entity.name]) || 'N/A'}
-                          </div>
-                        )}
-                      </button>
-                    ))}
+                          {invoiceType === 'student' && (
+                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                              {entity.selectClass || entity.class} • Reg No: {entity.registrationNo} • Fee: ₹{calculateTotalFee(feeStructures[entity.selectClass || entity.class]) || 'N/A'}
+                            </div>
+                          )}
+                          {invoiceType === 'class' && (
+                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                              Class: {entity.name} • Fee: ₹{calculateTotalFee(feeStructures[entity.name]) || getFeeAmount()}
+                            </div>
+                          )}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-3 text-gray-500 dark:text-gray-400 text-center">
+                        No {invoiceType}s found matching "{formData.searchQuery}"
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -475,14 +589,16 @@ const GenerateFeesInvoice = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td className="border border-gray-300 dark:border-gray-700 px-4 py-3 dark:text-white">
-                        {invoiceType === 'student' ? 'Tuition Fee' : 'Class Fee'}
-                      </td>
-                      <td className="border border-gray-300 dark:border-gray-700 px-4 py-3 text-right font-semibold dark:text-white">
-                        ₹{feeAmount}
-                      </td>
-                    </tr>
+                    {getFeeBreakdown().map((fee, index) => (
+                      <tr key={index} className={fee.amount < 0 ? 'bg-red-50 dark:bg-gray-900' : ''}>
+                        <td className={`border border-gray-300 dark:border-gray-700 px-4 py-3 dark:text-white ${fee.amount < 0 ? 'text-red-700 dark:text-red-300' : ''}`}>
+                          {fee.name}
+                        </td>
+                        <td className={`border border-gray-300 dark:border-gray-700 px-4 py-3 text-right font-semibold dark:text-white ${fee.amount < 0 ? 'text-red-700 dark:text-red-300' : ''}`}>
+                          {fee.amount < 0 ? `-₹${Math.abs(fee.amount)}` : `₹${fee.amount}`}
+                        </td>
+                      </tr>
+                    ))}
                     {formData.fineAfterDueDate && (
                       <tr className="bg-red-50 dark:bg-gray-900">
                         <td className="border border-gray-300 dark:border-gray-700 px-4 py-3 text-red-700 dark:text-red-300">

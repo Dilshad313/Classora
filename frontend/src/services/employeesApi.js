@@ -73,6 +73,12 @@ export const getEmployees = async (filters = {}) => {
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+        throw new Error('Session expired. Please login again.');
+      }
+
       let errorMessage = `HTTP error! status: ${response.status}`;
       try {
         const errorData = await response.json();

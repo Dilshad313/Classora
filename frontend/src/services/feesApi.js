@@ -6,19 +6,27 @@ const handleApiCall = async (url, options = {}) => {
   try {
     const token = localStorage.getItem('token');
     
+    if (!token) {
+      throw new Error('Access token is required. Please login again.');
+    }
+    
+    const { headers: customHeaders = {}, ...otherOptions } = options;
+    
     const response = await fetch(url, {
+      ...otherOptions,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
-        ...options.headers,
+        ...customHeaders,
       },
-      ...options,
     });
 
     if (!response.ok) {
       let errorMessage = `HTTP error! status: ${response.status}`;
+      let errorData = null;
+      
       try {
-        const errorData = await response.json();
+        errorData = await response.json();
         errorMessage = errorData.message || errorMessage;
         
         // Handle specific error cases
@@ -28,6 +36,16 @@ const handleApiCall = async (url, options = {}) => {
       } catch (e) {
         errorMessage = response.statusText || errorMessage;
       }
+
+      // Handle 401 errors - don't clear token or redirect automatically
+      // Just throw the error and let components handle it
+      if (response.status === 401) {
+        // If the backend says token expired, we pass that message along
+        const error = new Error(errorMessage || 'Session expired. Please login again.');
+        error.status = 401;
+        throw error;
+      }
+      
       throw new Error(errorMessage);
     }
 
