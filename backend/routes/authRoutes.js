@@ -1,7 +1,7 @@
 // routes/authRoutes.js
 
 import express from "express";
-import { registerAdmin, loginAdmin, getCurrentUser } from "../controllers/authController.js";
+import { registerAdmin, loginAdmin, loginUser, getCurrentUser } from "../controllers/authController.js";
 import { authenticateToken } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -9,6 +9,7 @@ const router = express.Router();
 // Public routes
 router.post("/register", registerAdmin);
 router.post("/login", loginAdmin);
+router.post("/login-user", loginUser);
 
 // Protected routes
 router.get("/me", authenticateToken, getCurrentUser);

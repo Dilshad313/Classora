@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogIn, Mail, Lock, Eye, EyeOff, GraduationCap, Crown, Shield, Loader2 } from 'lucide-react';
+import { LogIn, Mail, Lock, Eye, EyeOff, GraduationCap, Crown, User, Briefcase, Shield, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Login = () => {
@@ -14,18 +14,23 @@ const Login = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
-  const [hasAccount, setHasAccount] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Check if already logged in
+    // Check if already logged in and redirect to the correct dashboard
     const token = localStorage.getItem('token');
-    if (token) {
-      navigate('/dashboard');
+    const user = JSON.parse(localStorage.getItem('user'));
+
+    if (token && user) {
+      const { role } = user;
+      if (role === 'admin') {
+        navigate('/admin/dashboard');
+      } else if (role === 'student') {
+        navigate('/student/dashboard');
+      } else if (role === 'employee') {
+        navigate('/teacher/dashboard');
+      }
     }
-    
-    const user = localStorage.getItem('user');
-    setHasAccount(!!user);
   }, [navigate]);
 
   const handleChange = (e) => {
@@ -63,14 +68,21 @@ const Login = () => {
 
     setIsLoading(true);
 
+    // Determine the correct API endpoint and payload
+    const isAdmin = formData.role === 'admin';
+    const url = isAdmin
+      ? 'http://localhost:5000/api/auth/login'
+      : 'http://localhost:5000/api/auth/login-user';
+
+    const body = isAdmin
+      ? { email: formData.email.toLowerCase().trim(), password: formData.password }
+      : { email: formData.email.toLowerCase().trim(), password: formData.password, role: formData.role };
+
     try {
-      const response = await fetch('http://localhost:5000/api/admin/login', {
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: formData.email.toLowerCase().trim(),
-          password: formData.password
-        })
+        body: JSON.stringify(body)
       });
 
       const data = await response.json();
@@ -84,17 +96,22 @@ const Login = () => {
       localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('token', data.token);
       
-      setHasAccount(true);
-      
       // Success toast
       toast.success(`Welcome back, ${data.user.fullName}!`, {
         icon: '👋',
         duration: 3000,
       });
 
-      // Navigate to dashboard
+      // Navigate to the correct dashboard
       setTimeout(() => {
-        navigate('/dashboard');
+        const { role } = data.user;
+        if (role === 'admin') {
+          navigate('/admin/dashboard');
+        } else if (role === 'student') {
+          navigate('/student/dashboard');
+        } else if (role === 'employee') {
+          navigate('/teacher/dashboard');
+        }
       }, 500);
 
     } catch (error) {
@@ -106,7 +123,9 @@ const Login = () => {
   };
 
   const roles = [
-    { id: 'admin', label: 'Administrator', icon: Crown }
+    { id: 'admin', label: 'Admin', icon: Crown },
+    { id: 'student', label: 'Student', icon: User },
+    { id: 'employee', label: 'Employee', icon: Briefcase }
   ];
 
   return (
@@ -154,8 +173,8 @@ const Login = () => {
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Role selector */}
               <div>
-                <label className="text-sm font-medium text-gray-300 mb-4 block">Select Role</label>
-                <div className="grid grid-cols-1 gap-4">
+                <label className="text-sm font-medium text-gray-300 mb-4 block">Select Your Role</label>
+                <div className="grid grid-cols-3 gap-4">
                   {roles.map((role) => {
                     const Icon = role.icon;
                     return (
@@ -187,7 +206,7 @@ const Login = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    placeholder="admin@example.com"
+                    placeholder="user@example.com"
                     disabled={isLoading}
                     className={`w-full pl-14 pr-5 py-5 rounded-2xl bg-white/5 border backdrop-blur-xl text-white placeholder-gray-500 transition-all
                       ${errors.email ? 'border-red-500/80 focus:border-red-500' : 'border-white/10 focus:border-purple-500'}
@@ -278,11 +297,11 @@ const Login = () => {
 
               {/* Registration suggestion */}
               <div className="text-center pt-6 border-t border-white/10">
-                <p className="text-gray-400 mb-4">Don't have an account?</p>
+                <p className="text-gray-400">Don't have an admin account?</p>
                 <Link
                   to="/register"
-                  className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-emerald-600 to-cyan-600 
-                    rounded-2xl font-medium hover:from-emerald-700 hover:to-cyan-700 hover:scale-105 transition-all"
+                  className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-emerald-600 to-cyan-600
+                    rounded-xl font-medium hover:from-emerald-700 hover:to-cyan-700 hover:scale-105 transition-all text-sm"
                 >
                   <Shield className="w-5 h-5" />
                   Create Admin Account
