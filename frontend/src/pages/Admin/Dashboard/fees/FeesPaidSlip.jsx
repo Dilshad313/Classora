@@ -155,11 +155,11 @@ const FeesPaidSlip = () => {
               </div>
               <div class="detail-item">
                 <div class="detail-label">Guardian Name:</div>
-                <div class="detail-value">${student.guardianName}</div>
+                <div class="detail-value">${printRecord.guardianName || 'N/A'}</div>
               </div>
               <div class="detail-item">
                 <div class="detail-label">Class:</div>
-                <div class="detail-value">${student.class}</div>
+                <div class="detail-value">${printRecord.class}</div>
               </div>
               <div class="detail-item">
                 <div class="detail-label">Fee Month:</div>
@@ -311,7 +311,7 @@ const FeesPaidSlip = () => {
                       >
                         <div className="font-semibold text-gray-900 dark:text-white">{student.studentName}</div>
                         <div className="text-sm text-gray-600 dark:text-gray-400">
-                          Reg No: {student.registrationNo} • {student.class}
+                          Reg No: {student.registrationNo} • {student.classDisplay || `${student.selectClass} ${student.section ? '- ' + student.section : ''}`}
                         </div>
                       </button>
                     ))}
@@ -371,6 +371,31 @@ const FeesPaidSlip = () => {
             ) : (
               /* Display Records */
               <div className="space-y-6">
+                {/* Summary Section for Multiple Installments */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-100 dark:border-blue-800 rounded-xl p-6 mb-6">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Payment Summary</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Amount Paid</div>
+                      <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+                        ₹{feeRecords.reduce((sum, record) => sum + record.amount, 0).toFixed(2)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Installments</div>
+                      <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                        {feeRecords.length}
+                      </div>
+                    </div>
+                    <div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Fee Month</div>
+                        <div className="text-xl font-bold text-gray-900 dark:text-white">
+                             {new Date(feesMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                        </div>
+                    </div>
+                  </div>
+                </div>
+
                 {feeRecords.map((record) => (
                   <div key={record._id} className="border-2 border-gray-200 dark:border-gray-700 p-6 hover:border-blue-300 dark:hover:border-blue-500 transition-all rounded-xl">
                     {/* Record Header */}
@@ -437,14 +462,18 @@ const FeesPaidSlip = () => {
                           <UserCircle className="w-4 h-4" />
                           Guardian Name
                         </div>
-                        <div className="font-bold text-gray-900 dark:text-white">{selectedStudent.guardianName}</div>
+                        <div className="font-bold text-gray-900 dark:text-white">
+                          {record.guardianName || 'N/A'}
+                        </div>
                       </div>
                       <div>
                         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-1">
                           <GraduationCap className="w-4 h-4" />
                           Class
                         </div>
-                        <div className="font-bold text-gray-900 dark:text-white">{selectedStudent.class}</div>
+                        <div className="font-bold text-gray-900 dark:text-white">
+                          {record.class}
+                        </div>
                       </div>
                     </div>
 

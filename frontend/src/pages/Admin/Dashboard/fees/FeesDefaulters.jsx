@@ -16,9 +16,15 @@ import {
   Copy,
   FileSpreadsheet,
   CheckCircle,
-  Loader
+  Loader,
+  MessageSquare,
+  X,
+  Send
 } from 'lucide-react';
 import * as feesApi from '../../../../services/feesApi';
+import toast from 'react-hot-toast';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const FeesDefaulters = () => {
   const navigate = useNavigate();
@@ -28,7 +34,8 @@ const FeesDefaulters = () => {
   const [selectedDefaulters, setSelectedDefaulters] = useState([]);
   const [defaulters, setDefaulters] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [stats, setStats] = useState({ totalDefaulters: 0, totalPayable: 0 });
+  const [stats, setStats] = useState({ totalDefaulters: 0, totalPayable: 0, totalRequired: 0, totalPaid: 0 });
+  const [messageBox, setMessageBox] = useState({ isOpen: false, student: null, message: '' });
 
   // Load defaulters when month changes
   useEffect(() => {
@@ -40,24 +47,110 @@ const FeesDefaulters = () => {
   const loadDefaulters = async () => {
     try {
       setLoading(true);
+      
+      // Debug: Log the selected month
+      console.log('Loading defaulters for month:', feesMonth);
+      
+      // Validate month format
+      if (!feesMonth) {
+        toast.error('Please select a month');
+        return;
+      }
+      
       const filters = {
         month: feesMonth,
-        search: searchQuery
+        search: searchQuery || undefined // Only include search if it has a value
       };
+      
+      console.log('Sending filters:', filters);
 
       const response = await feesApi.getFeesDefaulters(filters);
-      const defaultersList = Array.isArray(response) ? response : [];
+      console.log('Full API Response:', JSON.stringify(response, null, 2));
+      
+      // Handle different response formats more robustly
+      let defaultersList = [];
+      let responseStats = null;
+      
+      if (response) {
+        // Check if response has data property
+        if (response.data && Array.isArray(response.data)) {
+          defaultersList = response.data;
+          responseStats = response.stats;
+        } 
+        // Check if response is directly an array
+        else if (Array.isArray(response)) {
+          defaultersList = response;
+        }
+        // Check if response has success property and data
+        else if (response.success && response.data) {
+          defaultersList = Array.isArray(response.data) ? response.data : [];
+          responseStats = response.stats;
+        }
+        // Check if response itself is the data (some API patterns)
+        else if (typeof response === 'object' && !response.success && !response.data) {
+          // Response might be the data directly
+          const possibleDataKeys = ['defaulters', 'results', 'items'];
+          for (const key of possibleDataKeys) {
+            if (response[key] && Array.isArray(response[key])) {
+              defaultersList = response[key];
+              responseStats = response.stats;
+              break;
+            }
+          }
+        }
+      }
+      
+      console.log('Processed defaulters list:', defaultersList);
+      console.log('Response stats:', responseStats);
+      
+      // Validate defaulters data
+      if (!Array.isArray(defaultersList)) {
+        console.error('Defaulters list is not an array:', defaultersList);
+        defaultersList = [];
+      }
+      
       setDefaulters(defaultersList);
       
-      // Calculate stats from defaulters list
-      const totalPayable = defaultersList.reduce((sum, d) => sum + (d.payable || 0), 0);
-      setStats({
+      // Calculate stats from API response or from the data
+      const stats = responseStats || {
         totalDefaulters: defaultersList.length,
-        totalPayable: totalPayable
-      });
+        totalPayable: defaultersList.reduce((sum, d) => sum + (d.payable || 0), 0),
+        totalRequired: defaultersList.reduce((sum, d) => sum + (d.totalFeeRequired || 0), 0),
+        totalPaid: defaultersList.reduce((sum, d) => sum + (d.amountPaid || 0), 0)
+      };
+      
+      console.log('Final stats:', stats);
+      setStats(stats);
+      
+      // Provide user feedback
+      if (defaultersList.length === 0) {
+        toast.info('No defaulters found for the selected month. All students may have paid their fees.');
+      } else {
+        toast.success(`Loaded ${defaultersList.length} defaulter(s) successfully`);
+      }
     } catch (error) {
       console.error('Error loading defaulters:', error);
-      alert('Failed to load fees defaulters');
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        response: error.response
+      });
+      
+      // Provide specific error messages
+      let errorMessage = 'Failed to load fees defaulters';
+      if (error.message.includes('404')) {
+        errorMessage = 'Fees defaulters endpoint not found';
+      } else if (error.message.includes('401')) {
+        errorMessage = 'Authentication failed. Please login again.';
+      } else if (error.message.includes('500')) {
+        errorMessage = 'Server error. Please try again later.';
+      } else if (error.message) {
+        errorMessage = `Failed to load fees defaulters: ${error.message}`;
+      }
+      
+      toast.error(errorMessage);
+      setDefaulters([]);
+      setStats({ totalDefaulters: 0, totalPayable: 0, totalRequired: 0, totalPaid: 0 });
     } finally {
       setLoading(false);
     }
@@ -69,8 +162,11 @@ const FeesDefaulters = () => {
     return (
       defaulter.studentName.toLowerCase().includes(query) ||
       defaulter.registrationNo.toLowerCase().includes(query) ||
-      defaulter.guardianName.toLowerCase().includes(query) ||
-      defaulter.class.toLowerCase().includes(query) ||
+      (defaulter.guardianName && defaulter.guardianName.toLowerCase().includes(query)) ||
+      (defaulter.fatherName && defaulter.fatherName.toLowerCase().includes(query)) ||
+      (defaulter.motherName && defaulter.motherName.toLowerCase().includes(query)) ||
+      (defaulter.class && defaulter.class.toLowerCase().includes(query)) ||
+      (defaulter.selectClass && defaulter.selectClass.toLowerCase().includes(query)) ||
       (defaulter.mobileNo && defaulter.mobileNo.includes(query))
     );
   });
@@ -96,27 +192,250 @@ const FeesDefaulters = () => {
   // Handle send reminder
   const handleSendReminder = () => {
     if (selectedDefaulters.length === 0) {
-      alert('Please select at least one defaulter to send reminder');
+      toast.error('Please select at least one defaulter to send reminder');
       return;
     }
-    alert(`Reminder sent to ${selectedDefaulters.length} defaulter(s)`);
+    toast.success(`Reminder sent to ${selectedDefaulters.length} defaulter(s)`);
+  };
+
+  // Helper function to format currency
+  const formatCurrency = (amount) => {
+    return `₹${parseFloat(amount || 0).toFixed(2)}`;
+  };
+
+  // Helper function to get guardian name
+  const getGuardianName = (defaulter) => {
+    return defaulter.fatherName || defaulter.guardianName || 'N/A';
+  };
+
+  // Helper function to get class name
+  const getClassName = (defaulter) => {
+    return `Class ${defaulter.selectClass || defaulter.class || 'N/A'}`;
   };
 
   // Handle export functions
   const handleCopy = () => {
-    alert('Data copied to clipboard');
+    if (filteredDefaulters.length === 0) {
+      toast.error('No data to copy');
+      return;
+    }
+
+    // Create formatted data for clipboard
+    const headers = ['ID', 'Name', 'Registration No', 'Guardian', 'Class', 'Total Fee Required', 'Amount Paid', 'Payable', 'Phone'];
+    const data = filteredDefaulters.map((defaulter, index) => [
+      index + 1,
+      defaulter.studentName,
+      defaulter.registrationNo,
+      getGuardianName(defaulter),
+      getClassName(defaulter),
+      formatCurrency(defaulter.totalFeeRequired),
+      formatCurrency(defaulter.amountPaid),
+      formatCurrency(defaulter.payable),
+      defaulter.mobileNo || 'N/A'
+    ]);
+
+    const csvContent = [headers, ...data]
+      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .join('\n');
+
+    navigator.clipboard.writeText(csvContent)
+      .then(() => toast.success('Data copied to clipboard'))
+      .catch(() => toast.error('Failed to copy data'));
   };
 
   const handleExportCSV = () => {
-    alert('Exporting to CSV...');
+    if (filteredDefaulters.length === 0) {
+      toast.error('No data to export');
+      return;
+    }
+
+    try {
+      const headers = ['ID', 'Name', 'Registration No', 'Guardian', 'Class', 'Total Fee Required', 'Amount Paid', 'Payable', 'Phone'];
+      const data = filteredDefaulters.map((defaulter, index) => [
+        index + 1,
+        defaulter.studentName,
+        defaulter.registrationNo,
+        getGuardianName(defaulter),
+        getClassName(defaulter),
+        defaulter.totalFeeRequired || 0,
+        defaulter.amountPaid || 0,
+        defaulter.payable || 0,
+        defaulter.mobileNo || 'N/A'
+      ]);
+
+      const csvContent = [headers, ...data]
+        .map(row => row.map(cell => `"${cell}"`).join(','))
+        .join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `fees-defaulters-${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success('CSV exported successfully');
+    } catch (error) {
+      console.error('CSV export error:', error);
+      toast.error('Failed to export CSV');
+    }
   };
 
   const handleExportExcel = () => {
-    alert('Exporting to Excel...');
+    if (filteredDefaulters.length === 0) {
+      toast.error('No data to export');
+      return;
+    }
+
+    try {
+      // Create HTML table for Excel export
+      const headers = ['ID', 'Name', 'Registration No', 'Guardian', 'Class', 'Total Fee Required', 'Amount Paid', 'Payable', 'Phone'];
+      const data = filteredDefaulters.map((defaulter, index) => [
+        index + 1,
+        defaulter.studentName,
+        defaulter.registrationNo,
+        getGuardianName(defaulter),
+        getClassName(defaulter),
+        formatCurrency(defaulter.totalFeeRequired),
+        formatCurrency(defaulter.amountPaid),
+        formatCurrency(defaulter.payable),
+        defaulter.mobileNo || 'N/A'
+      ]);
+
+      let html = '<table>\n';
+      html += '<tr>' + headers.map(header => `<th>${header}</th>`).join('') + '</tr>\n';
+      data.forEach(row => {
+        html += '<tr>' + row.map(cell => `<td>${cell}</td>`).join('') + '</tr>\n';
+      });
+      html += '</table>';
+
+      const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `fees-defaulters-${new Date().toISOString().split('T')[0]}.xls`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success('Excel exported successfully');
+    } catch (error) {
+      console.error('Excel export error:', error);
+      toast.error('Failed to export Excel');
+    }
   };
 
   const handleExportPDF = () => {
-    alert('Exporting to PDF...');
+    if (filteredDefaulters.length === 0) {
+      toast.error('No data to export');
+      return;
+    }
+
+    try {
+      // Initialize jsPDF
+      const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      // Add title
+      doc.setFontSize(16);
+      doc.text('Fees Defaulters Report', 14, 15);
+      
+      // Add date and month info
+      doc.setFontSize(10);
+      doc.text(`Month: ${feesMonth ? new Date(feesMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'N/A'}`, 14, 22);
+      doc.text(`Generated: ${new Date().toLocaleDateString('en-US')} at ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`, 14, 28);
+      doc.text(`Total Defaulters: ${filteredDefaulters.length}`, 14, 34);
+      
+      // Prepare table data
+      const headers = [
+        { header: 'ID', dataKey: 'id' },
+        { header: 'Name', dataKey: 'name' },
+        { header: 'Reg. No', dataKey: 'regNo' },
+        { header: 'Guardian', dataKey: 'guardian' },
+        { header: 'Class', dataKey: 'class' },
+        { header: 'Total Required', dataKey: 'totalRequired' },
+        { header: 'Amount Paid', dataKey: 'amountPaid' },
+        { header: 'Payable', dataKey: 'payable' },
+        { header: 'Phone', dataKey: 'phone' }
+      ];
+      
+      const data = filteredDefaulters.map((defaulter, index) => ({
+        id: index + 1,
+        name: defaulter.studentName || '',
+        regNo: defaulter.registrationNo || '',
+        guardian: getGuardianName(defaulter),
+        class: getClassName(defaulter),
+        totalRequired: formatCurrency(defaulter.totalFeeRequired),
+        amountPaid: formatCurrency(defaulter.amountPaid),
+        payable: formatCurrency(defaulter.payable),
+        phone: defaulter.mobileNo || 'N/A'
+      }));
+
+      // Add table using autoTable
+      doc.autoTable({
+        columns: headers,
+        body: data,
+        startY: 40,
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+          valign: 'middle',
+          halign: 'left'
+        },
+        headStyles: {
+          fillColor: [220, 38, 38],
+          textColor: 255,
+          fontStyle: 'bold',
+          fontSize: 9
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245]
+        },
+        margin: { left: 10, right: 10, top: 40, bottom: 20 },
+        theme: 'grid',
+        columnStyles: {
+          0: { cellWidth: 15, halign: 'center' }, // ID
+          1: { cellWidth: 40 }, // Name
+          2: { cellWidth: 25 }, // Reg No
+          3: { cellWidth: 35 }, // Guardian
+          4: { cellWidth: 20, halign: 'center' }, // Class
+          5: { cellWidth: 30, halign: 'right' }, // Total Required
+          6: { cellWidth: 25, halign: 'right' }, // Amount Paid
+          7: { cellWidth: 25, halign: 'right' }, // Payable
+          8: { cellWidth: 30 } // Phone
+        }
+      });
+
+      // Add summary at the bottom
+      const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 50;
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.text(`Summary:`, 14, finalY);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Total Required: ${formatCurrency(stats.totalRequired)}`, 14, finalY + 6);
+      doc.text(`Total Paid: ${formatCurrency(stats.totalPaid)}`, 14, finalY + 12);
+      doc.text(`Total Payable: ${formatCurrency(stats.totalPayable)}`, 14, finalY + 18);
+
+      // Save the PDF
+      const fileName = `fees-defaulters-${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(fileName);
+      
+      toast.success('PDF exported successfully');
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast.error('Failed to export PDF: ' + error.message);
+    }
   };
 
   const handlePrint = () => {
@@ -126,7 +445,7 @@ const FeesDefaulters = () => {
   // Handle submit (navigate to Collect Fees with selected students)
   const handleSubmit = () => {
     if (selectedDefaulters.length === 0) {
-      alert('Please select at least one defaulter');
+      toast.error('Please select at least one defaulter');
       return;
     }
     
@@ -134,6 +453,39 @@ const FeesDefaulters = () => {
     navigate('/dashboard/fees/collect-fees', { 
       state: { selectedDefaulters: selectedStudents }
     });
+  };
+
+  // Handle message functionality
+  const handleMessageClick = (student) => {
+    setMessageBox({ isOpen: true, student, message: '' });
+  };
+
+  const handleCloseMessage = () => {
+    setMessageBox({ isOpen: false, student: null, message: '' });
+  };
+
+  const handleSendMessage = () => {
+    if (!messageBox.message.trim()) {
+      toast.error('Please enter a message');
+      return;
+    }
+    
+    // Here you would implement the actual message sending logic
+    console.log('Sending message to:', messageBox.student.studentName);
+    console.log('Message:', messageBox.message);
+    
+    toast.success(`Message sent to ${messageBox.student.studentName}`);
+    handleCloseMessage();
+  };
+
+  // Helper function to get initials
+  const getInitials = (name) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   return (
@@ -336,6 +688,8 @@ const FeesDefaulters = () => {
                         <th className="px-4 py-4 text-left font-bold">Name</th>
                         <th className="px-4 py-4 text-left font-bold">Guardian</th>
                         <th className="px-4 py-4 text-left font-bold">Class</th>
+                        <th className="px-4 py-4 text-right font-bold">Total Fee Required</th>
+                        <th className="px-4 py-4 text-right font-bold">Amount Paid</th>
                         <th className="px-4 py-4 text-right font-bold">Payable</th>
                         <th className="px-4 py-4 text-left font-bold">Phone</th>
                         <th className="px-4 py-4 text-center font-bold">Action</th>
@@ -354,24 +708,51 @@ const FeesDefaulters = () => {
                           </td>
                           <td className="px-4 py-4 text-gray-700 dark:text-gray-300 font-medium">{index + 1}</td>
                           <td className="px-4 py-4">
-                            <img
-                              src={defaulter.photo?.url || `https://ui-avatars.com/api/?name=${encodeURIComponent(defaulter.studentName)}&background=4F46E5&color=fff`}
-                              alt={defaulter.studentName}
-                              className="w-10 h-10 rounded-full border-2 border-red-200 dark:border-red-700"
-                            />
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full border-2 border-red-200 dark:border-red-700 overflow-hidden flex items-center justify-center">
+                              {defaulter.picture?.url ? (
+                                <img 
+                                  src={defaulter.picture.url} 
+                                  alt={defaulter.studentName}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    // Fallback to initials if image fails to load
+                                    e.target.style.display = 'none';
+                                    e.target.nextSibling.style.display = 'flex';
+                                  }}
+                                />
+                              ) : null}
+                              {/* Fallback initials - hidden by default when image is present */}
+                              <div 
+                                className="text-white font-bold text-sm" 
+                                style={{ display: defaulter.picture?.url ? 'none' : 'flex' }}
+                              >
+                                {getInitials(defaulter.studentName)}
+                              </div>
+                            </div>
                           </td>
                           <td className="px-4 py-4">
                             <div className="font-semibold text-gray-900 dark:text-white">{defaulter.studentName}</div>
                             <div className="text-sm text-gray-600 dark:text-gray-400">{defaulter.registrationNo}</div>
                           </td>
-                          <td className="px-4 py-4 text-gray-700 dark:text-gray-300">{defaulter.guardianName}</td>
+                          <td className="px-4 py-4 text-gray-700 dark:text-gray-300">
+                            {defaulter.fatherName || defaulter.guardianName || 'N/A'}
+                          </td>
                           <td className="px-4 py-4">
                             <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium">
-                              {defaulter.class}
+                              Class {defaulter.selectClass || defaulter.class}
                             </span>
                           </td>
                           <td className="px-4 py-4 text-right">
+                            <span className="text-gray-600 dark:text-gray-400 font-semibold">₹{defaulter.totalFeeRequired?.toFixed(2) || '0.00'}</span>
+                          </td>
+                          <td className="px-4 py-4 text-right">
+                            <span className="text-blue-600 dark:text-blue-400 font-semibold">₹{defaulter.amountPaid?.toFixed(2) || '0.00'}</span>
+                          </td>
+                          <td className="px-4 py-4 text-right">
                             <span className="text-red-600 dark:text-red-400 font-bold text-lg">₹{defaulter.payable?.toFixed(2) || '0.00'}</span>
+                            {defaulter.paymentStatus === 'partial' && (
+                              <div className="text-xs text-orange-500 dark:text-orange-400 mt-1">Partial</div>
+                            )}
                           </td>
                           <td className="px-4 py-4">
                             <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
@@ -389,11 +770,11 @@ const FeesDefaulters = () => {
                                 <CheckCircle className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => alert(`Sending reminder to ${defaulter.studentName}`)}
+                                onClick={() => handleMessageClick(defaulter)}
                                 className="p-2 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 rounded-lg transition-all"
-                                title="Send Reminder"
+                                title="Send Message"
                               >
-                                <Mail className="w-4 h-4" />
+                                <MessageSquare className="w-4 h-4" />
                               </button>
                             </div>
                           </td>
@@ -449,19 +830,35 @@ const FeesDefaulters = () => {
                           </td>
                           <td className="px-6 py-5">
                             <span className="px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-base font-semibold">
-                              {defaulter.class}
+                              Class {defaulter.selectClass || defaulter.class}
                             </span>
                           </td>
                           <td className="px-6 py-5">
                             <div className="flex items-center gap-4">
-                              <img
-                                src={defaulter.photo?.url || `https://ui-avatars.com/api/?name=${encodeURIComponent(defaulter.studentName)}&background=4F46E5&color=fff`}
-                                alt={defaulter.studentName}
-                                className="w-12 h-12 rounded-full border-2 border-red-200 dark:border-red-700"
-                              />
+                              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full border-2 border-red-200 dark:border-red-700 overflow-hidden flex items-center justify-center">
+                                {defaulter.picture?.url ? (
+                                  <img 
+                                    src={defaulter.picture.url} 
+                                    alt={defaulter.studentName}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      // Fallback to initials if image fails to load
+                                      e.target.style.display = 'none';
+                                      e.target.nextSibling.style.display = 'flex';
+                                    }}
+                                  />
+                                ) : null}
+                                {/* Fallback initials - hidden by default when image is present */}
+                                <div 
+                                  className="text-white font-bold" 
+                                  style={{ display: defaulter.picture?.url ? 'none' : 'flex' }}
+                                >
+                                  {getInitials(defaulter.studentName)}
+                                </div>
+                              </div>
                               <div>
                                 <div className="font-bold text-gray-900 dark:text-white text-lg">{defaulter.studentName}</div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400">Guardian: {defaulter.guardianName}</div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">Guardian: {defaulter.fatherName || defaulter.guardianName || 'N/A'}</div>
                               </div>
                             </div>
                           </td>
@@ -483,7 +880,7 @@ const FeesDefaulters = () => {
 
             {/* Summary Card */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 mt-6 no-print transition-colors duration-300">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="text-center p-4 bg-red-50 dark:bg-gray-900 rounded-xl border border-red-200 dark:border-gray-700">
                   <div className="text-3xl font-bold text-red-600 dark:text-red-400">{stats.totalDefaulters}</div>
                   <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Total Defaulters</div>
@@ -492,8 +889,16 @@ const FeesDefaulters = () => {
                   <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">{selectedDefaulters.length}</div>
                   <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Selected</div>
                 </div>
+                <div className="text-center p-4 bg-blue-50 dark:bg-gray-900 rounded-xl border border-blue-200 dark:border-gray-700">
+                  <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">₹{stats.totalRequired.toFixed(2)}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Total Required</div>
+                </div>
                 <div className="text-center p-4 bg-green-50 dark:bg-gray-900 rounded-xl border border-green-200 dark:border-gray-700">
-                  <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+                  <div className="text-3xl font-bold text-green-600 dark:text-green-400">₹{stats.totalPaid.toFixed(2)}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Total Paid</div>
+                </div>
+                <div className="text-center p-4 bg-red-50 dark:bg-gray-900 rounded-xl border border-red-200 dark:border-gray-700">
+                  <div className="text-3xl font-bold text-red-600 dark:text-red-400">
                     ₹{stats.totalPayable.toFixed(2)}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Total Payable</div>
@@ -526,6 +931,91 @@ const FeesDefaulters = () => {
             <p className="text-gray-600 dark:text-gray-400">
               All students have paid their fees for {new Date(feesMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
             </p>
+          </div>
+        )}
+
+        {/* Message Box Modal */}
+        {messageBox.isOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  Send Message
+                </h3>
+                <button
+                  onClick={handleCloseMessage}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all"
+                >
+                  <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                </button>
+              </div>
+
+              {/* Student Info */}
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full border-2 border-red-200 dark:border-red-700 overflow-hidden flex items-center justify-center">
+                    {messageBox.student?.picture?.url ? (
+                      <img 
+                        src={messageBox.student.picture.url} 
+                        alt={messageBox.student?.studentName}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div 
+                      className="text-white font-bold" 
+                      style={{ display: messageBox.student?.picture?.url ? 'none' : 'flex' }}
+                    >
+                      {getInitials(messageBox.student?.studentName || '')}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 dark:text-white">
+                      {messageBox.student?.studentName}
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {messageBox.student?.registrationNo}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Message Input */}
+              <div className="p-6">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  Message
+                </label>
+                <textarea
+                  value={messageBox.message}
+                  onChange={(e) => setMessageBox(prev => ({ ...prev, message: e.target.value }))}
+                  placeholder="Type your message here..."
+                  className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+                  rows={4}
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={handleCloseMessage}
+                  className="px-5 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSendMessage}
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all flex items-center gap-2"
+                >
+                  <Send className="w-4 h-4" />
+                  Send Message
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

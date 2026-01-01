@@ -1,5 +1,6 @@
 import FeePayment from '../models/Fees.js';
 import Student from '../models/Student.js';
+import FeeStructure from '../models/FeeStructure.js';
 import { StatusCodes } from 'http-status-codes';
 
 // Collect fees for a student
@@ -163,49 +164,103 @@ export const getFeesDefaulters = async (req, res) => {
     const endDate = new Date(startDate);
     endDate.setMonth(endDate.getMonth() + 1);
 
-    // Get all students
+    // Get all active students
     const allStudents = await Student.find({ status: 'active' }).select('-password');
     
-    // Get students who have paid for this month
-    const paidStudents = await FeePayment.find({
+    // Get all fee payments for this month
+    const paymentsForMonth = await FeePayment.find({
       feeMonth: {
         $gte: startDate,
         $lt: endDate
       }
-    }).distinct('studentId');
+    });
 
-    // Find defaulters (students not in paidStudents list)
-    let defaulters = allStudents.filter(student => 
-      !paidStudents.some(id => id.toString() === student._id.toString())
-    );
+    // Get fee structures for calculating payable amounts
+    const feeStructures = await FeeStructure.find({ status: 'active' });
+    const feeStructureMap = {};
+    feeStructures.forEach(structure => {
+      feeStructureMap[structure.className] = structure;
+    });
+
+    // Calculate total paid per student
+    const paymentsByStudent = {};
+    paymentsForMonth.forEach(payment => {
+      const studentId = payment.studentId.toString();
+      if (!paymentsByStudent[studentId]) {
+        paymentsByStudent[studentId] = 0;
+      }
+      paymentsByStudent[studentId] += payment.amount;
+    });
+
+    // Calculate payable amount for each student and identify defaulters
+    const defaultersWithPayable = [];
+    
+    for (const student of allStudents) {
+      const studentClass = student.selectClass || student.class;
+      const studentId = student._id.toString();
+      
+      // Calculate total fee required for this student
+      let totalFeeRequired = 0;
+      
+      // Try to get fee from fee structure first
+      const feeStructure = feeStructureMap[studentClass];
+      if (feeStructure) {
+        totalFeeRequired = feeStructure.totalFee;
+      } else {
+        // Fallback: use default fee calculation based on common fee particulars
+        // This matches the logic used in CollectFees and GenerateFeesInvoice
+        totalFeeRequired = 3000; // Default monthly fee - can be made configurable
+      }
+
+      // Get amount paid by this student
+      const amountPaid = paymentsByStudent[studentId] || 0;
+      
+      // Calculate remaining balance
+      const remainingBalance = totalFeeRequired - amountPaid;
+      
+      // Student is a defaulter if they haven't paid the full amount
+      if (remainingBalance > 0) {
+        defaultersWithPayable.push({
+          ...student.toObject(),
+          payable: remainingBalance,
+          totalFeeRequired: totalFeeRequired,
+          amountPaid: amountPaid,
+          paymentStatus: amountPaid > 0 ? 'partial' : 'unpaid'
+        });
+      }
+    }
 
     // Apply search filter if provided
+    let filteredDefaulters = defaultersWithPayable;
     if (search) {
       const query = search.toLowerCase();
-      defaulters = defaulters.filter(defaulter => 
+      filteredDefaulters = defaultersWithPayable.filter(defaulter => 
         defaulter.studentName.toLowerCase().includes(query) ||
         defaulter.registrationNo.toLowerCase().includes(query) ||
-        defaulter.guardianName.toLowerCase().includes(query) ||
-        defaulter.selectClass.toLowerCase().includes(query)
+        (defaulter.fatherName && defaulter.fatherName.toLowerCase().includes(query)) ||
+        (defaulter.motherName && defaulter.motherName.toLowerCase().includes(query)) ||
+        (defaulter.guardianName && defaulter.guardianName.toLowerCase().includes(query)) ||
+        (defaulter.selectClass && defaulter.selectClass.toLowerCase().includes(query)) ||
+        (defaulter.class && defaulter.class.toLowerCase().includes(query)) ||
+        (defaulter.mobileNo && defaulter.mobileNo.includes(query))
       );
     }
 
-    // Get fee structure to calculate payable amount
-    const defaultersWithPayable = defaulters.map(defaulter => ({
-      ...defaulter.toObject(),
-      payable: 3000 // Default amount, should be fetched from fee structure
-    }));
-
     // Calculate statistics
-    const totalPayable = defaultersWithPayable.reduce((sum, d) => sum + (d.payable || 0), 0);
+    const totalPayable = filteredDefaulters.reduce((sum, d) => sum + (d.payable || 0), 0);
+    const totalRequired = filteredDefaulters.reduce((sum, d) => sum + (d.totalFeeRequired || 0), 0);
+    const totalPaid = filteredDefaulters.reduce((sum, d) => sum + (d.amountPaid || 0), 0);
 
     res.status(StatusCodes.OK).json({
       success: true,
       message: 'Fees defaulters retrieved successfully',
-      data: defaultersWithPayable,
+      data: filteredDefaulters,
       stats: {
-        totalDefaulters: defaultersWithPayable.length,
-        totalPayable
+        totalDefaulters: filteredDefaulters.length,
+        totalPayable,
+        totalRequired,
+        totalPaid,
+        month: month
       }
     });
   } catch (error) {
@@ -547,6 +602,307 @@ export const bulkDeleteFeePayments = async (req, res) => {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: 'Failed to delete fee payments'
+    });
+  }
+};
+
+// Export fees report as CSV
+export const exportFeesReportCSV = async (req, res) => {
+  try {
+    const { period, month, year, startDate, endDate } = req.query;
+    
+    // Build date filter
+    let dateFilter = {};
+    if (period === 'month' && month) {
+      const startDate = new Date(month);
+      const endDate = new Date(startDate);
+      endDate.setMonth(endDate.getMonth() + 1);
+      dateFilter = { paymentDate: { $gte: startDate, $lt: endDate } };
+    } else if (period === 'year' && year) {
+      const startDate = new Date(`${year}-01-01`);
+      const endDate = new Date(`${parseInt(year) + 1}-01-01`);
+      dateFilter = { paymentDate: { $gte: startDate, $lt: endDate } };
+    } else if (period === 'quarter' && month) {
+      const date = new Date(month);
+      const quarterStart = new Date(date.getFullYear(), Math.floor(date.getMonth() / 3) * 3, 1);
+      const quarterEnd = new Date(quarterStart);
+      quarterEnd.setMonth(quarterEnd.getMonth() + 3);
+      dateFilter = { paymentDate: { $gte: quarterStart, $lt: quarterEnd } };
+    } else if (period === 'custom' && startDate && endDate) {
+      dateFilter = { paymentDate: { $gte: new Date(startDate), $lte: new Date(endDate) } };
+    } else {
+      dateFilter = { paymentDate: { $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) } };
+    }
+
+    // Get all payments for CSV
+    const payments = await FeePayment.find(dateFilter).sort({ paymentDate: -1 });
+
+    // Format data for CSV
+    const csvData = payments.map(payment => ({
+      'Receipt No': payment.receiptNo,
+      'Student Name': payment.studentName,
+      'Registration No': payment.registrationNo,
+      'Class': payment.class,
+      'Amount': payment.amount,
+      'Payment Date': new Date(payment.paymentDate).toLocaleDateString(),
+      'Fee Month': new Date(payment.feeMonth).toLocaleDateString(),
+      'Payment Method': payment.depositType,
+      'Guardian Name': payment.guardianName
+    }));
+
+    // Generate CSV string
+    const { Parser } = await import('json2csv');
+    const parser = new Parser({ fields: ['Receipt No', 'Student Name', 'Registration No', 'Class', 'Amount', 'Payment Date', 'Fee Month', 'Payment Method', 'Guardian Name'] });
+    const csv = parser.parse(csvData);
+
+    // Set response headers
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="fees-report.csv"');
+    res.send(csv);
+  } catch (error) {
+    console.error('Export CSV error:', error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: 'Failed to export fees report as CSV'
+    });
+  }
+};
+
+// Export fees report as Excel
+export const exportFeesReportExcel = async (req, res) => {
+  try {
+    const { period, month, year, startDate, endDate } = req.query;
+    
+    // Build date filter
+    let dateFilter = {};
+    if (period === 'month' && month) {
+      const startDate = new Date(month);
+      const endDate = new Date(startDate);
+      endDate.setMonth(endDate.getMonth() + 1);
+      dateFilter = { paymentDate: { $gte: startDate, $lt: endDate } };
+    } else if (period === 'year' && year) {
+      const startDate = new Date(`${year}-01-01`);
+      const endDate = new Date(`${parseInt(year) + 1}-01-01`);
+      dateFilter = { paymentDate: { $gte: startDate, $lt: endDate } };
+    } else if (period === 'quarter' && month) {
+      const date = new Date(month);
+      const quarterStart = new Date(date.getFullYear(), Math.floor(date.getMonth() / 3) * 3, 1);
+      const quarterEnd = new Date(quarterStart);
+      quarterEnd.setMonth(quarterEnd.getMonth() + 3);
+      dateFilter = { paymentDate: { $gte: quarterStart, $lt: quarterEnd } };
+    } else if (period === 'custom' && startDate && endDate) {
+      dateFilter = { paymentDate: { $gte: new Date(startDate), $lte: new Date(endDate) } };
+    } else {
+      dateFilter = { paymentDate: { $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) } };
+    }
+
+    const ExcelJS = await import('exceljs');
+    const Workbook = ExcelJS.default.Workbook;
+    const workbook = new Workbook();
+
+    // Get report data
+    const payments = await FeePayment.find(dateFilter).sort({ paymentDate: -1 });
+    
+    const overallStats = await FeePayment.aggregate([
+      { $match: dateFilter },
+      {
+        $group: {
+          _id: null,
+          totalCollected: { $sum: '$amount' },
+          totalPayments: { $sum: 1 },
+          avgAmount: { $avg: '$amount' }
+        }
+      }
+    ]);
+
+    // Create Transactions Sheet
+    const wsTransactions = workbook.addWorksheet('Transactions');
+    wsTransactions.columns = [
+      { header: 'Receipt No', key: 'receiptNo', width: 15 },
+      { header: 'Student Name', key: 'studentName', width: 25 },
+      { header: 'Registration No', key: 'registrationNo', width: 18 },
+      { header: 'Class', key: 'class', width: 10 },
+      { header: 'Amount', key: 'amount', width: 12 },
+      { header: 'Payment Date', key: 'paymentDate', width: 15 },
+      { header: 'Fee Month', key: 'feeMonth', width: 15 },
+      { header: 'Payment Method', key: 'depositType', width: 15 },
+      { header: 'Guardian Name', key: 'guardianName', width: 20 }
+    ];
+
+    // Style header row
+    wsTransactions.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    wsTransactions.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } };
+
+    // Add data
+    payments.forEach(payment => {
+      wsTransactions.addRow({
+        receiptNo: payment.receiptNo,
+        studentName: payment.studentName,
+        registrationNo: payment.registrationNo,
+        class: payment.class,
+        amount: payment.amount,
+        paymentDate: new Date(payment.paymentDate).toLocaleDateString(),
+        feeMonth: new Date(payment.feeMonth).toLocaleDateString(),
+        depositType: payment.depositType,
+        guardianName: payment.guardianName
+      });
+    });
+
+    // Format amount column
+    wsTransactions.getColumn('amount').numFmt = '₹#,##0';
+
+    // Create Summary Sheet
+    const wsSummary = workbook.addWorksheet('Summary');
+    
+    const totalCollected = overallStats[0]?.totalCollected || 0;
+    const totalPayments = overallStats[0]?.totalPayments || 0;
+    const totalStudents = await Student.countDocuments({ status: 'active' });
+    const paidStudents = await FeePayment.distinct('studentId', dateFilter);
+    
+    wsSummary.addRow(['Fees Report Summary']);
+    wsSummary.getRow(1).font = { bold: true, size: 14 };
+    
+    wsSummary.addRow(['']);
+    wsSummary.addRow(['Total Collected', totalCollected]);
+    wsSummary.addRow(['Total Payments', totalPayments]);
+    wsSummary.addRow(['Total Students', totalStudents]);
+    wsSummary.addRow(['Students Paid', paidStudents.length]);
+    wsSummary.addRow(['Collection Rate', `${totalStudents > 0 ? Math.round((paidStudents.length / totalStudents) * 100) : 0}%`]);
+    wsSummary.addRow(['Average Fee/Student', overallStats[0]?.avgAmount?.toFixed(0) || 0]);
+
+    wsSummary.getColumn('A').width = 25;
+    wsSummary.getColumn('B').width = 20;
+
+    // Send file
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="fees-report.xlsx"');
+    
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error('Export Excel error:', error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: 'Failed to export fees report as Excel'
+    });
+  }
+};
+
+// Export fees report as PDF
+export const exportFeesReportPDF = async (req, res) => {
+  try {
+    const { period, month, year, startDate, endDate } = req.query;
+    
+    // Build date filter
+    let dateFilter = {};
+    if (period === 'month' && month) {
+      const startDate = new Date(month);
+      const endDate = new Date(startDate);
+      endDate.setMonth(endDate.getMonth() + 1);
+      dateFilter = { paymentDate: { $gte: startDate, $lt: endDate } };
+    } else if (period === 'year' && year) {
+      const startDate = new Date(`${year}-01-01`);
+      const endDate = new Date(`${parseInt(year) + 1}-01-01`);
+      dateFilter = { paymentDate: { $gte: startDate, $lt: endDate } };
+    } else if (period === 'quarter' && month) {
+      const date = new Date(month);
+      const quarterStart = new Date(date.getFullYear(), Math.floor(date.getMonth() / 3) * 3, 1);
+      const quarterEnd = new Date(quarterStart);
+      quarterEnd.setMonth(quarterEnd.getMonth() + 3);
+      dateFilter = { paymentDate: { $gte: quarterStart, $lt: quarterEnd } };
+    } else if (period === 'custom' && startDate && endDate) {
+      dateFilter = { paymentDate: { $gte: new Date(startDate), $lte: new Date(endDate) } };
+    } else {
+      dateFilter = { paymentDate: { $gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) } };
+    }
+
+    const jsPDF = await import('jspdf');
+    const PDFDocument = jsPDF.jsPDF;
+    
+    // Get report data
+    const payments = await FeePayment.find(dateFilter).sort({ paymentDate: -1 }).limit(100);
+    
+    const overallStats = await FeePayment.aggregate([
+      { $match: dateFilter },
+      {
+        $group: {
+          _id: null,
+          totalCollected: { $sum: '$amount' },
+          totalPayments: { $sum: 1 },
+          avgAmount: { $avg: '$amount' }
+        }
+      }
+    ]);
+
+    const doc = new PDFDocument();
+    
+    // Add header
+    doc.setFontSize(20);
+    doc.text('Fees Report', 105, 20, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 30, { align: 'center' });
+    
+    // Add summary
+    doc.setTextColor(0);
+    doc.setFontSize(12);
+    doc.text('Summary', 20, 45);
+    
+    doc.setFontSize(10);
+    let yPos = 55;
+    const totalCollected = overallStats[0]?.totalCollected || 0;
+    const totalPayments = overallStats[0]?.totalPayments || 0;
+    
+    doc.text(`Total Collected: ₹${totalCollected.toLocaleString()}`, 20, yPos);
+    yPos += 7;
+    doc.text(`Total Payments: ${totalPayments}`, 20, yPos);
+    yPos += 7;
+    doc.text(`Average Fee: ₹${(overallStats[0]?.avgAmount || 0).toFixed(0)}`, 20, yPos);
+    yPos += 15;
+    
+    // Add transactions table
+    doc.setFontSize(12);
+    doc.text('Recent Transactions', 20, yPos);
+    yPos += 10;
+    
+    // Table header
+    doc.setFontSize(9);
+    doc.setFillColor(79, 70, 229);
+    doc.setTextColor(255);
+    doc.rect(20, yPos - 5, 170, 6, 'F');
+    doc.text('Student', 22, yPos);
+    doc.text('Class', 70, yPos);
+    doc.text('Amount', 100, yPos);
+    doc.text('Date', 135, yPos);
+    
+    // Table data
+    doc.setTextColor(0);
+    yPos += 8;
+    
+    payments.slice(0, 20).forEach((payment, index) => {
+      if (yPos > 270) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      doc.text(payment.studentName.substring(0, 30), 22, yPos);
+      doc.text(payment.class, 70, yPos);
+      doc.text(`₹${payment.amount.toLocaleString()}`, 100, yPos);
+      doc.text(new Date(payment.paymentDate).toLocaleDateString(), 135, yPos);
+      yPos += 6;
+    });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="fees-report.pdf"');
+    
+    doc.pipe(res);
+    doc.end();
+  } catch (error) {
+    console.error('Export PDF error:', error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: 'Failed to export fees report as PDF'
     });
   }
 };

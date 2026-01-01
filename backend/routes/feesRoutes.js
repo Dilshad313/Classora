@@ -6,7 +6,10 @@ import {
   getFeesPaidSlip,
   getFeesReport,
   deleteFeePayment,
-  bulkDeleteFeePayments
+  bulkDeleteFeePayments,
+  exportFeesReportCSV,
+  exportFeesReportExcel,
+  exportFeesReportPDF
 } from '../controllers/feesControllers.js';
 import { authenticateToken } from '../middleware/auth.js';
 
@@ -29,6 +32,11 @@ router.get('/paid-slip', getFeesPaidSlip);
 
 // Get fees report
 router.get('/report', getFeesReport);
+
+// Export fees report
+router.get('/report/export/csv', exportFeesReportCSV);
+router.get('/report/export/excel', exportFeesReportExcel);
+router.get('/report/export/pdf', exportFeesReportPDF);
 
 // Delete single fee payment
 router.delete('/payments/:id', deleteFeePayment);
