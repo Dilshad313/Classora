@@ -7,7 +7,7 @@ import {
   exportStudentInfoExcel 
 } from '../../../../services/reportApi';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 const StudentInfo = () => {
   const navigate = useNavigate();
@@ -122,7 +122,7 @@ const StudentInfo = () => {
     ]);
     
     // Generate table
-    doc.autoTable({
+    autoTable(doc, {
       head: headers,
       body: data,
       startY: 45,

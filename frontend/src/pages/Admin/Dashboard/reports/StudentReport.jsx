@@ -12,7 +12,7 @@ import {
   exportStudentInfoExcel 
 } from '../../../../services/reportApi';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 const StudentReport = () => {
   const navigate = useNavigate();
@@ -136,7 +136,7 @@ const StudentReport = () => {
       subject.attendance.toFixed(1)
     ]);
     
-    doc.autoTable({
+    autoTable(doc, {
       head: subjectHeaders,
       body: subjectData,
       startY: 145,
@@ -147,7 +147,7 @@ const StudentReport = () => {
     
     // Recent Tests
     if (reportData.performance.recentTests && reportData.performance.recentTests.length > 0) {
-      const testY = doc.lastAutoTable.finalY + 10;
+      const testY = doc.previousAutoTable.finalY + 10;
       doc.setFontSize(14);
       doc.text('Recent Test Results', 14, testY);
       
@@ -159,7 +159,7 @@ const StudentReport = () => {
         `${test.score}/${test.maxScore}`
       ]);
       
-      doc.autoTable({
+      autoTable(doc, {
         head: testHeaders,
         body: testData,
         startY: testY + 5,

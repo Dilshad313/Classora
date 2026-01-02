@@ -24,7 +24,7 @@ import {
 import * as feesApi from '../../../../services/feesApi';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 const FeesDefaulters = () => {
   const navigate = useNavigate();
@@ -383,7 +383,7 @@ const FeesDefaulters = () => {
       }));
 
       // Add table using autoTable
-      doc.autoTable({
+      autoTable(doc, {
         columns: headers,
         body: data,
         startY: 40,
@@ -418,7 +418,7 @@ const FeesDefaulters = () => {
       });
 
       // Add summary at the bottom
-      const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 50;
+      const finalY = doc.previousAutoTable ? doc.previousAutoTable.finalY + 10 : 50;
       doc.setFontSize(10);
       doc.setFont(undefined, 'bold');
       doc.text(`Summary:`, 14, finalY);

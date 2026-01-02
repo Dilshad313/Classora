@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Home, ChevronRight, BarChart3, TrendingUp, TrendingDown, DollarSign, Users, Calendar,
-  Printer, Download, CheckCircle, Clock, PieChart, Activity, CreditCard, Wallet, Target, Award, FileText, Loader
+  Printer, Download, CheckCircle, Clock, PieChart, Activity, CreditCard, Wallet, Target, Award, FileText, Loader, FileSpreadsheet, Copy
 } from 'lucide-react';
 import * as feesApi from '../../../../services/feesApi';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import toast from 'react-hot-toast';
 
 const FeesReport = () => {
   const navigate = useNavigate();
@@ -43,14 +46,235 @@ const FeesReport = () => {
       setReportData(response);
     } catch (error) {
       console.error('Error loading report data:', error);
-      alert('Failed to load fees report');
+      toast.error('Failed to load fees report');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleExport = () => {
-    alert('Export feature coming soon...');
+  // Helper function to format currency in thousands (K)
+  const formatCurrency = (amount, decimals = 1) => {
+    if (amount >= 1000) {
+      return `₹${(amount / 1000).toFixed(decimals)}K`;
+    }
+    return `₹${amount.toFixed(0)}`;
+  };
+
+  const handleExportPDF = () => {
+    try {
+      const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      // Add header
+      doc.setFontSize(18);
+      doc.setFont(undefined, 'bold');
+      doc.text('Fees Report & Analytics', 14, 15);
+      
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Period: ${getPeriodLabel()}`, 14, 22);
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 28);
+
+      // Overall Stats
+      doc.setFontSize(14);
+      doc.setFont(undefined, 'bold');
+      doc.text('Overall Statistics', 14, 40);
+      
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Total Collected: ${formatCurrency(overallStats.totalCollected)}`, 14, 48);
+      doc.text(`Total Pending: ${formatCurrency(overallStats.totalPending)}`, 14, 54);
+      doc.text(`Collection Rate: ${overallStats.collectionRate}%`, 14, 60);
+      doc.text(`Total Students: ${overallStats.totalStudents}`, 80, 48);
+      doc.text(`Paid Students: ${overallStats.paidStudents}`, 80, 54);
+      doc.text(`Defaulters: ${overallStats.totalDefaulters}`, 80, 60);
+
+      // Class-wise data table
+      if (classWiseData.length > 0) {
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text('Class-wise Collection', 14, 72);
+
+        const classHeaders = [
+          { header: 'Class', dataKey: 'class' },
+          { header: 'Students', dataKey: 'students' },
+          { header: 'Collected', dataKey: 'collected' },
+          { header: 'Pending', dataKey: 'pending' },
+          { header: 'Rate %', dataKey: 'percentage' }
+        ];
+
+        const classTableData = classWiseData.map(item => ({
+          class: item.class,
+          students: item.students,
+          collected: formatCurrency(item.collected),
+          pending: formatCurrency(item.pending),
+          percentage: `${item.percentage}%`
+        }));
+
+        autoTable(doc, {
+          columns: classHeaders,
+          body: classTableData,
+          startY: 76,
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold' },
+          alternateRowStyles: { fillColor: [245, 245, 245] }
+        });
+      }
+
+      // Recent transactions
+      if (recentTransactions.length > 0) {
+        const transY = doc.previousAutoTable ? doc.previousAutoTable.finalY + 10 : 115;
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text('Recent Transactions', 14, transY);
+
+        const transHeaders = [
+          { header: 'Student', dataKey: 'student' },
+          { header: 'Class', dataKey: 'class' },
+          { header: 'Amount', dataKey: 'amount' },
+          { header: 'Date', dataKey: 'date' },
+          { header: 'Method', dataKey: 'method' }
+        ];
+
+        const transTableData = recentTransactions.map(t => ({
+          student: t.student?.studentName || t.studentName,
+          class: t.class,
+          amount: formatCurrency(t.amount, 0),
+          date: new Date(t.paymentDate).toLocaleDateString(),
+          method: t.depositType
+        }));
+
+        autoTable(doc, {
+          columns: transHeaders,
+          body: transTableData,
+          startY: transY + 4,
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold' },
+          alternateRowStyles: { fillColor: [245, 245, 245] }
+        });
+      }
+
+      doc.save(`fees-report-${new Date().toISOString().split('T')[0]}.pdf`);
+      toast.success('PDF exported successfully');
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast.error('Failed to export PDF: ' + error.message);
+    }
+  };
+
+  const handleExportCSV = () => {
+    try {
+      const csvData = [];
+      
+      // Headers
+      csvData.push(['Fees Report']);
+      csvData.push([`Period: ${getPeriodLabel()}`]);
+      csvData.push([`Generated: ${new Date().toLocaleString()}`]);
+      csvData.push([]);
+      
+      // Overall Stats
+      csvData.push(['Overall Statistics']);
+      csvData.push(['Metric', 'Value']);
+      csvData.push(['Total Collected', overallStats.totalCollected]);
+      csvData.push(['Total Pending', overallStats.totalPending]);
+      csvData.push(['Collection Rate', `${overallStats.collectionRate}%`]);
+      csvData.push(['Total Students', overallStats.totalStudents]);
+      csvData.push(['Paid Students', overallStats.paidStudents]);
+      csvData.push(['Defaulters', overallStats.totalDefaulters]);
+      csvData.push([]);
+      
+      // Class-wise Data
+      if (classWiseData.length > 0) {
+        csvData.push(['Class-wise Collection']);
+        csvData.push(['Class', 'Students', 'Collected', 'Pending', 'Collection %']);
+        classWiseData.forEach(item => {
+          csvData.push([
+            item.class,
+            item.students,
+            item.collected,
+            item.pending,
+            `${item.percentage}%`
+          ]);
+        });
+        csvData.push([]);
+      }
+      
+      // Payment Methods
+      if (paymentMethods.length > 0) {
+        csvData.push(['Payment Methods']);
+        csvData.push(['Method', 'Amount', 'Percentage']);
+        paymentMethods.forEach(method => {
+          csvData.push([
+            method._id,
+            method.amount,
+            `${method.percentage}%`
+          ]);
+        });
+      }
+
+      const csvString = csvData.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `fees-report-${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success('CSV exported successfully');
+    } catch (error) {
+      console.error('CSV export error:', error);
+      toast.error('Failed to export CSV');
+    }
+  };
+
+  const handleCopyData = () => {
+    try {
+      let textData = `FEES REPORT\n`;
+      textData += `Period: ${getPeriodLabel()}\n\n`;
+      textData += `OVERALL STATISTICS\n`;
+      textData += `Total Collected: ${formatCurrency(overallStats.totalCollected)}\n`;
+      textData += `Total Pending: ${formatCurrency(overallStats.totalPending)}\n`;
+      textData += `Collection Rate: ${overallStats.collectionRate}%\n`;
+      textData += `Total Students: ${overallStats.totalStudents}\n`;
+      textData += `Paid Students: ${overallStats.paidStudents}\n`;
+      textData += `Defaulters: ${overallStats.totalDefaulters}\n\n`;
+
+      if (classWiseData.length > 0) {
+        textData += `CLASS-WISE COLLECTION\n`;
+        classWiseData.forEach(item => {
+          textData += `${item.class}: ${item.students} students, Collected: ${formatCurrency(item.collected)}, Pending: ${formatCurrency(item.pending)}, Rate: ${item.percentage}%\n`;
+        });
+      }
+
+      navigator.clipboard.writeText(textData);
+      toast.success('Data copied to clipboard');
+    } catch (error) {
+      console.error('Copy error:', error);
+      toast.error('Failed to copy data');
+    }
+  };
+
+  const getPeriodLabel = () => {
+    if (selectedPeriod === 'month') {
+      return new Date(selectedMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    } else if (selectedPeriod === 'year') {
+      return selectedYear;
+    } else if (selectedPeriod === 'custom' && startDate && endDate) {
+      return `${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}`;
+    } else if (selectedPeriod === 'quarter') {
+      const now = new Date();
+      const quarter = Math.floor(now.getMonth() / 3) + 1;
+      return `Q${quarter} ${now.getFullYear()}`;
+    }
+    return 'Current Month';
   };
 
   const overallStats = reportData?.overallStats || {
@@ -91,10 +315,16 @@ const FeesReport = () => {
               </div>
             </div>
             <div className="flex gap-3">
-              <button onClick={handleExport} className="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold transition-all shadow-md hover:shadow-lg flex items-center gap-2">
-                <Download className="w-5 h-5" />Export
+              <button onClick={handleCopyData} className="px-5 py-2.5 bg-gray-600 hover:bg-gray-700 text-white rounded-xl font-semibold transition-all shadow-md hover:shadow-lg flex items-center gap-2">
+                <Copy className="w-5 h-5" />Copy
               </button>
-              <button onClick={() => window.print()} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all shadow-md hover:shadow-lg flex items-center gap-2">
+              <button onClick={handleExportCSV} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all shadow-md hover:shadow-lg flex items-center gap-2">
+                <FileText className="w-5 h-5" />CSV
+              </button>
+              <button onClick={handleExportPDF} className="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold transition-all shadow-md hover:shadow-lg flex items-center gap-2">
+                <Download className="w-5 h-5" />PDF
+              </button>
+              <button onClick={() => window.print()} className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-all shadow-md hover:shadow-lg flex items-center gap-2">
                 <Printer className="w-5 h-5" />Print
               </button>
             </div>
@@ -109,7 +339,7 @@ const FeesReport = () => {
         )}
 
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 mb-6 no-print transition-colors duration-300">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
             <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Report Period:</label>
             <div className="flex gap-2">
               {['month', 'quarter', 'year', 'custom'].map(period => (
@@ -147,7 +377,7 @@ const FeesReport = () => {
                   onChange={(e) => setSelectedYear(e.target.value)}
                   className="px-4 py-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                 >
-                  {[2022, 2023, 2024, 2025].map(year => (
+                  {[2022, 2023, 2024, 2025, 2026].map(year => (
                     <option key={year} value={year} className="dark:bg-gray-800">{year}</option>
                   ))}
                 </select>
@@ -185,11 +415,11 @@ const FeesReport = () => {
               </div>
               <div className="flex items-center gap-1 text-sm bg-white/20 px-3 py-1 rounded-full">
                 <TrendingUp className="w-4 h-4" />
-                <span>+12.5%</span>
+                <span>{overallStats.totalStudents > 0 ? ((overallStats.paidStudents / overallStats.totalStudents) * 100).toFixed(1) : 0}%</span>
               </div>
             </div>
             <div className="text-3xl font-bold mb-1">
-              ₹{(overallStats.totalCollected / 100000).toFixed(1)}L
+              {formatCurrency(overallStats.totalCollected)}
             </div>
             <div className="text-green-100 text-sm font-medium">Total Collected</div>
           </div>
@@ -201,11 +431,11 @@ const FeesReport = () => {
               </div>
               <div className="flex items-center gap-1 text-sm bg-white/20 px-3 py-1 rounded-full">
                 <TrendingDown className="w-4 h-4" />
-                <span>-5.2%</span>
+                <span>{overallStats.totalDefaulters}</span>
               </div>
             </div>
             <div className="text-3xl font-bold mb-1">
-              ₹{(overallStats.totalPending / 100000).toFixed(1)}L
+              {formatCurrency(overallStats.totalPending)}
             </div>
             <div className="text-orange-100 text-sm font-medium">Total Pending</div>
           </div>
@@ -217,7 +447,7 @@ const FeesReport = () => {
               </div>
               <div className="flex items-center gap-1 text-sm bg-white/20 px-3 py-1 rounded-full">
                 <TrendingUp className="w-4 h-4" />
-                <span>+3.8%</span>
+                <span>{overallStats.paidStudents}/{overallStats.totalStudents}</span>
               </div>
             </div>
             <div className="text-3xl font-bold mb-1">{overallStats.collectionRate}%</div>
@@ -260,7 +490,7 @@ const FeesReport = () => {
               </div>
             </div>
             <div className="space-y-3">
-              {monthlyData.map((data, index) => (
+              {monthlyData.length > 0 ? monthlyData.map((data, index) => (
                 <div key={index} className="flex items-center gap-3">
                   <div className="w-12 text-sm font-semibold text-gray-700 dark:text-gray-300">
                     {new Date(data.month).toLocaleDateString('en-US', { month: 'short' })}
@@ -271,7 +501,7 @@ const FeesReport = () => {
                       style={{ width: `${maxCollected > 0 ? (data.collected / maxCollected) * 100 : 0}%` }}
                     >
                       <span className="text-white text-xs font-bold">
-                        ₹{(data.collected / 1000).toFixed(0)}K
+                        {formatCurrency(data.collected)}
                       </span>
                     </div>
                     <div 
@@ -293,7 +523,11 @@ const FeesReport = () => {
                     )}
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  No monthly data available
+                </div>
+              )}
             </div>
           </div>
 
@@ -302,14 +536,14 @@ const FeesReport = () => {
               <PieChart className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />Payment Methods
             </h2>
             <div className="space-y-4">
-              {paymentMethods.map((method, index) => (
+              {paymentMethods.length > 0 ? paymentMethods.map((method, index) => (
                 <div key={index}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <CreditCard className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                       <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 capitalize">{method._id}</span>
                     </div>
-                    <span className="text-sm font-bold text-gray-900 dark:text-white">{method.percentage}%</span>
+                    <span className="text-sm font-bold text-gray-900 dark:text-white">{method.percentage?.toFixed(1)}%</span>
                   </div>
                   <div className="relative h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div 
@@ -318,19 +552,25 @@ const FeesReport = () => {
                     ></div>
                   </div>
                   <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                    ₹{(method.amount / 1000).toFixed(0)}K
+                    {formatCurrency(method.amount)}
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
+                  No payment data
+                </div>
+              )}
             </div>
-            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Total</span>
-                <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
-                  ₹{(paymentMethods.reduce((sum, m) => sum + m.amount, 0) / 100000).toFixed(1)}L
-                </span>
+            {paymentMethods.length > 0 && (
+              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Total</span>
+                  <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                    {formatCurrency(paymentMethods.reduce((sum, m) => sum + m.amount, 0))}
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -351,7 +591,7 @@ const FeesReport = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {classWiseData.map((classData, index) => (
+                {classWiseData.length > 0 ? classWiseData.map((classData, index) => (
                   <tr key={index} className="hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
                     <td className="px-6 py-4">
                       <span className="font-semibold text-gray-900 dark:text-white">{classData.class}</span>
@@ -363,19 +603,19 @@ const FeesReport = () => {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <span className="text-green-600 dark:text-green-400 font-bold">
-                        ₹{(classData.collected / 1000).toFixed(0)}K
+                        {formatCurrency(classData.collected)}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <span className="text-orange-600 dark:text-orange-400 font-bold">
-                        ₹{(classData.pending / 1000).toFixed(0)}K
+                        {formatCurrency(classData.pending)}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span className={`px-3 py-1 rounded-full text-sm font-bold ${
                         classData.percentage >= 85 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
                       }`}>
-                        {classData.percentage}%
+                        {Number(classData.percentage).toFixed(1)}%
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -384,33 +624,41 @@ const FeesReport = () => {
                           className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${
                             classData.percentage >= 85 ? 'bg-green-500' : 'bg-yellow-500'
                           }`} 
-                          style={{ width: `${classData.percentage}%` }}
+                          style={{ width: `${Math.min(classData.percentage, 100)}%` }}
                         ></div>
                       </div>
                     </td>
                   </tr>
-                ))}
+                )) : (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                      No class-wise data available
+                    </td>
+                  </tr>
+                )}
               </tbody>
-              <tfoot className="bg-indigo-50 dark:bg-gray-900 border-t-2 border-indigo-200 dark:border-gray-700">
-                <tr>
-                  <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">Total</td>
-                  <td className="px-6 py-4 text-center font-bold text-gray-900 dark:text-white">
-                    {classWiseData.reduce((sum, c) => sum + c.students, 0)}
-                  </td>
-                  <td className="px-6 py-4 text-right font-bold text-green-600 dark:text-green-400">
-                    ₹{(classWiseData.reduce((sum, c) => sum + c.collected, 0) / 100000).toFixed(1)}L
-                  </td>
-                  <td className="px-6 py-4 text-right font-bold text-orange-600 dark:text-orange-400">
-                    ₹{(classWiseData.reduce((sum, c) => sum + c.pending, 0) / 100000).toFixed(1)}L
-                  </td>
-                  <td className="px-6 py-4 text-center font-bold text-indigo-600 dark:text-indigo-400">
-                    {classWiseData.length > 0 ? 
-                      (classWiseData.reduce((sum, c) => sum + parseFloat(c.percentage), 0) / classWiseData.length).toFixed(1) 
-                      : 0}%
-                  </td>
-                  <td className="px-6 py-4"></td>
-                </tr>
-              </tfoot>
+              {classWiseData.length > 0 && (
+                <tfoot className="bg-indigo-50 dark:bg-gray-900 border-t-2 border-indigo-200 dark:border-gray-700">
+                  <tr>
+                    <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">Total</td>
+                    <td className="px-6 py-4 text-center font-bold text-gray-900 dark:text-white">
+                      {classWiseData.reduce((sum, c) => sum + c.students, 0)}
+                    </td>
+                    <td className="px-6 py-4 text-right font-bold text-green-600 dark:text-green-400">
+                      {formatCurrency(classWiseData.reduce((sum, c) => sum + c.collected, 0))}
+                    </td>
+                    <td className="px-6 py-4 text-right font-bold text-orange-600 dark:text-orange-400">
+                      {formatCurrency(classWiseData.reduce((sum, c) => sum + c.pending, 0))}
+                    </td>
+                    <td className="px-6 py-4 text-center font-bold text-indigo-600 dark:text-indigo-400">
+                      {classWiseData.length > 0 ? 
+                        (classWiseData.reduce((sum, c) => sum + parseFloat(c.percentage), 0) / classWiseData.length).toFixed(1) 
+                        : 0}%
+                    </td>
+                    <td className="px-6 py-4"></td>
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         </div>
@@ -421,12 +669,12 @@ const FeesReport = () => {
               <Wallet className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />Fee Categories Breakdown
             </h2>
             <div className="space-y-4">
-              {feeCategories.map((category, index) => (
+              {feeCategories.length > 0 ? feeCategories.map((category, index) => (
                 <div key={index} className="border-b border-gray-100 dark:border-gray-700 pb-4 last:border-b-0">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{category._id}</span>
                     <span className="text-sm font-bold text-gray-900 dark:text-white">
-                      ₹{(category.amount / 1000).toFixed(0)}K
+                      {formatCurrency(category.amount)}
                     </span>
                   </div>
                   <div className="relative h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -436,13 +684,17 @@ const FeesReport = () => {
                     ></div>
                   </div>
                   <div className="flex items-center justify-between mt-1">
-                    <span className="text-xs text-gray-600 dark:text-gray-400">{category.percentage}% of total</span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">{category.percentage?.toFixed(1)}% of total</span>
                     <span className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold">
                       ₹{overallStats.totalStudents > 0 ? (category.amount / overallStats.totalStudents).toFixed(0) : 0}/student
                     </span>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
+                  No category data
+                </div>
+              )}
             </div>
           </div>
 
@@ -451,7 +703,7 @@ const FeesReport = () => {
               <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />Recent Transactions
             </h2>
             <div className="space-y-3">
-              {recentTransactions.map((transaction) => (
+              {recentTransactions.length > 0 ? recentTransactions.map((transaction) => (
                 <div key={transaction._id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-xl hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors">
                   <div className="flex-1">
                     <div className="font-semibold text-gray-900 dark:text-white text-sm">
@@ -472,7 +724,11 @@ const FeesReport = () => {
                     </div>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
+                  No recent transactions
+                </div>
+              )}
             </div>
             <button 
               onClick={() => navigate('/dashboard/fees/collect-fees')} 
@@ -497,8 +753,8 @@ const FeesReport = () => {
             </p>
             <div className="mt-4 pt-4 border-t border-white/20">
               <div className="flex items-center justify-between text-sm">
-                <span>This Month</span>
-                <span className="font-semibold">+3.2%</span>
+                <span>Coverage</span>
+                <span className="font-semibold">{overallStats.totalStudents > 0 ? ((overallStats.paidStudents / overallStats.totalStudents) * 100).toFixed(1) : 0}%</span>
               </div>
             </div>
           </div>
@@ -514,8 +770,8 @@ const FeesReport = () => {
             <p className="text-violet-100 text-sm">Per student average fee</p>
             <div className="mt-4 pt-4 border-t border-white/20">
               <div className="flex items-center justify-between text-sm">
-                <span>Last Month</span>
-                <span className="font-semibold">₹6,850</span>
+                <span>Total collected</span>
+                <span className="font-semibold">{formatCurrency(overallStats.totalCollected)}</span>
               </div>
             </div>
           </div>
