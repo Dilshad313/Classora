@@ -166,6 +166,7 @@ const FeesReport = () => {
   };
 
   const handleExportCSV = () => {
+    const toastId = toast.loading('Generating CSV file...');
     try {
       const csvData = [];
       
@@ -228,10 +229,111 @@ const FeesReport = () => {
       link.click();
       document.body.removeChild(link);
       
-      toast.success('CSV exported successfully');
+      toast.success('CSV exported successfully', { id: toastId });
     } catch (error) {
       console.error('CSV export error:', error);
-      toast.error('Failed to export CSV');
+      toast.error('Failed to export CSV', { id: toastId });
+    }
+  };
+
+  const escapeXml = (unsafe) => {
+    if (unsafe === null || unsafe === undefined) {
+        return '';
+    }
+    return unsafe.toString().replace(/[<>&'"]/g, (c) => {
+        switch (c) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case '\'': return '&apos;';
+            case '"': return '&quot;';
+        }
+    });
+  };
+
+  const handleExportXLSX = () => {
+    const toastId = toast.loading('Generating XLSX file...');
+    try {
+      const data = [];
+      
+      // Headers
+      data.push(['Fees Report']);
+      data.push([`Period: ${getPeriodLabel()}`]);
+      data.push([`Generated: ${new Date().toLocaleString()}`]);
+      data.push([]);
+      
+      // Overall Stats
+      data.push(['Overall Statistics']);
+      data.push(['Metric', 'Value']);
+      data.push(['Total Collected', overallStats.totalCollected]);
+      data.push(['Total Pending', overallStats.totalPending]);
+      data.push(['Collection Rate', `${overallStats.collectionRate}%`]);
+      data.push(['Total Students', overallStats.totalStudents]);
+      data.push(['Paid Students', overallStats.paidStudents]);
+      data.push(['Defaulters', overallStats.totalDefaulters]);
+      data.push([]);
+      
+      // Class-wise Data
+      if (classWiseData.length > 0) {
+        data.push(['Class-wise Collection']);
+        data.push(['Class', 'Students', 'Collected', 'Pending', 'Collection %']);
+        classWiseData.forEach(item => {
+          data.push([
+            item.class,
+            item.students,
+            item.collected,
+            item.pending,
+            `${item.percentage}%`
+          ]);
+        });
+        data.push([]);
+      }
+      
+      // Payment Methods
+      if (paymentMethods.length > 0) {
+        data.push(['Payment Methods']);
+        data.push(['Method', 'Amount', 'Percentage']);
+        paymentMethods.forEach(method => {
+          data.push([
+            method._id,
+            method.amount,
+            `${method.percentage}%`
+          ]);
+        });
+      }
+
+      const xlsxContent = `<?xml version="1.0" encoding="UTF-8"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+  xmlns:o="urn:schemas-microsoft-com:office:office"
+  xmlns:x="urn:schemas-microsoft-com:office:excel"
+  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+  xmlns:html="http://www.w3.org/TR/REC-html40">
+  <Worksheet ss:Name="Fees Report">
+    <Table>
+      ${data.map(row => `<Row>${row.map(cell => {
+        const type = typeof cell === 'number' ? 'Number' : 'String';
+        return `<Cell><Data ss:Type="${type}">${escapeXml(cell)}</Data></Cell>`;
+      }).join('')}</Row>`).join('')}
+    </Table>
+  </Worksheet>
+</Workbook>`;
+
+      const blob = new Blob([xlsxContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `fees-report-${new Date().toISOString().split('T')[0]}.xls`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success('XLSX exported successfully', { id: toastId });
+    } catch (error) {
+      console.error('XLSX export error:', error);
+      toast.error(`Failed to export XLSX: ${error.message}`, { id: toastId });
     }
   };
 
@@ -320,6 +422,9 @@ const FeesReport = () => {
               </button>
               <button onClick={handleExportCSV} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all shadow-md hover:shadow-lg flex items-center gap-2">
                 <FileText className="w-5 h-5" />CSV
+              </button>
+              <button onClick={handleExportXLSX} className="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-semibold transition-all shadow-md hover:shadow-lg flex items-center gap-2">
+                <FileSpreadsheet className="w-5 h-5" />XLSX
               </button>
               <button onClick={handleExportPDF} className="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold transition-all shadow-md hover:shadow-lg flex items-center gap-2">
                 <Download className="w-5 h-5" />PDF

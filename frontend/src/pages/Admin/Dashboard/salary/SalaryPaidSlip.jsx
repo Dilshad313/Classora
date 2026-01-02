@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   Home,
   ChevronRight,
@@ -15,25 +15,68 @@ import {
   Loader2
 } from 'lucide-react';
 import { salaryApi } from '../../../../services/salaryApi';
+import toast from 'react-hot-toast';
 
 const SalaryPaidSlip = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const location = useLocation();
   const [salaryDetails, setSalaryDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchSalarySlip = async () => {
-      if (!id) {
-        setError('No salary slip ID provided');
-        setLoading(false);
-        return;
-      }
       try {
         setLoading(true);
         setError(null);
-       
+
+        // Check if salary details were passed via navigation state (from Pay Salary page)
+        if (location.state?.salaryDetails) {
+          const salaryData = location.state.salaryDetails;
+          
+          // Format the data for display
+          const formattedData = {
+            receiptNo: salaryData.receiptNo,
+            employee: {
+              employeeId: salaryData.employee?.employeeId,
+              name: salaryData.employee?.name || salaryData.employee?.employeeName,
+              role: salaryData.employee?.role || salaryData.employee?.employeeRole,
+              department: salaryData.employee?.department,
+              email: salaryData.employee?.email || salaryData.employee?.emailAddress,
+              phone: salaryData.employee?.phone || salaryData.employee?.mobileNo,
+              address: salaryData.employee?.address || salaryData.employee?.homeAddress || 'N/A',
+              joiningDate: salaryData.employee?.joiningDate ? new Date(salaryData.employee.joiningDate).toLocaleDateString('en-GB') : 'N/A',
+              picture: salaryData.employee?.picture?.url || salaryData.employee?.picture
+            },
+            month: salaryData.month,
+            salaryDate: salaryData.salaryDate ? new Date(salaryData.salaryDate).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB'),
+            fixedSalary: Number(salaryData.fixedSalary) || 0,
+            bonus: Number(salaryData.bonus) || 0,
+            deduction: Number(salaryData.deduction) || 0,
+           netSalary: Number(salaryData.netSalary) || 0,
+            paymentMethod: salaryData.paymentMethod || 'bank_transfer',
+            status: salaryData.status || 'paid',
+            paidBy: salaryData.paidBy || 'System',
+            remarks: salaryData.remarks || '',
+            paymentDate: salaryData.paymentDate || new Date().toLocaleDateString('en-GB'),
+            paymentTime: salaryData.paymentTime || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            issuedDate: salaryData.issuedDate || new Date().toLocaleDateString('en-GB')
+          };
+          
+          setSalaryDetails(formattedData);
+          setLoading(false);
+          return;
+        }
+
+        // If no state, check if ID is provided
+        if (!id) {
+          setError('No salary slip ID provided. Please navigate from Salary Sheet or Pay Salary page.');
+          setLoading(false);
+          return;
+        }
+
+        // Fetch from API using ID
         const result = await salaryApi.getSalarySlip(id);
        
         if (result.success && result.data) {
@@ -43,23 +86,22 @@ const SalaryPaidSlip = () => {
           const formattedData = {
             receiptNo: salaryData.receiptNo,
             employee: {
-              id: salaryData.employee?.id,
               employeeId: salaryData.employee?.employeeId,
-              name: salaryData.employee?.name,
-              role: salaryData.employee?.role,
+              name: salaryData.employee?.name || salaryData.employee?.employeeName,
+              role: salaryData.employee?.role || salaryData.employee?.employeeRole,
               department: salaryData.employee?.department,
-              email: salaryData.employee?.email,
-              phone: salaryData.employee?.phone,
-              address: salaryData.employee?.address,
+              email: salaryData.employee?.email || salaryData.employee?.emailAddress,
+              phone: salaryData.employee?.phone || salaryData.employee?.mobileNo,
+              address: salaryData.employee?.address || salaryData.employee?.homeAddress || 'N/A',
               joiningDate: salaryData.employee?.joiningDate ? new Date(salaryData.employee.joiningDate).toLocaleDateString('en-GB') : 'N/A',
-              picture: salaryData.employee?.picture
+              picture: salaryData.employee?.picture?.url || salaryData.employee?.picture
             },
             month: salaryData.month,
-            salaryDate: salaryData.salaryDate ? new Date(salaryData.salaryDate).toLocaleDateString('en-GB') : 'N/A',
-            fixedSalary: salaryData.fixedSalary || 0,
-            bonus: salaryData.bonus || 0,
-            deduction: salaryData.deduction || 0,
-            netSalary: salaryData.netSalary || 0,
+            salaryDate: salaryData.salaryDate ? new Date(salaryData.salaryDate).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB'),
+            fixedSalary: Number(salaryData.fixedSalary) || 0,
+            bonus: Number(salaryData.bonus) || 0,
+            deduction: Number(salaryData.deduction) || 0,
+            netSalary: Number(salaryData.netSalary) || 0,
             paymentMethod: salaryData.paymentMethod || 'bank_transfer',
             status: salaryData.status || 'paid',
             paidBy: salaryData.paidBy || 'System',
@@ -69,26 +111,33 @@ const SalaryPaidSlip = () => {
             issuedDate: salaryData.issuedDate ? new Date(salaryData.issuedDate).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB')
           };
          
-          setSalaryDetails(formattedData);
+ setSalaryDetails(formattedData);
         } else {
           setError(result.message || 'Failed to load salary slip');
         }
       } catch (err) {
         console.error('Error fetching salary slip:', err);
         setError(err.message || 'Failed to fetch salary slip. Please try again.');
+        toast.error(err.message || 'Failed to load salary slip');
       } finally {
         setLoading(false);
       }
     };
+
     fetchSalarySlip();
-  }, [id]);
+  }, [id, location.state]);
 
   const handlePrint = () => {
     window.print();
+    toast.success('Print dialog opened');
   };
 
   const handleNewPayment = () => {
     navigate('/dashboard/salary/pay');
+  };
+
+  const handleBackToSheet = () => {
+    navigate('/dashboard/salary/salary-sheet');
   };
 
   if (loading) {
@@ -123,7 +172,7 @@ const SalaryPaidSlip = () => {
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-8">
             <div className="text-center">
               <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
               </div>
@@ -137,11 +186,17 @@ const SalaryPaidSlip = () => {
                   Retry
                 </button>
                 <button
-                  onClick={() => navigate('/dashboard/salary/pay')}
+                  onClick={handleBackToSheet}
+                  className="px-6 py-3 bg-gray-600 dark:bg-gray-500 hover:bg-gray-700 dark:hover:bg-gray-400 text-white rounded-xl font-semibold transition-all shadow-md hover:shadow-lg"
+                >
+                  Go to Salary Sheet
+                </button>
+                <button
+                  onClick={handleNewPayment}
                   className="px-6 py-3 bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-400 text-white rounded-xl font-semibold transition-all shadow-md hover:shadow-lg"
                 >
-                  Go Back to Pay Salary
-                </button>
+                  Pay New Salary
+</button>
               </div>
             </div>
           </div>
@@ -171,6 +226,7 @@ const SalaryPaidSlip = () => {
           <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
           <span className="text-gray-900 dark:text-white font-semibold">Salary Paid Slip</span>
         </div>
+
         {/* Header */}
         <div className="mb-8 no-print">
           <div className="flex items-center justify-between">
@@ -186,13 +242,21 @@ const SalaryPaidSlip = () => {
             </div>
           </div>
         </div>
+
         {/* Action Buttons */}
         <div className="flex justify-end gap-4 mb-6 no-print">
           <button
-            onClick={handleNewPayment}
+            onClick={handleBackToSheet}
             className="px-6 py-3 bg-gray-600 dark:bg-gray-500 hover:bg-gray-700 dark:hover:bg-gray-400 text-white rounded-xl font-semibold transition-all shadow-md hover:shadow-lg flex items-center gap-2"
           >
             <FileText className="w-5 h-5" />
+            Back to Salary Sheet
+          </button>
+          <button
+            onClick={handleNewPayment}
+            className="px-6 py-3 bg-purple-600 dark:bg-purple-500 hover:bg-purple-700 dark:hover:bg-purple-400 text-white rounded-xl font-semibold transition-all shadow-md hover:shadow-lg flex items-center gap-2"
+          >
+            <Wallet className="w-5 h-5" />
             New Payment
           </button>
           <button
@@ -200,9 +264,10 @@ const SalaryPaidSlip = () => {
             className="px-6 py-3 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-400 text-white rounded-xl font-semibold transition-all shadow-md hover:shadow-lg flex items-center gap-2"
           >
             <Printer className="w-5 h-5" />
-            Print Salary Slip
+            Print
           </button>
         </div>
+
         {/* Salary Slip */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border-2 border-gray-300 dark:border-gray-600 p-12 print-section">
           {/* Header */}
@@ -214,6 +279,7 @@ const SalaryPaidSlip = () => {
               SALARY SLIP
             </div>
           </div>
+
           {/* Receipt Info */}
           <div className="grid grid-cols-2 gap-6 mb-8">
             <div>
@@ -225,6 +291,7 @@ const SalaryPaidSlip = () => {
               <p className="text-lg font-bold text-gray-900 dark:text-white">{salaryDetails.paymentDate}</p>
             </div>
           </div>
+
           {/* Employee Information */}
           <div className="mb-8 p-6 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -262,10 +329,11 @@ const SalaryPaidSlip = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Address:</p>
-                <p className="font-semibold text-gray-900 dark:text-white">{salaryDetails.employee.address || 'N/A'}</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{salaryDetails.employee.address}</p>
               </div>
             </div>
           </div>
+
           {/* Payment Period */}
           <div className="mb-8 p-6 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-500">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -304,6 +372,7 @@ const SalaryPaidSlip = () => {
               </div>
             </div>
           </div>
+
           {/* Salary Breakdown */}
           <div className="mb-8">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -319,8 +388,8 @@ const SalaryPaidSlip = () => {
               </thead>
               <tbody>
                 <tr>
-                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-3 font-semibold">Fixed Salary</td>
-                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-3 text-right font-semibold">
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-3 font-semibold text-gray-900 dark:text-white">Fixed Salary</td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-3 text-right font-semibold text-gray-900 dark:text-white">
                     ₹{salaryDetails.fixedSalary.toLocaleString()}
                   </td>
                 </tr>
@@ -349,7 +418,7 @@ const SalaryPaidSlip = () => {
               </tbody>
               <tfoot className="bg-emerald-100 dark:bg-emerald-800 border-t-2 border-emerald-300 dark:border-emerald-500">
                 <tr>
-                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-4 font-bold text-lg">
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-4 font-bold text-lg text-gray-900 dark:text-white">
                     Net Salary Paid
                   </td>
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-4 text-right font-bold text-xl text-emerald-600 dark:text-emerald-400">
@@ -359,6 +428,7 @@ const SalaryPaidSlip = () => {
               </tfoot>
             </table>
           </div>
+
           {/* Remarks */}
           {salaryDetails.remarks && (
             <div className="mb-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-500">
@@ -366,6 +436,7 @@ const SalaryPaidSlip = () => {
               <p className="font-medium text-gray-900 dark:text-white">{salaryDetails.remarks}</p>
             </div>
           )}
+
           {/* Amount in Words */}
           <div className="mb-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-500">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Amount in Words:</p>
@@ -373,6 +444,7 @@ const SalaryPaidSlip = () => {
               Rupees {salaryDetails.netSalary.toLocaleString('en-IN')} Only
             </p>
           </div>
+
           {/* Footer */}
           <div className="flex justify-between items-end pt-8 border-t-2 border-gray-300 dark:border-gray-600">
             <div>
@@ -386,6 +458,7 @@ const SalaryPaidSlip = () => {
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">HR Department</p>
             </div>
           </div>
+
           {/* Note */}
           <div className="mt-8 p-4 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 dark:border-yellow-400 rounded">
             <p className="text-sm text-gray-700 dark:text-gray-300">
@@ -393,6 +466,7 @@ const SalaryPaidSlip = () => {
               Please verify all details and contact HR for any discrepancies. Keep this slip for your records.
             </p>
           </div>
+
           {/* Footer Info */}
           <div className="mt-6 text-center text-xs text-gray-500 dark:text-gray-400 border-t pt-4">
             <p>Generated on {salaryDetails.issuedDate} at {salaryDetails.paymentTime}</p>
@@ -400,6 +474,7 @@ const SalaryPaidSlip = () => {
           </div>
         </div>
       </div>
+
       {/* Print Styles */}
       <style jsx>{`
         @media print {

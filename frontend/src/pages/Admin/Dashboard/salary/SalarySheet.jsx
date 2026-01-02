@@ -5,6 +5,9 @@ import {
   Filter, TrendingUp, TrendingDown, Eye, Copy, FileText, Loader2, ChevronLeft, ChevronRight as RightIcon
 } from 'lucide-react';
 import { salaryApi } from '../../../../services/salaryApi';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import toast from 'react-hot-toast';
 
 const SalarySheet = () => {
   const navigate = useNavigate();
@@ -75,18 +78,172 @@ const SalarySheet = () => {
     return () => clearTimeout(debounceTimer);
   }, [page, limit, searchQuery, filterMonth, filterDepartment, filterStatus]);
 
-  const handlePrint = () => window.print();
+  const handlePrint = () => {
+    window.print();
+    toast.success('Print dialog opened');
+  };
 
-  const handleExport = async () => {
+  const handleExportPDF = async () => {
     try {
       setExporting(true);
-      // In a real implementation, this would trigger a file download
-      alert('Export feature would download the salary sheet as Excel/PDF');
-      // Example: window.open(`${API_BASE_URL}/salary/sheet/export?${queryParams}`, '_blank');
+      
+      if (!salaryData || !salaryData.salaries || salaryData.salaries.length === 0) {
+        toast.error('No data to export');
+        return;
+      }
+
+      const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation
+      
+      // Add header
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Salary Sheet Report', 14, 15);
+      
+      // Add metadata
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Generated: ${new Date().toLocaleDateString('en-GB')} ${new Date().toLocaleTimeString()}`, 14, 22);
+      if (filterMonth) {
+        doc.text(`Month: ${new Date(filterMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`, 14, 27);
+      }
+      
+      // Prepare table data
+      const tableData = salaryData.salaries.map((salary, index) => [
+        index + 1,
+        salary.receiptNo || 'N/A',
+        salary.employee?.employeeName || 'Unknown',
+        salary.employee?.employeeId || 'N/A',
+        salary.employee?.employeeRole || 'Unknown',
+        salary.employee?.department || 'Unknown',
+        `₹${salary.fixedSalary?.toLocaleString() || '0'}`,
+        `₹${salary.bonus?.toLocaleString() || '0'}`,
+        `₹${salary.deduction?.toLocaleString() || '0'}`,
+        `₹${salary.netSalary?.toLocaleString() || '0'}`,
+        salary.status?.charAt(0).toUpperCase() + salary.status?.slice(1) || 'Unknown'
+      ]);
+
+      // Add totals row
+      if (salaryData.totals) {
+        tableData.push([
+          '',
+          '',
+          'TOTAL',
+          '',
+          '',
+          '',
+          `₹${salaryData.totals.totalFixed?.toLocaleString() || '0'}`,
+          `₹${salaryData.totals.totalBonus?.toLocaleString() || '0'}`,
+          `₹${salaryData.totals.totalDeduction?.toLocaleString() || '0'}`,
+          `₹${salaryData.totals.totalNet?.toLocaleString() || '0'}`,
+          ''
+        ]);
+      }
+
+      // Add table
+      autoTable(doc, {
+        head: [['#', 'Receipt No', 'Employee Name', 'Emp ID', 'Role', 'Department', 'Fixed Salary', 'Bonus', 'Deduction', 'Net Salary', 'Status']],
+        body: tableData,
+        startY: 32,
+        styles: {
+          fontSize: 8,
+          cellPadding: 2
+        },
+        headStyles: {
+          fillColor: [147, 51, 234], // Purple color
+          textColor: 255,
+          fontStyle: 'bold'
+        },
+        footStyles: {
+          fillColor: [243, 244, 246],
+          textColor: [17, 24, 39],
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+          fillColor: [249, 250, 251]
+        },
+        columnStyles: {
+          0: { cellWidth: 10, halign: 'center' },
+          1: { cellWidth: 25 },
+          2: { cellWidth: 35 },
+          3: { cellWidth: 20 },
+          4: { cellWidth: 25 },
+          5: { cellWidth: 25 },
+          6: { cellWidth: 25, halign: 'right' },
+          7: { cellWidth: 20, halign: 'right' },
+          8: { cellWidth: 20, halign: 'right' },
+          9: { cellWidth: 25, halign: 'right' },
+          10: { cellWidth: 18, halign: 'center' }
+        }
+      });
+
+      // Save the PDF
+      const fileName = `Salary_Sheet_${filterMonth || 'All'}_${new Date().toISOString().slice(0, 10)}.pdf`;
+      doc.save(fileName);
+      
+      toast.success('PDF exported successfully!');
     } catch (err) {
-      alert('Failed to export salary sheet: ' + err.message);
+      console.error('Export error:', err);
+      toast.error('Failed to export PDF: ' + err.message);
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      setExporting(true);
+      
+      if (!salaryData || !salaryData.salaries || salaryData.salaries.length === 0) {
+        toast.error('No data to export');
+        return;
+      }
+
+      // Prepare CSV content
+      let csv = 'Salary Sheet Report\n';
+      csv += `Generated: ${new Date().toLocaleDateString('en-GB')} ${new Date().toLocaleTimeString()}\n`;
+      if (filterMonth) {
+        csv += `Month: ${new Date(filterMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}\n`;
+      }
+      csv += '\n';
+      
+      // Add headers
+      csv += '#,Receipt No,Employee Name,Employee ID,Role,Department,Fixed Salary,Bonus,Deduction,Net Salary,Status\n';
+      
+      // Add data rows
+      salaryData.salaries.forEach((salary, index) => {
+        csv += `${index + 1},"${salary.receiptNo || 'N/A'}","${salary.employee?.employeeName || 'Unknown'}","${salary.employee?.employeeId || 'N/A'}","${salary.employee?.employeeRole || 'Unknown'}","${salary.employee?.department || 'Unknown'}",${salary.fixedSalary || 0},${salary.bonus || 0},${salary.deduction || 0},${salary.netSalary || 0},"${salary.status || 'Unknown'}"\n`;
+      });
+      
+      // Add totals row
+      if (salaryData.totals) {
+        csv += `\n,,"TOTAL",,,${salaryData.totals.totalFixed || 0},${salaryData.totals.totalBonus || 0},${salaryData.totals.totalDeduction || 0},${salaryData.totals.totalNet || 0},\n`;
+      }
+
+      // Create blob and download
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `Salary_Sheet_${filterMonth || 'All'}_${new Date().toISOString().slice(0, 10)}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success('CSV exported successfully!');
+    } catch (err) {
+      console.error('Export error:', err);
+      toast.error('Failed to export CSV: ' + err.message);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExport = (format) => {
+    if (format === 'pdf') {
+      handleExportPDF();
+    } else {
+      handleExportCSV();
     }
   };
 

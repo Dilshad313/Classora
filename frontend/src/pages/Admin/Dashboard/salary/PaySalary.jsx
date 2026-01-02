@@ -16,6 +16,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { salaryApi } from '../../../../services/salaryApi';
+import toast from 'react-hot-toast';
 
 const PaySalary = () => {
   const navigate = useNavigate();
@@ -31,8 +32,6 @@ const PaySalary = () => {
   const [deduction, setDeduction] = useState('');
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
 
   // Set default date values
   useEffect(() => {
@@ -52,7 +51,6 @@ const PaySalary = () => {
         return;
       }
       setSearching(true);
-      setError(null);
      
       try {
         const result = await salaryApi.searchEmployees(searchQuery);
@@ -74,7 +72,7 @@ const PaySalary = () => {
           setEmployees(mappedEmployees);
         }
       } catch (err) {
-        setError(err.message || 'Failed to search employees');
+        toast.error(err.message || 'Failed to search employees');
         setFilteredEmployees([]);
       } finally {
         setSearching(false);
@@ -98,7 +96,6 @@ const PaySalary = () => {
     setSearchQuery(value);
     setShowSuggestions(value.length > 0);
     setSelectedEmployee(null);
-    setError(null);
   };
 
   const handleSelectEmployee = (employee) => {
@@ -115,25 +112,29 @@ const PaySalary = () => {
   };
 
   const handleSubmitSalary = async () => {
+    // Validate required fields
     if (!selectedEmployee || !salaryMonth || !salaryDate || !fixedSalary) {
-      setError('Please fill all required fields (Employee, Month, Date, and Fixed Salary)');
+      toast.error('Please fill all required fields (Employee, Month, Date, and Fixed Salary)');
       return;
     }
+
     const fixedSalaryNum = parseFloat(fixedSalary) || 0;
     if (fixedSalaryNum <= 0) {
-      setError('Fixed salary must be greater than 0');
+      toast.error('Fixed salary must be greater than 0');
       return;
     }
+
     const bonusNum = parseFloat(bonus) || 0;
     const deductionNum = parseFloat(deduction) || 0;
     const totalSalary = fixedSalaryNum + bonusNum - deductionNum;
+
     if (totalSalary < 0) {
-      setError('Total salary cannot be negative');
+      toast.error('Total salary cannot be negative');
       return;
     }
+
     setLoading(true);
-    setError(null);
-    setSuccess(null);
+
     try {
       const salaryData = {
         employeeId: selectedEmployee.id,
@@ -143,28 +144,52 @@ const PaySalary = () => {
         bonus: bonusNum,
         deduction: deductionNum
       };
+
       const result = await salaryApi.paySalary(salaryData);
      
       if (result.success) {
-        setSuccess('Salary paid successfully!');
+        // Show success toast
+        toast.success(`Salary paid successfully! Receipt No: ${result.data.receiptNo}`, {
+          duration: 3000,
+          icon: '✅'
+        });
        
-        // Navigate to salary slip after 1 second
+        // Reset form
+        setSelectedEmployee(null);
+        setSearchQuery('');
+        setFixedSalary('');
+        setBonus('');
+        setDeduction('');
+       
+        // Navigate to Salary Sheet after a brief delay
         setTimeout(() => {
-          navigate(`../paid-slip/${result.data._id}`, {
+          navigate('/dashboard/salary/salary-sheet', {
             state: {
-              salaryDetails: {
-                ...result.data,
-                employee: selectedEmployee,
-                receiptNo: result.data.receiptNo,
-                paymentDate: new Date().toLocaleDateString('en-GB'),
-                paymentTime: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-              }
+              salaryPaid: true,
+              receiptNo: result.data.receiptNo,
+              employeeName: selectedEmployee.name,
+              month: salaryMonth
             }
           });
-        }, 1000);
+        }, 1500);
       }
     } catch (err) {
-      setError(err.message || 'Failed to process salary payment');
+      // Handle specific error cases
+      const errorMessage = err.message || 'Failed to process salary payment';
+      
+      // Check if it's a duplicate payment error
+      if (errorMessage.includes('already paid') || errorMessage.includes('Salary already paid')) {
+        toast.error(`❌ ${errorMessage}`, {
+          duration: 5000,
+          style: {
+            background: '#FEE2E2',
+            color: '#991B1B',
+            fontWeight: '600'
+          }
+        });
+      } else {
+        toast.error(errorMessage, { duration: 4000 });
+      }
     } finally {
       setLoading(false);
     }
@@ -194,6 +219,7 @@ const PaySalary = () => {
           <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
           <span className="text-gray-900 dark:text-white font-semibold">Pay Salary</span>
         </div>
+
         {/* Header */}
         <div className="mb-8 no-print">
           <div className="flex items-center gap-3 mb-2">
@@ -206,34 +232,7 @@ const PaySalary = () => {
             </div>
           </div>
         </div>
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 dark:border-red-400 rounded">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-500 dark:text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-red-700 dark:text-red-300 font-medium">{error}</p>
-              </div>
-            </div>
-          </div>
-        )}
-        {/* Success Message */}
-        {success && (
-          <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 dark:border-green-400 rounded">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <CheckCircle className="h-5 w-5 text-green-500 dark:text-green-400" />
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-green-700 dark:text-green-300 font-medium">{success}</p>
-              </div>
-            </div>
-          </div>
-        )}
+
         {/* Search Employee */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-8 mb-6 no-print">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
@@ -293,6 +292,7 @@ const PaySalary = () => {
             </div>
           )}
         </div>
+
         {/* Salary Payment Form */}
         {selectedEmployee && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-8 mb-6 no-print">
@@ -300,6 +300,7 @@ const PaySalary = () => {
               <Wallet className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
               Pay Employee Salary
             </h2>
+
             {/* Employee Details */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 p-6 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-xl border border-emerald-200 dark:border-emerald-500">
               <div className="flex items-center gap-3">
@@ -331,6 +332,7 @@ const PaySalary = () => {
                 <div className="font-bold text-gray-900 dark:text-white">{selectedEmployee.role}</div>
               </div>
             </div>
+
             {/* Salary Input Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <div>
@@ -344,6 +346,9 @@ const PaySalary = () => {
                   onChange={(e) => setSalaryMonth(e.target.value)}
                   className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  ⚠️ Salary can only be paid once per month
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -397,6 +402,7 @@ const PaySalary = () => {
                 />
               </div>
             </div>
+
             {/* Total Calculation Preview */}
             {fixedSalary && (
               <div className="mb-8 p-6 bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 border-2 border-emerald-200 dark:border-emerald-500 rounded-xl">
@@ -425,8 +431,21 @@ const PaySalary = () => {
                 </div>
               </div>
             )}
+
             {/* Submit Button */}
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => {
+                  setSelectedEmployee(null);
+                  setSearchQuery('');
+                  setFixedSalary('');
+                  setBonus('');
+                  setDeduction('');
+                }}
+                className="px-8 py-4 bg-gray-500 hover:bg-gray-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all"
+              >
+                Cancel
+              </button>
               <button
                 onClick={handleSubmitSalary}
                 disabled={loading}
