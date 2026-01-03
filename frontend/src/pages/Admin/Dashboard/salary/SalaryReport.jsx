@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import {
   Home, ChevronRight, BarChart3, TrendingUp, TrendingDown, DollarSign, Users, Calendar,
   Printer, Download, CheckCircle, Clock, Activity, PieChart, Award, FileText, AlertCircle,
@@ -41,11 +44,14 @@ const SalaryReport = () => {
        
         if (result.success) {
           setReportData(result.data);
+          toast.success('Report data loaded successfully');
         } else {
           setError('Failed to load salary report');
+          toast.error('Failed to load salary report');
         }
       } catch (err) {
         setError(err.message || 'Failed to fetch salary report');
+        toast.error(err.message || 'Failed to fetch salary report');
       } finally {
         setLoading(false);
       }
@@ -54,13 +60,54 @@ const SalaryReport = () => {
   }, [selectedPeriod, selectedMonth]);
 
   const handleExport = async () => {
+    if (!reportData) {
+      toast.error('No report data to export.');
+      return;
+    }
+
+    setExporting(true);
+    toast.loading('Exporting report...');
+
     try {
-      setExporting(true);
-      // In a real implementation, this would trigger a file download
-      alert('Export feature would download the report as Excel/PDF');
-      // Example: window.open(`${API_BASE_URL}/salary/report/export?month=${selectedMonth}`, '_blank');
+      const doc = new jsPDF();
+      const { summary, monthlyTrend, departmentWise, recentPayments, pendingSalaries } = reportData;
+
+      doc.text('Salary Report', 14, 16);
+      doc.setFontSize(10);
+      doc.text(`Report for ${selectedPeriod}: ${selectedMonth}`, 14, 22);
+
+      autoTable(doc, {
+        startY: 30,
+        head: [['Metric', 'Value']],
+        body: [
+          ['Total Paid', `₹${(summary?.totalPaid / 100000).toFixed(1)}L`],
+          ['Total Pending', `₹${(summary?.totalPending / 100000).toFixed(1)}L`],
+          ['Payment Rate', `${summary?.paymentRate || 0}%`],
+          ['Total Employees', summary?.totalEmployees || 0],
+        ],
+      });
+
+      if (departmentWise && departmentWise.length > 0) {
+        doc.addPage();
+        doc.text('Department-wise Salary', 14, 16);
+        autoTable(doc, {
+          startY: 22,
+          head: [['Department', 'Employees', 'Paid', 'Avg Salary']],
+          body: departmentWise.map(dept => [
+            dept._id || 'Unknown',
+            dept.employees,
+            `₹${(dept.paid / 1000).toFixed(0)}K`,
+            `₹${Math.round(dept.avgSalary).toLocaleString()}`,
+          ]),
+        });
+      }
+
+      doc.save(`Salary_Report_${selectedMonth}.pdf`);
+      toast.dismiss();
+      toast.success('Report exported successfully!');
     } catch (err) {
-      alert('Failed to export report: ' + err.message);
+      toast.dismiss();
+      toast.error('Failed to export report: ' + err.message);
     } finally {
       setExporting(false);
     }

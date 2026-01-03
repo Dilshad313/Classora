@@ -279,7 +279,7 @@ const DashboardLayout = () => {
       roles: ['admin'],
       submenu: [
         { title: 'Pay Salary', path: '/dashboard/salary/pay', icon: Banknote },
-        { title: 'Salary Paid Slip', path: '/dashboard/salary/paid-slip', icon: Receipt },
+        { title: 'Salary Paid Slip', path: '/dashboard/salary/sheet', icon: Receipt },
         { title: 'Salary Sheet', path: '/dashboard/salary/sheet', icon: FileSpreadsheet },
         { title: 'Salary Report', path: '/dashboard/salary/report', icon: BarChart3 },
       ]

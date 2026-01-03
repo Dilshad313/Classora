@@ -6,8 +6,8 @@ import {
 } from 'lucide-react';
 import * as feesApi from '../../../../services/feesApi';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import toast from 'react-hot-toast';
+
 
 const FeesReport = () => {
   const navigate = useNavigate();
@@ -114,7 +114,7 @@ const FeesReport = () => {
           percentage: `${item.percentage}%`
         }));
 
-        autoTable(doc, {
+        doc.autoTable({
           columns: classHeaders,
           body: classTableData,
           startY: 76,
@@ -147,7 +147,7 @@ const FeesReport = () => {
           method: t.depositType
         }));
 
-        autoTable(doc, {
+        doc.autoTable({
           columns: transHeaders,
           body: transTableData,
           startY: transY + 4,
