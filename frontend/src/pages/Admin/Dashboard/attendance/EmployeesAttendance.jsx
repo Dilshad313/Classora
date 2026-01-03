@@ -6,6 +6,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { attendanceApi } from '../../../../services/attendanceApi';
+import toast from 'react-hot-toast';
 
 const EmployeesAttendance = () => {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ const EmployeesAttendance = () => {
 
   const loadEmployees = async () => {
     if (!attendanceDate) {
-      alert('Please select a date');
+      toast.error('Please select a date');
       return;
     }
     
@@ -35,7 +36,7 @@ const EmployeesAttendance = () => {
       });
       setAttendanceRecords(initialRecords);
     } catch (error) {
-      alert(`Failed to load employees: ${error.message}`);
+      toast.error(`Failed to load employees: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -69,7 +70,7 @@ const EmployeesAttendance = () => {
         attendance: attendanceArray
       });
       
-      alert('Attendance Saved Successfully!');
+      toast.success('Attendance Saved Successfully!');
       
       // Reset form
       setShowEmployees(false);
@@ -77,7 +78,7 @@ const EmployeesAttendance = () => {
       setSelectAll('');
       setEmployees([]);
     } catch (error) {
-      alert(`Failed to save attendance: ${error.message}`);
+      toast.error(`Failed to save attendance: ${error.message}`);
     }
   };
 

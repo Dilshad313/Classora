@@ -5,6 +5,7 @@ import {
   Clock, Users, Download, Printer, BarChart3, TrendingUp, Loader2
 } from 'lucide-react';
 import { attendanceApi } from '../../../../services/attendanceApi';
+import toast from 'react-hot-toast';
 
 const ClassWiseReport = () => {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ const ClassWiseReport = () => {
 
   const handleGenerateReport = async () => {
     if (!selectedDate) {
-      alert('Please select a date');
+      toast.error('Please select a date');
       return;
     }
     
@@ -33,7 +34,7 @@ const ClassWiseReport = () => {
       setShowReport(true);
     } catch (error) {
       setError(error.message);
-      alert(`Failed to generate report: ${error.message}`);
+      toast.error(`Failed to generate report: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -142,9 +143,9 @@ const ClassWiseReport = () => {
       a.download = `class_attendance_report_${selectedDate}.csv`;
       a.click();
       
-      alert('Report exported successfully!');
+      toast.success('Report exported successfully!');
     } catch (error) {
-      alert(`Export failed: ${error.message}`);
+      toast.error(`Export failed: ${error.message}`);
     }
   };
 

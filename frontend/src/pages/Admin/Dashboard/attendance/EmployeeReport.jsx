@@ -6,6 +6,9 @@ import {
   Loader2
 } from 'lucide-react';
 import { attendanceApi } from '../../../../services/attendanceApi';
+import toast from 'react-hot-toast';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const EmployeeReport = () => {
   const navigate = useNavigate();
@@ -59,7 +62,7 @@ const EmployeeReport = () => {
         break;
       case 'custom':
         if (!startDate || !endDate) {
-          alert('Please select both start and end dates');
+          toast.error('Please select both start and end dates');
           return null;
         }
         start = startDate;
@@ -90,7 +93,7 @@ const EmployeeReport = () => {
       setRecords(result.data || []);
       setTotalRecords(result.pagination?.total || result.data?.length || 0);
     } catch (error) {
-      alert(`Failed to load report: ${error.message}`);
+      toast.error(`Failed to load report: ${error.message}`);
       setRecords([]);
       setTotalRecords(0);
     } finally {
@@ -139,9 +142,9 @@ const EmployeeReport = () => {
       ).join('\n');
       
       navigator.clipboard.writeText(text);
-      alert('Copied to clipboard!');
+      toast.success('Copied to clipboard!');
     } catch (error) {
-      alert(`Failed to copy: ${error.message}`);
+      toast.error(`Failed to copy: ${error.message}`);
     }
   };
 
@@ -169,22 +172,95 @@ const EmployeeReport = () => {
       a.href = url;
       a.download = `employee_attendance_${dateRange.start}_to_${dateRange.end}.csv`;
       a.click();
+      toast.success('CSV file downloaded successfully!');
     } catch (error) {
-      alert(`Failed to export CSV: ${error.message}`);
+      toast.error(`Failed to export CSV: ${error.message}`);
     }
   };
 
   const handleExcel = async () => {
     try {
       await handleCSV(); // For now, CSV serves as Excel
-      alert('Excel file downloaded successfully!');
+      toast.success('Excel file downloaded successfully!');
     } catch (error) {
-      alert(`Failed to export Excel: ${error.message}`);
+      toast.error(`Failed to export Excel: ${error.message}`);
     }
   };
 
-  const handlePDF = () => {
-    window.print();
+  const handlePDF = async () => {
+    const dateRange = getDateRange();
+    if (!dateRange) return;
+    
+    try {
+      const loadingToast = toast.loading('Generating PDF...');
+      
+      // Get all records for PDF (not paginated)
+      const exportData = {
+        startDate: dateRange.start,
+        endDate: dateRange.end,
+        search: searchQuery || undefined,
+        page: 1,
+        limit: 10000 // Get all records
+      };
+      
+      const result = await attendanceApi.getEmployeeAttendanceReport(exportData);
+      const allRecords = result.data || [];
+      
+      if (allRecords.length === 0) {
+        toast.error('No data available to generate PDF', { id: loadingToast });
+        return;
+      }
+      
+      // Create PDF
+      const doc = new jsPDF();
+      
+      // Add title
+      doc.setFontSize(18);
+      doc.text('Employee Attendance Report', 14, 15);
+      
+      // Add date range
+      doc.setFontSize(12);
+      doc.text(`Period: ${dateRange.start} to ${dateRange.end}`, 14, 25);
+      
+      // Add generated date
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 32);
+      
+      // Prepare table data
+      const tableData = allRecords.map(record => [
+        new Date(record.date).toLocaleDateString('en-GB'),
+        getDayName(record.date),
+        record.employeeId,
+        record.name,
+        record.role,
+        record.department,
+        record.status === 'P' ? 'Present' : record.status === 'A' ? 'Absent' : 'Leave'
+      ]);
+      
+      // Add table
+      autoTable(doc, {
+        head: [['Date', 'Day', 'Employee ID', 'Name', 'Role', 'Department', 'Status']],
+        body: tableData,
+        startY: 40,
+        styles: {
+          fontSize: 10,
+          cellPadding: 3
+        },
+        headStyles: {
+          fillColor: [147, 51, 234],
+          textColor: 255
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245]
+        }
+      });
+      
+      // Save the PDF
+      doc.save(`employee_attendance_${dateRange.start}_to_${dateRange.end}.pdf`);
+      
+      toast.success('PDF downloaded successfully!', { id: loadingToast });
+    } catch (error) {
+      toast.error(`Failed to generate PDF: ${error.message}`);
+    }
   };
 
   const handlePrint = () => {

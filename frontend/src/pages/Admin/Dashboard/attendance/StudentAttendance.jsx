@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { attendanceApi } from '../../../../services/attendanceApi';
 import { getStudents } from '../../../../services/studentApi';
+import toast from 'react-hot-toast';
 
 const StudentAttendance = () => {
   const navigate = useNavigate();
@@ -63,7 +64,7 @@ const StudentAttendance = () => {
 
   const handleSearchClass = async () => {
     if (!selectedClass || !attendanceDate) {
-      alert('Please select both date and class');
+      toast.error('Please select both date and class');
       return;
     }
 
@@ -83,7 +84,7 @@ const StudentAttendance = () => {
       });
       setAttendanceRecords(initialRecords);
     } catch (error) {
-      alert(`Failed to load students: ${error.message}`);
+      toast.error(`Failed to load students: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -120,7 +121,7 @@ const StudentAttendance = () => {
         attendance: attendanceArray
       });
       
-      alert('Attendance Saved Successfully!');
+      toast.success('Attendance Saved Successfully!');
       
       // Reset form
       setShowStudents(false);
@@ -129,7 +130,7 @@ const StudentAttendance = () => {
       setSelectAll('');
       setStudents([]);
     } catch (error) {
-      alert(`Failed to save attendance: ${error.message}`);
+      toast.error(`Failed to save attendance: ${error.message}`);
     }
   };
 
