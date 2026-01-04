@@ -123,14 +123,13 @@ export const getClassesForSMS = async (req, res) => {
     console.log(`🏫 GET /api/sms/classes for user: ${userId}`);
     
     const classes = await Class.find({ createdBy: userId })
-      .select('className section studentCount')
-      .sort({ className: 1, section: 1 });
+      .select('className')
+      .sort({ className: 1 });
     
-    // Format classes for dropdown
+    // Format classes for dropdown - only class name as requested
     const formattedClasses = classes.map(cls => ({
       id: cls._id,
-      name: `${cls.className} - ${cls.section}`,
-      studentCount: cls.studentCount || 0
+      name: cls.className
     }));
     
     res.status(StatusCodes.OK).json({
@@ -322,15 +321,18 @@ export const sendSMS = async (req, res) => {
           });
         }
         
-        // Get students in this class
+        // Get students in this class - extract grade number from className to match student selectClass
+        const gradeNumber = classData.className.match(/\d+/);
+        const classGrade = gradeNumber ? gradeNumber[0] : classData.className;
+        
         const classStudents = await Student.find({
-          selectClass: classData.className.slice(-2).trim(), // Extract class number from "Grade X"
+          selectClass: classGrade,
           status: 'active'
         }).select('_id mobileNo');
         
         recipients = classStudents.filter(s => s.mobileNo).map(s => s.mobileNo);
         studentIds = classStudents.map(s => s._id);
-        recipientName = `${classData.className} - ${classData.section}`;
+        recipientName = classData.className;
         recipientCount = recipients.length;
         break;
         

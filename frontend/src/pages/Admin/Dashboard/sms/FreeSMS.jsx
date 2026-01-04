@@ -18,6 +18,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { smsApi } from '../../../../services/smsApi';
+import toast from 'react-hot-toast';
 
 const FreeSMS = () => {
   const navigate = useNavigate();
@@ -81,6 +82,7 @@ const FreeSMS = () => {
       
     } catch (err) {
       console.error('Error loading data:', err);
+      toast.error('Failed to load SMS data. Please try again.');
       setError('Failed to load SMS data. Please try again.');
     } finally {
       setLoading(prev => ({ ...prev, stats: false }));
@@ -100,16 +102,19 @@ const FreeSMS = () => {
     setError('');
 
     if (!recipientType) {
+      toast.error('Please select a recipient type');
       setError('Please select a recipient type');
       return;
     }
 
     if ((recipientType === 'specificClass' || recipientType === 'specificStudent' || recipientType === 'specificEmployee') && !selectedRecipient) {
+      toast.error('Please select a recipient');
       setError('Please select a recipient');
       return;
     }
 
     if (!smsMessage.trim()) {
+      toast.error('Please enter a message');
       setError('Please enter a message');
       return;
     }
@@ -124,6 +129,9 @@ const FreeSMS = () => {
       };
 
       const result = await smsApi.sendSMS(smsData);
+      
+      // Show success toast notification
+      toast.success(`SMS sent successfully to ${result.recipientCount} recipient(s)!`);
       
       // Show success message
       setShowSuccess(true);
@@ -145,7 +153,9 @@ const FreeSMS = () => {
 
     } catch (err) {
       console.error('Error sending SMS:', err);
-      setError(err.message || 'Failed to send SMS. Please try again.');
+      const errorMessage = err.message || 'Failed to send SMS. Please try again.';
+      toast.error(errorMessage);
+      setError(errorMessage);
     } finally {
       setLoading(prev => ({ ...prev, sending: false }));
     }
@@ -158,7 +168,7 @@ const FreeSMS = () => {
       case 'allEmployees':
         return stats.totalEmployees || 0;
       case 'specificClass':
-        return classes.find(c => c.id === selectedRecipient)?.studentCount || 0;
+        return selectedRecipient ? 'Class students' : 0;
       case 'specificStudent':
       case 'specificEmployee':
         return 1;
@@ -462,7 +472,7 @@ const FreeSMS = () => {
                         <option value="">Choose...</option>
                         {recipientType === 'specificClass' && classes.map(cls => (
                           <option key={cls.id} value={cls.id} className="bg-white dark:bg-gray-700">
-                            {cls.name} ({cls.studentCount} students)
+                            {cls.name}
                           </option>
                         ))}
                         {recipientType === 'specificStudent' && students.map(student => (
@@ -516,7 +526,10 @@ const FreeSMS = () => {
                             Sending to: {getRecipientLabel()}
                           </p>
                           <p className="text-xs text-green-700 dark:text-green-300 mt-1">
-                            Total Recipients: {getRecipientCount()} • Message Length: {charCount} characters
+                            {typeof getRecipientCount() === 'number' 
+                              ? `Total Recipients: ${getRecipientCount()} • Message Length: ${charCount} characters`
+                              : `${getRecipientCount()} • Message Length: ${charCount} characters`
+                            }
                           </p>
                         </div>
                       </div>
@@ -531,7 +544,7 @@ const FreeSMS = () => {
                       </div>
                       <div>
                         <p className="font-semibold text-green-900 dark:text-green-200">SMS Sent Successfully!</p>
-                        <p className="text-sm text-green-700 dark:text-green-300">Your message has been delivered to {getRecipientCount()} recipient(s).</p>
+                        <p className="text-sm text-green-700 dark:text-green-300">Your message has been delivered successfully.</p>
                       </div>
                     </div>
                   )}
