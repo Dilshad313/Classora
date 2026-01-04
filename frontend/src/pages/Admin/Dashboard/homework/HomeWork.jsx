@@ -22,7 +22,7 @@ import {
   Paperclip
 } from 'lucide-react';
 import { homeworkApi } from '../../../../services/homeworkApi';
-import { subjectApi, getAllSubjects } from '../../../../services/subjectApi';
+import { subjectApi, getAllSubjects, getSubjectsByClass } from '../../../../services/subjectApi';
 import { classApi } from '../../../../services/classApi';
 import { employeesApi } from '../../../../services/employeesApi';
 import { toast, ToastContainer } from 'react-toastify';
@@ -35,8 +35,10 @@ const HomeWork = () => {
   const [classes, setClasses] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [subjects, setSubjects] = useState([]);
+  const [classSubjects, setClassSubjects] = useState([]); // Subjects for selected class
   const [homeworks, setHomeworks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -66,12 +68,13 @@ const HomeWork = () => {
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingHomework, setEditingHomework] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     date: '',
     dueDate: '',
     class: '',
-    section: 'A',
     subject: '',
     teacher: '',
     details: '',
@@ -198,6 +201,7 @@ const HomeWork = () => {
   // Handler functions
   const handleAddHomework = () => {
     setEditingHomework(null);
+    setClassSubjects([]); // Clear class subjects
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     
@@ -206,7 +210,6 @@ const HomeWork = () => {
       date: new Date().toISOString().split('T')[0],
       dueDate: tomorrow.toISOString().split('T')[0],
       class: '',
-      section: 'A',
       subject: '',
       teacher: '',
       details: '',
@@ -216,14 +219,41 @@ const HomeWork = () => {
     setShowAddModal(true);
   };
 
-  const handleEditHomework = (homework) => {
+  const handleEditHomework = async (homework) => {
     setEditingHomework(homework);
+    
+    // If homework has a class, load subjects for that class
+    if (homework.class?._id || homework.class) {
+      const classId = homework.class?._id || homework.class;
+      try {
+        setLoadingSubjects(true);
+        const response = await getSubjectsByClass(classId);
+        console.log('📋 Edit Mode API Response:', response);
+        
+        if (response && response.success) {
+          // API returns nested structure: data.subjects
+          let subjects = response.data?.subjects || [];
+          console.log('📖 Edit Mode Subjects:', subjects);
+          setClassSubjects(subjects);
+        } else {
+          console.error('❌ Edit Mode API Error:', response);
+          setClassSubjects([]);
+        }
+      } catch (error) {
+        console.error('Error fetching subjects for class:', error);
+        setClassSubjects([]);
+      } finally {
+        setLoadingSubjects(false);
+      }
+    } else {
+      setClassSubjects([]);
+    }
+    
     setFormData({
       title: homework.title || '',
       date: homework.date ? homework.date.split('T')[0] : '',
       dueDate: homework.dueDate ? homework.dueDate.split('T')[0] : '',
       class: homework.class?._id || homework.class || '',
-      section: homework.section || 'A',
       subject: homework.subject?._id || homework.subject || '',
       teacher: homework.teacher?._id || homework.teacher || '',
       details: homework.details || '',
@@ -233,23 +263,34 @@ const HomeWork = () => {
     setShowAddModal(true);
   };
 
-  const handleDeleteHomework = async (id) => {
-    if (window.confirm('Are you sure you want to delete this homework?')) {
-      try {
-        const result = await homeworkApi.deleteHomework(id);
-        if (result.success) {
-          toast.success('Homework deleted successfully');
-          await fetchHomeworks();
-          // Refresh stats
-          const statsResponse = await homeworkApi.getHomeworkStats();
-          if (statsResponse.success) {
-            setStats(statsResponse.data);
-          }
+  const handleDeleteHomework = (id) => {
+    setDeleteTargetId(id);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      const result = await homeworkApi.deleteHomework(deleteTargetId);
+      if (result.success) {
+        toast.success('Homework deleted successfully');
+        await fetchHomeworks();
+        // Refresh stats
+        const statsResponse = await homeworkApi.getHomeworkStats();
+        if (statsResponse.success) {
+          setStats(statsResponse.data);
         }
-      } catch (error) {
-        toast.error(error.message || 'Failed to delete homework');
       }
+    } catch (error) {
+      toast.error(error.message || 'Failed to delete homework');
+    } finally {
+      setShowDeleteConfirm(false);
+      setDeleteTargetId(null);
     }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setDeleteTargetId(null);
   };
 
   const handleBulkDelete = async (ids) => {
@@ -300,7 +341,6 @@ const HomeWork = () => {
             date: new Date().toISOString().split('T')[0],
             dueDate: '',
             class: '',
-            section: 'A',
             subject: '',
             teacher: '',
             details: '',
@@ -325,7 +365,6 @@ const HomeWork = () => {
             date: new Date().toISOString().split('T')[0],
             dueDate: '',
             class: '',
-            section: 'A',
             subject: '',
             teacher: '',
             details: '',
@@ -348,6 +387,74 @@ const HomeWork = () => {
     }
   };
 
+  // Handler for class selection to fetch subjects for that class
+  const handleClassChange = async (classId) => {
+    console.log('🎯 Class selected:', classId);
+    setFormData({ 
+      ...formData, 
+      class: classId, 
+      subject: '', 
+      teacher: '' 
+    });
+    setClassSubjects([]); // Always set to empty array first
+    
+    if (classId) {
+      try {
+        setLoadingSubjects(true);
+        console.log('📚 Fetching subjects for class:', classId);
+        const response = await getSubjectsByClass(classId);
+        console.log('📋 API Response:', response);
+        
+        if (response && response.success) {
+          // API returns nested structure: data.subjects
+          let subjects = response.data?.subjects || [];
+          console.log('📖 Raw subjects from API:', subjects);
+          
+          // Ensure subjects is always an array
+          if (!Array.isArray(subjects)) {
+            console.log('⚠️ Subjects is not an array, converting:', subjects);
+            subjects = Array.isArray(subjects) ? subjects : [];
+          }
+          console.log('📖 Final subjects array:', subjects);
+          setClassSubjects(subjects);
+        } else {
+          console.error('❌ API returned success=false:', response);
+          toast.error(response?.message || 'Failed to load subjects');
+          setClassSubjects([]); // Ensure it's an array
+        }
+      } catch (error) {
+        console.error('❌ Error fetching subjects for class:', error);
+        toast.error('Failed to load subjects for selected class');
+        setClassSubjects([]); // Ensure it's an array
+      } finally {
+        setLoadingSubjects(false);
+      }
+    }
+  };
+
+  // Handler for subject selection - teacher is now manual selection
+  const handleSubjectChange = (subjectId) => {
+    console.log('📝 Subject selected:', subjectId);
+    console.log('📚 Available classSubjects:', classSubjects);
+    
+    // Ensure classSubjects is an array before proceeding
+    if (!Array.isArray(classSubjects)) {
+      console.error('❌ classSubjects is not an array:', classSubjects);
+      return;
+    }
+    
+    // Find the selected subject (for logging purposes)
+    const selectedSubject = classSubjects.find(s => s._id === subjectId);
+    console.log('🎯 Selected subject:', selectedSubject);
+    
+    // Update form with subject selection, clear teacher selection for manual choice
+    setFormData({ 
+      ...formData, 
+      subject: subjectId, 
+      teacher: '' // Clear teacher so user can select manually
+    });
+  };
+
   const handleClearFilters = () => {
     setFilters({
       date: '',
@@ -367,16 +474,25 @@ const HomeWork = () => {
 
   // Helper functions
   const getTeacherName = (teacher) => {
-    if (!teacher) return 'Unknown';
-    if (typeof teacher === 'object') return teacher.employeeName;
-    return teachers.find(t => t._id === teacher)?.employeeName || 'Unknown';
+    console.log('👨‍🏫 Getting teacher name for:', teacher);
+    if (!teacher) {
+      console.log('❌ No teacher provided');
+      return '';
+    }
+    if (typeof teacher === 'object') {
+      console.log('📝 Teacher is object:', teacher.employeeName);
+      return teacher.employeeName;
+    }
+    const teacherObj = teachers.find(t => t._id === teacher);
+    console.log('🔍 Found teacher object:', teacherObj);
+    return teacherObj ? teacherObj.employeeName : '';
   };
 
   const getClassName = (classObj) => {
     if (!classObj) return 'Unknown';
-    if (typeof classObj === 'object') return `${classObj.className} - ${classObj.section}`;
+    if (typeof classObj === 'object') return classObj.className;
     const cls = classes.find(c => c._id === classObj);
-    return cls ? `${cls.className} - ${cls.section}` : 'Unknown';
+    return cls ? cls.className : 'Unknown';
   };
 
   const getSubjectName = (subject) => {
@@ -587,7 +703,7 @@ const HomeWork = () => {
                   <option value="">All Classes</option>
                   {classes.map(cls => (
                     <option key={cls._id} value={cls._id}>
-                      {cls.className} - {cls.section}
+                      {cls.className}
                     </option>
                   ))}
                 </select>
@@ -982,35 +1098,21 @@ const HomeWork = () => {
                       <Users className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <select
                         value={formData.class}
-                        onChange={(e) => setFormData({ ...formData, class: e.target.value })}
+                        onChange={(e) => handleClassChange(e.target.value)}
                         className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 appearance-none"
                         required
                       >
-                        <option value="">Select class...</option>
+                        <option value="">Select class first...</option>
                         {classes.map(cls => (
                           <option key={cls._id} value={cls._id}>
-                            {cls.className} - {cls.section}
+                            {cls.className}
                           </option>
                         ))}
                       </select>
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                      Section
-                    </label>
-                    <select
-                      value={formData.section}
-                      onChange={(e) => setFormData({ ...formData, section: e.target.value })}
-                      className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 appearance-none"
-                    >
-                      <option value="A">Section A</option>
-                      <option value="B">Section B</option>
-                      <option value="C">Section C</option>
-                      <option value="D">Section D</option>
-                      <option value="E">Section E</option>
-                    </select>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Select a class to view available subjects
+                    </p>
                   </div>
                 </div>
 
@@ -1023,18 +1125,36 @@ const HomeWork = () => {
                       <BookOpen className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <select
                         value={formData.subject}
-                        onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 appearance-none"
+                        onChange={(e) => {
+                          console.log('🔄 Select changed - New value:', e.target.value, 'Old value:', formData.subject);
+                          handleSubjectChange(e.target.value);
+                        }}
+                        onFocus={() => console.log('🎯 Select focused - Current options count:', classSubjects?.length || 0)}
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 appearance-none disabled:opacity-50"
                         required
+                        disabled={!formData.class || loadingSubjects}
                       >
-                        <option value="">Select subject...</option>
-                        {subjects.map(subject => (
+                        <option value="">
+                          {loadingSubjects ? 'Loading subjects...' : formData.class ? 'Select subject...' : 'Select class first...'}
+                        </option>
+                        {Array.isArray(classSubjects) && classSubjects.map(subject => {
+                          console.log('🎨 Rendering subject option - ID:', subject._id, 'Name:', subject.subjectName, 'Full subject:', subject);
+                          return (
                           <option key={subject._id} value={subject._id}>
-                            {subject.name}
+                            {subject.subjectName}
                           </option>
-                        ))}
+                          );
+                        })}
                       </select>
+                      {loadingSubjects && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                          <Loader className="w-4 h-4 text-blue-600 animate-spin" />
+                        </div>
+                      )}
                     </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Only subjects assigned to the selected class are shown
+                    </p>
                   </div>
 
                   <div>
@@ -1045,11 +1165,17 @@ const HomeWork = () => {
                       <GraduationCap className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                       <select
                         value={formData.teacher}
-                        onChange={(e) => setFormData({ ...formData, teacher: e.target.value })}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 appearance-none"
+                        onChange={(e) => {
+                          console.log('👨‍🏫 Teacher selected:', e.target.value);
+                          setFormData({ ...formData, teacher: e.target.value });
+                        }}
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 appearance-none disabled:opacity-50"
                         required
+                        disabled={!formData.subject}
                       >
-                        <option value="">Select teacher...</option>
+                        <option value="">
+                          {formData.subject ? 'Select teacher...' : 'Select subject first...'}
+                        </option>
                         {teachers.map(teacher => (
                           <option key={teacher._id} value={teacher._id}>
                             {teacher.employeeName}
@@ -1057,6 +1183,9 @@ const HomeWork = () => {
                         ))}
                       </select>
                     </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Select the teacher for this homework assignment
+                    </p>
                   </div>
                 </div>
 
@@ -1118,6 +1247,37 @@ const HomeWork = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Dialog */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6">
+              <div className="flex items-center justify-center w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full mx-auto mb-4">
+                <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 text-center mb-2">
+                Delete Homework
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 text-center mb-6">
+                Are you sure you want to delete this homework? This action cannot be undone.
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={cancelDelete}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-semibold"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
         )}
