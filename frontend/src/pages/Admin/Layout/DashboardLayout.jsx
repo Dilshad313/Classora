@@ -301,7 +301,7 @@ const DashboardLayout = () => {
       icon: Calendar,
       roles: ['admin'],
       submenu: [
-        { title: 'Weekdays', path: '/dashboard/timetable/weekdays', icon: CalendarDays },
+        { title: 'Week Days', path: '/dashboard/timetable/weekdays', icon: CalendarDays },
         { title: 'Time Periods', path: '/dashboard/timetable/periods', icon: Clock },
         { title: 'Class Rooms', path: '/dashboard/timetable/classrooms', icon: DoorClosed },
         { title: 'Create Timetable', path: '/dashboard/timetable/create', icon: Plus },

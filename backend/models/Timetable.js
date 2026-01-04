@@ -66,12 +66,16 @@ const timetableSchema = new mongoose.Schema({
   // Schedule Info
   academicYear: {
     type: String,
-    required: true
+    required: false,
+    default: function() {
+      return new Date().getFullYear().toString();
+    }
   },
   term: {
     type: String,
     enum: ['1st Term', '2nd Term', '3rd Term', 'Annual'],
-    required: true
+    required: false,
+    default: '1st Term'
   },
   isActive: {
     type: Boolean,
@@ -101,14 +105,15 @@ timetableSchema.index({ classId: 1, academicYear: 1, term: 1 });
 timetableSchema.index({ teacherId: 1 });
 timetableSchema.index({ createdBy: 1, isActive: 1 });
 
-// Ensure unique timetable per class per academic period
+// Ensure unique timetable per class per academic period (only if academicYear and term are provided)
 timetableSchema.pre('save', async function(next) {
-  if (this.isNew) {
+  if (this.isNew && this.academicYear && this.term) {
     const existing = await this.constructor.findOne({
       classId: this.classId,
       academicYear: this.academicYear,
       term: this.term,
-      createdBy: this.createdBy
+      createdBy: this.createdBy,
+      _id: { $ne: this._id }
     });
     
     if (existing) {

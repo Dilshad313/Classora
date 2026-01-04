@@ -12,7 +12,9 @@ import {
   Timer,
   Coffee,
   BookOpen,
-  Loader2
+  Loader2,
+  Calendar,
+  DoorOpen
 } from 'lucide-react';
 import { timePeriodApi } from '../../../../services/timetableApi';
 import { toast } from 'react-hot-toast';
@@ -186,13 +188,29 @@ const TimePeriods = () => {
               <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Time Periods Management</h1>
               <p className="text-gray-600 dark:text-gray-300 mt-1">Configure class periods and break times</p>
             </div>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-            >
-              <Plus className="w-5 h-5" />
-              <span className="font-semibold">Add Period</span>
-            </button>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => navigate('/dashboard/timetable/weekdays')}
+                className="flex items-center space-x-2 px-4 py-2 bg-purple-600 dark:bg-purple-700 text-white rounded-lg hover:bg-purple-700 dark:hover:bg-purple-800 transition-all"
+              >
+                <Calendar className="w-4 h-4" />
+                <span className="font-medium">Week Days</span>
+              </button>
+              <button
+                onClick={() => navigate('/dashboard/timetable/classrooms')}
+                className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 dark:bg-indigo-700 text-white rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-800 transition-all"
+              >
+                <DoorOpen className="w-4 h-4" />
+                <span className="font-medium">Classrooms</span>
+              </button>
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                <Plus className="w-5 h-5" />
+                <span className="font-semibold">Add Period</span>
+              </button>
+            </div>
           </div>
         </div>
 

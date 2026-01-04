@@ -13,7 +13,9 @@ import {
   Search,
   Filter,
   FileText,
-  Loader2
+  Loader2,
+  Plus,
+  Edit
 } from 'lucide-react';
 import { timetableApi } from '../../../../services/timetableApi';
 import { classApi } from '../../../../services/classApi';
@@ -198,6 +200,20 @@ const GenerateClass = () => {
               <p className="text-gray-600 dark:text-gray-300 mt-1 print:text-center print:text-sm">View and download class-wise schedules</p>
             </div>
             <div className="flex items-center space-x-3 print:hidden">
+              <button
+                onClick={() => navigate('/dashboard/timetable/create')}
+                className="flex items-center space-x-2 px-4 py-2 bg-purple-600 dark:bg-purple-700 text-white rounded-lg hover:bg-purple-700 dark:hover:bg-purple-800 transition-all"
+              >
+                <Edit className="w-4 h-4" />
+                <span className="font-medium">Create</span>
+              </button>
+              <button
+                onClick={() => navigate('/dashboard/timetable/teacher')}
+                className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 dark:bg-indigo-700 text-white rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-800 transition-all"
+              >
+                <Users className="w-4 h-4" />
+                <span className="font-medium">Teacher View</span>
+              </button>
               <button
                 onClick={handlePrint}
                 className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 dark:from-purple-700 dark:to-purple-800 text-white rounded-xl hover:from-purple-700 hover:to-purple-800 dark:hover:from-purple-600 dark:hover:to-purple-700 transition-all shadow-lg hover:shadow-xl"

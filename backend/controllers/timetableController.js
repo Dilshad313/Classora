@@ -24,11 +24,19 @@ export const createOrUpdateTimetable = async (req, res) => {
       teacherId
     } = req.body;
     
-    // Validation
-    if (!classId || !academicYear || !term) {
+    // Validation - Only classId is mandatory, academicYear and term are optional
+    if (!classId) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        message: 'Class, academic year, and term are required'
+        message: 'Class is required'
+      });
+    }
+    
+    // Validate periods array exists and has data
+    if (!periods || !Array.isArray(periods) || periods.length === 0) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'At least one period is required'
       });
     }
     
@@ -115,17 +123,24 @@ export const createOrUpdateTimetable = async (req, res) => {
       }
     }
     
-    // Check for existing timetable
-    let timetable = await Timetable.findOne({
+    // Build query for existing timetable
+    const query = {
       classId,
-      academicYear,
-      term,
       createdBy: userId
-    });
+    };
+    
+    // Add optional fields to query if provided
+    if (academicYear) query.academicYear = academicYear;
+    if (term) query.term = term;
+    
+    // Check for existing timetable
+    let timetable = await Timetable.findOne(query);
     
     if (timetable) {
       // Update existing timetable
-      timetable.periods = periods || [];
+      timetable.periods = periods;
+      if (academicYear) timetable.academicYear = academicYear;
+      if (term) timetable.term = term;
       if (teacherId) timetable.teacherId = teacherId;
       await timetable.save();
       
@@ -135,12 +150,12 @@ export const createOrUpdateTimetable = async (req, res) => {
         data: timetable
       });
     } else {
-      // Create new timetable
+      // Create new timetable with default values for optional fields
       const timetableData = {
         classId,
-        academicYear,
-        term,
-        periods: periods || [],
+        academicYear: academicYear || new Date().getFullYear().toString(),
+        term: term || '1st Term',
+        periods: periods,
         teacherId,
         createdBy: userId
       };
