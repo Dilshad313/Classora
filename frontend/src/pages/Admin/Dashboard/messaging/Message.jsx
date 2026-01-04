@@ -18,9 +18,14 @@ import {
   Check,
   Loader2,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  File,
+  Image as ImageIcon,
+  Trash2
 } from 'lucide-react';
 import { messageApi } from '../../../../services/messageApi';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Message = () => {
   const navigate = useNavigate();
@@ -38,6 +43,13 @@ const Message = () => {
   const [attachedFiles, setAttachedFiles] = useState([]);
   const [showSuccess, setShowSuccess] = useState(false);
   const [newMessage, setNewMessage] = useState('');
+  
+  // Confirmation modal state
+  const [deleteConfirmation, setDeleteConfirmation] = useState({
+    show: false,
+    chatId: null,
+    chatName: ''
+  });
   
   // New state for API data
   const [classes, setClasses] = useState([]);
@@ -66,10 +78,22 @@ const Message = () => {
     hasMore: false
   });
 
-  // Fetch chats on component mount and when search term changes
+  // Fetch chats on component mount and when search term changes (with debounce)
   useEffect(() => {
-    fetchChats();
+    const timeoutId = setTimeout(() => {
+      fetchChats();
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
   }, [searchTerm]);
+
+  // Initial load with toast
+  useEffect(() => {
+    toast.info('Loading chats...', { toastId: 'initial-load' });
+    fetchChats().finally(() => {
+      toast.dismiss('initial-load');
+    });
+  }, []);
 
   // Fetch recipients when message type changes
   useEffect(() => {
@@ -94,13 +118,31 @@ const Message = () => {
       setError('');
       
       const filters = {};
-      if (searchTerm) filters.search = searchTerm;
+      if (searchTerm && searchTerm.trim()) {
+        filters.search = searchTerm.trim();
+        // Show loading indicator for search
+        if (searchTerm.length > 0) {
+          toast.info('Searching chats...', { toastId: 'search-chats' });
+        }
+      }
       
       const data = await messageApi.getChats(filters);
       setChats(data || []);
+      
+      // Clear search toast and show results
+      if (searchTerm && searchTerm.trim()) {
+        toast.dismiss('search-chats');
+        if (data && data.length > 0) {
+          toast.success(`Found ${data.length} chat(s)`);
+        } else {
+          toast.info('No chats found for your search');
+        }
+      }
     } catch (err) {
-      setError(`Failed to load chats: ${err.message}`);
-      console.error('Error fetching chats:', err);
+        setError(`Failed to load chats: ${err.message}`);
+        toast.error(`Failed to load chats: ${err.message}`);
+        toast.dismiss('search-chats');
+        console.error('Error fetching chats:', err);
     } finally {
       setLoading(prev => ({ ...prev, chats: false }));
     }
@@ -119,6 +161,8 @@ const Message = () => {
       
       if (!recipientType) return;
       
+      toast.info(`Loading ${messageType === 'specificClass' ? 'classes' : messageType === 'specificStudent' ? 'students' : 'employees'}...`, { toastId: 'load-recipients' });
+      
       const data = await messageApi.getRecipients({ 
         type: recipientType,
         search: searchTerm 
@@ -126,16 +170,21 @@ const Message = () => {
       
       if (messageType === 'specificClass') {
         setClasses(data?.classes || []);
+        toast.success(`Loaded ${data?.classes?.length || 0} class(es)`);
       } else if (messageType === 'specificStudent') {
         setStudents(data?.students || []);
+        toast.success(`Loaded ${data?.students?.length || 0} student(s)`);
       } else if (messageType === 'specificEmployee') {
         setEmployees(data?.employees || []);
+        toast.success(`Loaded ${data?.employees?.length || 0} employee(s)`);
       }
     } catch (err) {
       setError(`Failed to load recipients: ${err.message}`);
+      toast.error(`Failed to load recipients: ${err.message}`);
       console.error('Error fetching recipients:', err);
     } finally {
       setLoading(prev => ({ ...prev, recipients: false }));
+      toast.dismiss('load-recipients');
     }
   };
 
@@ -144,6 +193,8 @@ const Message = () => {
     try {
       setLoading(prev => ({ ...prev, chatDetails: true }));
       setError('');
+      
+      toast.info('Loading chat messages...', { toastId: 'load-chat' });
       
       const data = await messageApi.getChatById(chatId, {
         page: pagination.page,
@@ -167,12 +218,16 @@ const Message = () => {
         
         // Mark chat as read
         await messageApi.markChatAsRead(chatId);
+        
+        toast.success(`Loaded ${data.messages?.length || 0} message(s)`);
       }
     } catch (err) {
       setError(`Failed to load chat: ${err.message}`);
+      toast.error(`Failed to load chat: ${err.message}`);
       console.error('Error fetching chat details:', err);
     } finally {
       setLoading(prev => ({ ...prev, chatDetails: false }));
+      toast.dismiss('load-chat');
     }
   };
 
@@ -200,13 +255,20 @@ const Message = () => {
   // Send new message in existing chat
   const handleSendNewMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedChat) return;
+    if ((!newMessage.trim() && attachedFiles.length === 0) || !selectedChat) {
+      if (!newMessage.trim() && attachedFiles.length === 0) {
+        toast.error('Please enter a message or attach a file');
+      }
+      return;
+    }
     
     try {
       setLoading(prev => ({ ...prev, sending: true }));
       
+      toast.info('Sending message...', { toastId: 'send-message' });
+      
       const messageData = {
-        text: newMessage,
+        text: newMessage.trim() || '', // Allow empty text if files are attached
         chatId: selectedChat._id,
         type: selectedChat.type,
         targetType: selectedChat.targetType || ''
@@ -215,18 +277,39 @@ const Message = () => {
       const data = await messageApi.sendMessage(messageData, attachedFiles);
       
       if (data?.message) {
+        // Debug: Log the received message structure
+        console.log('=== Message Debug Info ===');
+        console.log('Full data object:', data);
+        console.log('Message object:', data.message);
+        console.log('Message attachments:', data.message.attachments);
+        console.log('Attachments type:', typeof data.message.attachments);
+        console.log('Attachments length:', data.message.attachments?.length);
+        console.log('Attached files being sent:', attachedFiles);
+        
         // Add new message to local state
-        setChatMessages(prev => [...prev, {
+        const newMessage = {
           ...data.message,
           senderName: data.message.senderName || 'You',
           isSent: true,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }]);
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          // Ensure attachments are properly included
+          attachments: data.message.attachments || []
+        };
+        
+        console.log('New message being added to state:', newMessage);
+        console.log('New message attachments:', newMessage.attachments);
+        
+        setChatMessages(prev => {
+          console.log('Previous messages:', prev);
+          const updated = [...prev, newMessage];
+          console.log('Updated messages:', updated);
+          return updated;
+        });
         
         // Update chat list
         setChats(prev => prev.map(chat => 
           chat._id === selectedChat._id 
-            ? { ...chat, lastMessage: data.message.text, lastActivity: new Date() }
+            ? { ...chat, lastMessage: data.message.text || '📎 Attachment', lastActivity: new Date() }
             : chat
         ));
         
@@ -234,13 +317,16 @@ const Message = () => {
         setAttachedFiles([]);
         
         setSuccessMessage('Message sent successfully!');
+        toast.success('Message sent successfully!');
         setTimeout(() => setSuccessMessage(''), 3000);
       }
     } catch (err) {
       setError(`Failed to send message: ${err.message}`);
+      toast.error(`Failed to send message: ${err.message}`);
       console.error('Error sending message:', err);
     } finally {
       setLoading(prev => ({ ...prev, sending: false }));
+      toast.dismiss('send-message');
     }
   };
 
@@ -250,17 +336,20 @@ const Message = () => {
     
     // Validation
     if (!messageType) {
+      toast.error('Please select a recipient type');
       setError('Please select a recipient type');
       return;
     }
     
     if ((messageType === 'specificClass' || messageType === 'specificStudent' || messageType === 'specificEmployee') && !selectedRecipient) {
+      toast.error('Please select a recipient');
       setError('Please select a recipient');
       return;
     }
 
-    if (!messageText.trim()) {
-      setError('Please enter a message');
+    if (!messageText.trim() && attachedFiles.length === 0) {
+      toast.error('Please enter a message or attach a file');
+      setError('Please enter a message or attach a file');
       return;
     }
 
@@ -268,9 +357,11 @@ const Message = () => {
       setLoading(prev => ({ ...prev, sending: true }));
       setError('');
       
+      toast.info('Sending message...', { toastId: 'send-new-message' });
+      
       // Prepare message data based on type
       let messageData = {
-        text: messageText.trim(),
+        text: messageText.trim() || '', // Allow empty text if files are attached
         type: messageType === 'allStudents' || messageType === 'allEmployees' ? 'broadcast' : 
               messageType === 'specificClass' ? 'group' : 'individual'
       };
@@ -298,6 +389,7 @@ const Message = () => {
         // Show success message
         setShowSuccess(true);
         setSuccessMessage(`Message sent to ${getRecipientLabel()}!`);
+        toast.success(`Message sent to ${getRecipientLabel()}!`);
         
         // Refresh chats list
         fetchChats();
@@ -318,9 +410,11 @@ const Message = () => {
       }
     } catch (err) {
       setError(`Failed to send message: ${err.message}`);
+      toast.error(`Failed to send message: ${err.message}`);
       console.error('Error sending new message:', err);
     } finally {
       setLoading(prev => ({ ...prev, sending: false }));
+      toast.dismiss('send-new-message');
     }
   };
 
@@ -340,11 +434,13 @@ const Message = () => {
       ];
       
       if (!allowedTypes.includes(file.type)) {
+        toast.error(`File type ${file.type} is not allowed`);
         setError(`File type ${file.type} is not allowed`);
         return false;
       }
       
       if (file.size > 10 * 1024 * 1024) {
+        toast.error('File size must be less than 10MB');
         setError('File size must be less than 10MB');
         return false;
       }
@@ -352,11 +448,21 @@ const Message = () => {
       return true;
     });
     
-    setAttachedFiles(prev => [...prev, ...validFiles]);
+    if (validFiles.length > 0) {
+      setAttachedFiles(prev => [...prev, ...validFiles]);
+      toast.success(`Added ${validFiles.length} file(s)`);
+    }
+    
+    // Clear the input
+    if (e.target) {
+      e.target.value = '';
+    }
   };
 
   const handleRemoveFile = (index) => {
+    const removedFile = attachedFiles[index];
     setAttachedFiles(prev => prev.filter((_, i) => i !== index));
+    toast.info(`Removed ${removedFile.name}`);
   };
 
   // Load more messages
@@ -365,6 +471,8 @@ const Message = () => {
     
     try {
       setLoading(prev => ({ ...prev, chatDetails: true }));
+      
+      toast.info('Loading more messages...', { toastId: 'load-more' });
       
       const nextPage = pagination.page + 1;
       const data = await messageApi.getChatById(selectedChat._id, {
@@ -384,37 +492,65 @@ const Message = () => {
           totalPages: data.pagination.totalPages,
           hasMore: nextPage < data.pagination.totalPages
         });
+        
+        toast.success(`Loaded ${data.messages.length} more message(s)`);
       }
     } catch (err) {
       setError(`Failed to load more messages: ${err.message}`);
+      toast.error(`Failed to load more messages: ${err.message}`);
       console.error('Error loading more messages:', err);
     } finally {
       setLoading(prev => ({ ...prev, chatDetails: false }));
+      toast.dismiss('load-more');
     }
   };
 
   // Delete chat
-  const handleDeleteChat = async (chatId, e) => {
+  const handleDeleteChat = (chatId, e) => {
     e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this chat?')) {
-      try {
-        await messageApi.deleteChat(chatId);
-        
-        // Remove from local state
-        setChats(prev => prev.filter(chat => chat._id !== chatId));
-        
-        if (selectedChat?._id === chatId) {
-          setSelectedChat(null);
-          setChatMessages([]);
-        }
-        
-        setSuccessMessage('Chat deleted successfully!');
-        setTimeout(() => setSuccessMessage(''), 3000);
-      } catch (err) {
-        setError(`Failed to delete chat: ${err.message}`);
-        console.error('Error deleting chat:', err);
-      }
+    const chat = chats.find(c => c._id === chatId);
+    if (chat) {
+      setDeleteConfirmation({
+        show: true,
+        chatId: chatId,
+        chatName: chat.name
+      });
     }
+  };
+
+  // Confirm delete chat
+  const confirmDeleteChat = async () => {
+    try {
+      toast.info('Deleting chat...', { toastId: 'delete-chat' });
+      
+      await messageApi.deleteChat(deleteConfirmation.chatId);
+      
+      // Remove from local state
+      setChats(prev => prev.filter(chat => chat._id !== deleteConfirmation.chatId));
+      
+      if (selectedChat?._id === deleteConfirmation.chatId) {
+        setSelectedChat(null);
+        setChatMessages([]);
+      }
+      
+      setSuccessMessage('Chat deleted successfully!');
+      toast.success('Chat deleted successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      
+      // Close confirmation modal
+      setDeleteConfirmation({ show: false, chatId: null, chatName: '' });
+    } catch (err) {
+      setError(`Failed to delete chat: ${err.message}`);
+      toast.error(`Failed to delete chat: ${err.message}`);
+      console.error('Error deleting chat:', err);
+    } finally {
+      toast.dismiss('delete-chat');
+    }
+  };
+
+  // Cancel delete
+  const cancelDelete = () => {
+    setDeleteConfirmation({ show: false, chatId: null, chatName: '' });
   };
 
   // Format time for display
@@ -450,7 +586,7 @@ const Message = () => {
         return 'All Employees';
       case 'specificClass':
         const selectedClass = classes.find(c => c._id === selectedRecipient);
-        return selectedClass ? `${selectedClass.className} - Section ${selectedClass.section}` : 'Select Class';
+        return selectedClass ? `${selectedClass.className}` : 'Select Class';
       case 'specificStudent':
         const selectedStudent = students.find(s => s._id === selectedRecipient);
         return selectedStudent ? `${selectedStudent.studentName} - ${selectedStudent.selectClass}` : 'Select Student';
@@ -465,11 +601,12 @@ const Message = () => {
   // Filter chats based on search
   const filteredChats = chats.filter(chat =>
     chat.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    chat.lastMessageData?.text?.toLowerCase().includes(searchTerm.toLowerCase())
+    chat.lastMessage?.text?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex flex-col">
+    <>
+      <div className="h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex flex-col">
       <div className="flex-shrink-0 p-6 pb-0">
         <div className="max-w-7xl mx-auto">
           {/* Breadcrumb */}
@@ -576,6 +713,15 @@ const Message = () => {
                     disabled={loading.chats}
                     className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 disabled:opacity-50"
                   />
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm('')}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                      title="Clear search"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -620,7 +766,7 @@ const Message = () => {
                               </span>
                             </div>
                             <p className="text-sm text-gray-600 dark:text-gray-300 truncate">
-                              {chat.lastMessageData?.text || 'No messages yet'}
+                              {chat.lastMessage?.text || 'No messages yet'}
                             </p>
                           </div>
                           {(() => {
@@ -717,7 +863,7 @@ const Message = () => {
                         <Loader2 className="w-8 h-8 text-blue-600 dark:text-blue-400 animate-spin" />
                       </div>
                     ) : (
-                      <>
+                        <>
                         {pagination.hasMore && (
                           <div className="text-center mb-4">
                             <button
@@ -736,11 +882,18 @@ const Message = () => {
                         )}
                         
                         <div className="space-y-4">
-                          {chatMessages.map((message) => (
-                            <div
-                              key={message._id}
-                              className={`flex ${message.senderModel === 'Admin' ? 'justify-end' : 'justify-start'}`}
-                            >
+                          {chatMessages.length === 0 ? (
+                            <div className="text-center py-8">
+                              <MessageCircle className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                              <p className="text-gray-500 dark:text-gray-400">No messages yet</p>
+                              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Start the conversation!</p>
+                            </div>
+                          ) : (
+                            chatMessages.map((message) => (
+                              <div
+                                key={message._id}
+                                className={`flex ${message.senderModel === 'Admin' ? 'justify-end' : 'justify-start'}`}
+                              >
                               <div className={`max-w-[70%] ${message.senderModel === 'Admin' ? 'order-2' : 'order-1'}`}>
                                 {message.senderModel !== 'Admin' && (
                                   <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 ml-2">
@@ -754,19 +907,21 @@ const Message = () => {
                                 }`}>
                                   <p className="text-sm leading-relaxed">{message.text}</p>
                                   
+                                  {/* Debug: Show attachment info */}
                                   {message.attachments && message.attachments.length > 0 && (
-                                    <div className="mt-2 space-y-2">
+                                    <div className="mt-2 p-2 bg-yellow-100 dark:bg-yellow-900 rounded text-xs">
+                                      📎 Has {message.attachments.length} attachment(s)
+                                    </div>
+                                  )}
+                                  
+                              {message.attachments && message.attachments.length > 0 && (
+                                    <div className="mt-2 p-2 bg-red-100 dark:bg-red-900 rounded">
+                                      <p className="text-xs font-bold">ATTACHMENTS FOUND: {message.attachments.length}</p>
                                       {message.attachments.map((attachment, index) => (
-                                        <div key={index} className="flex items-center space-x-2 p-2 bg-white/20 dark:bg-gray-800/50 rounded-lg">
-                                          <Paperclip className="w-4 h-4" />
-                                          <a
-                                            href={attachment.url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-sm underline truncate"
-                                          >
-                                            {attachment.name}
-                                          </a>
+                                        <div key={index} className="mt-1">
+                                          <p className="text-xs">{attachment.name}</p>
+                                          <p className="text-xs">{attachment.url}</p>
+                                          <p className="text-xs">{attachment.fileType}</p>
                                         </div>
                                       ))}
                                     </div>
@@ -780,10 +935,11 @@ const Message = () => {
                                 </div>
                               </div>
                             </div>
-                          ))}
+                            ))
+                          )}
                           <div ref={messagesEndRef} />
                         </div>
-                      </>
+                        </>
                     )}
                   </div>
 
@@ -842,7 +998,7 @@ const Message = () => {
                           </button>
                           <button
                             type="submit"
-                            disabled={!newMessage.trim() || loading.sending}
+                            disabled={(!newMessage.trim() && attachedFiles.length === 0) || loading.sending}
                             className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 dark:from-blue-700 dark:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 text-white rounded-xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                           >
                             {loading.sending ? (
@@ -1108,7 +1264,7 @@ const Message = () => {
                               <option value="">Choose...</option>
                               {messageType === 'specificClass' && classes.map(cls => (
                                 <option key={cls._id} value={cls._id}>
-                                  {cls.className} - Section {cls.section} ({cls.studentCount} students)
+                                  {cls.className}
                                 </option>
                               ))}
                               {messageType === 'specificStudent' && students.map(student => (
@@ -1235,7 +1391,66 @@ const Message = () => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+      
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmation.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
+                <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Delete Chat
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  This action cannot be undone
+                </p>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-gray-700 dark:text-gray-300">
+                Are you sure you want to delete the chat with <span className="font-semibold">{deleteConfirmation.chatName}</span>? 
+                All messages will be permanently removed.
+              </p>
+            </div>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={cancelDelete}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteChat}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-colors font-medium flex items-center justify-center space-x-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Delete Chat</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        limit={3}
+      />
+    </>
   );
 };
 

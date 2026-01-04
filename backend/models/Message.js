@@ -28,8 +28,12 @@ const messageSchema = new mongoose.Schema({
   // Message content
   text: {
     type: String,
-    required: true,
-    trim: true
+    required: function() {
+      // Text is required only if there are no attachments
+      return !this.attachments || this.attachments.length === 0;
+    },
+    trim: true,
+    default: ''
   },
   
   // Attachments

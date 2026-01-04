@@ -205,10 +205,10 @@ export const sendMessage = async (req, res) => {
     } = req.body;
     
     // Validation
-    if (!text || !text.trim()) {
+    if ((!text || !text.trim()) && (!req.files || !req.files.attachments || req.files.attachments.length === 0)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        message: 'Message text is required'
+        message: 'Message text or attachments is required'
       });
     }
     
