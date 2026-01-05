@@ -15,6 +15,7 @@ import {
   Loader2,
   AlertCircle
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import {
   getAllChapters,
   createChapter,
@@ -57,6 +58,14 @@ const SubjectChapters = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // Delete confirmation dialog state
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    show: false,
+    chapterId: null,
+    chapterTitle: '',
+    chapterNumber: ''
+  });
+
   const [formData, setFormData] = useState({
     subject: '',
     chapterNumber: '',
@@ -92,7 +101,7 @@ const SubjectChapters = () => {
       }
     } catch (error) {
       console.error('Failed to load chapters:', error);
-      alert('Failed to load chapters. Please try again.');
+      toast.error('Failed to load chapters. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -105,6 +114,7 @@ const SubjectChapters = () => {
       setStats(statsData);
     } catch (error) {
       console.error('Failed to load statistics:', error);
+      toast.error('Failed to load statistics.');
     } finally {
       setLoadingStats(false);
     }
@@ -181,8 +191,10 @@ const SubjectChapters = () => {
 
       if (editingChapter) {
         await updateChapter(editingChapter._id, chapterData);
+        toast.success('Chapter updated successfully!');
       } else {
         await createChapter(chapterData);
+        toast.success('Chapter added successfully!');
       }
 
       setShowSuccess(true);
@@ -194,29 +206,43 @@ const SubjectChapters = () => {
       }, 1500);
     } catch (error) {
       console.error('Error saving chapter:', error);
-      alert(error.message || 'Failed to save chapter. Please try again.');
+      toast.error(error.message || 'Failed to save chapter. Please try again.');
     } finally {
       setFormLoading(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this chapter?')) {
-      return;
+    // Find the chapter details for confirmation dialog
+    const chapter = chapters.find(ch => ch._id === id);
+    if (chapter) {
+      setDeleteConfirm({
+        show: true,
+        chapterId: id,
+        chapterTitle: chapter.title,
+        chapterNumber: chapter.chapterNumber
+      });
     }
+  };
 
+  const confirmDelete = async () => {
     try {
       setDeleteLoading(true);
-      await deleteChapter(id);
+      await deleteChapter(deleteConfirm.chapterId);
       await loadData();
       await loadStats();
-      alert('Chapter deleted successfully');
+      toast.success('Chapter deleted successfully');
     } catch (error) {
       console.error('Failed to delete chapter:', error);
-      alert(error.message || 'Failed to delete chapter. Please check if it has questions.');
+      toast.error(error.message || 'Failed to delete chapter. Please check if it has questions.');
     } finally {
       setDeleteLoading(false);
+      setDeleteConfirm({ show: false, chapterId: null, chapterTitle: '', chapterNumber: '' });
     }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirm({ show: false, chapterId: null, chapterTitle: '', chapterNumber: '' });
   };
 
   const handleFilterChange = (key, value) => {
@@ -647,6 +673,63 @@ const SubjectChapters = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Dialog */}
+        {deleteConfirm.show && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full mx-4">
+              <div className="p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
+                    <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Delete Chapter</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">This action cannot be undone</p>
+                  </div>
+                </div>
+                
+                <div className="mb-6">
+                  <p className="text-gray-700 dark:text-gray-300">
+                    Are you sure you want to delete the chapter:
+                  </p>
+                  <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <p className="font-semibold text-gray-900 dark:text-gray-100">
+                      Chapter {deleteConfirm.chapterNumber}: {deleteConfirm.chapterTitle}
+                    </p>
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    All associated questions and data will be permanently removed.
+                  </p>
+                </div>
+
+                <div className="flex space-x-3">
+                  <button
+                    onClick={cancelDelete}
+                    className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-semibold"
+                    disabled={deleteLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDelete}
+                    className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={deleteLoading}
+                  >
+                    {deleteLoading ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Deleting...</span>
+                      </div>
+                    ) : (
+                      'Delete Chapter'
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

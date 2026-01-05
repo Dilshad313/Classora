@@ -78,6 +78,7 @@ import LiveClass from './pages/Admin/Dashboard/live-class/LiveClass';
 import SubjectChapters from './pages/Admin/Dashboard/question-paper/SubjectChapters';
 import QuestionBank from './pages/Admin/Dashboard/question-paper/QuestionBank';
 import CreateQuestion from './pages/Admin/Dashboard/question-paper/CreateQuestion';
+import EditQuestion from './pages/Admin/Dashboard/question-paper/EditQuestion';
 
 import CreateExam from './pages/Admin/Dashboard/exams/CreateExam';
 import ExamMarks from './pages/Admin/Dashboard/exams/ExamMarks';
@@ -329,6 +330,7 @@ function App() {
           <Route path="question-paper/chapters" element={<SubjectChapters/>} />
           <Route path="question-paper/bank" element={<QuestionBank/>} />
           <Route path="question-paper/create" element={<CreateQuestion/>} />
+          <Route path="question-paper/edit/:id" element={<EditQuestion/>} />
 
           {/* Exam Routes */}
           <Route path="exams/create" element={<CreateExam/>} />

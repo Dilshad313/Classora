@@ -16,6 +16,7 @@ import {
   X,
   AlertCircle
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import {
   getAllQuestions,
   deleteQuestion,
@@ -63,6 +64,13 @@ const QuestionBank = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
 
+  // Single delete confirmation dialog state
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    show: false,
+    questionId: null,
+    questionText: ''
+  });
+
   const questionTypes = ['Very Short Answer', 'Short Answer', 'Long Answer', 'MCQ', 'True/False'];
   const difficultyLevels = ['Easy', 'Medium', 'Hard'];
 
@@ -97,8 +105,9 @@ const QuestionBank = () => {
         setChapters(dropdownData.chapters);
       }
     } catch (error) {
-      console.error('Failed to load data:', error);
-      alert('Failed to load questions. Please try again.');
+      console.error('Failed to load question:', error);
+      toast.error('Failed to load question data. Please try again.');
+      navigate('/dashboard/question-paper/bank');
     } finally {
       setLoading(false);
     }
@@ -121,27 +130,96 @@ const QuestionBank = () => {
     });
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this question?')) {
-      return;
+  const handleDelete = (id) => {
+    console.log('handleDelete called with id:', id);
+    // Find question details for confirmation dialog
+    const question = questions.find(q => q._id === id);
+    console.log('Found question for delete:', question);
+    if (question) {
+      const questionText = question.question ? 
+        (question.question.length > 50 ? question.question.substring(0, 50) + '...' : question.question)
+        : 'Question text not available';
+      
+      console.log('Setting deleteConfirm with questionText:', questionText);
+      setDeleteConfirm({
+        show: true,
+        questionId: id,
+        questionText: questionText
+      });
+    } else {
+      console.log('Question not found for id:', id);
     }
+  };
 
+  const confirmDelete = async () => {
+    console.log('confirmDelete called with questionId:', deleteConfirm.questionId);
     try {
       setDeleteLoading(true);
-      await deleteQuestion(id);
+      await deleteQuestion(deleteConfirm.questionId);
       await loadData();
-      alert('Question deleted successfully');
+      toast.success('Question deleted successfully');
     } catch (error) {
       console.error('Failed to delete question:', error);
-      alert(error.message || 'Failed to delete question');
+      toast.error(error.message || 'Failed to delete question');
     } finally {
       setDeleteLoading(false);
+      setDeleteConfirm({ show: false, questionId: null, questionText: '' });
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirm({ show: false, questionId: null, questionText: '' });
+  };
+
+  const handleDownload = async (question) => {
+    try {
+      // Create a simple text content for the question
+      const content = `
+QUESTION PAPER
+===============
+
+Subject: ${getSubjectName(question.subject)}
+Chapter: ${getChapterName(question.chapter)}
+Type: ${question.questionType}
+Difficulty: ${question.difficulty}
+Marks: ${question.marks}
+
+Question:
+${question.question}
+
+${question.questionType === 'MCQ' && question.options ? 
+  'Options:\n' + Object.entries(question.options).map(([key, value]) => `${key}: ${value}`).join('\n') + 
+  '\nCorrect Answer: ' + question.correctAnswer : ''
+}
+
+${question.solution ? 'Solution:\n' + question.solution : ''}
+
+${question.hint ? 'Hint:\n' + question.hint : ''}
+
+Generated on: ${new Date().toLocaleString()}
+`;
+
+      // Create blob and download
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `question_${question._id}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Question downloaded successfully');
+    } catch (error) {
+      console.error('Failed to download question:', error);
+      toast.error('Failed to download question');
     }
   };
 
   const handleBulkDelete = async () => {
     if (selectedQuestions.length === 0) {
-      alert('Please select questions to delete');
+      toast.error('Please select questions to delete');
       return;
     }
 
@@ -155,10 +233,10 @@ const QuestionBank = () => {
       setSelectedQuestions([]);
       await loadData();
       setShowDeleteModal(false);
-      alert(`${selectedQuestions.length} questions deleted successfully`);
+      toast.success(`${selectedQuestions.length} questions deleted successfully`);
     } catch (error) {
       console.error('Failed to delete questions:', error);
-      alert(error.message || 'Failed to delete questions');
+      toast.error(error.message || 'Failed to delete questions');
     } finally {
       setBulkDeleteLoading(false);
     }
@@ -182,13 +260,29 @@ const QuestionBank = () => {
 
   const getSubjectName = (subjectId) => {
     if (!subjectId) return 'Unknown';
-    const subject = subjects.find(s => s._id === subjectId);
+    
+    // Handle different data structures
+    if (typeof subjectId === 'object' && subjectId !== null) {
+      // If subject is already populated object
+      return subjectId.name || 'Unknown';
+    }
+    
+    // If subjectId is a string ID, find it in subjects array
+    const subject = subjects.find(s => s._id === subjectId || s.id === subjectId);
     return subject ? subject.name : 'Unknown';
   };
 
   const getChapterName = (chapterId) => {
     if (!chapterId) return 'Unknown';
-    const chapter = chapters.find(ch => ch._id === chapterId);
+    
+    // Handle different data structures
+    if (typeof chapterId === 'object' && chapterId !== null) {
+      // If chapter is already populated object
+      return chapterId.title || 'Unknown';
+    }
+    
+    // If chapterId is a string ID, find it in chapters array
+    const chapter = chapters.find(ch => ch._id === chapterId || ch.id === chapterId);
     return chapter ? chapter.title : 'Unknown';
   };
 
@@ -509,7 +603,11 @@ const QuestionBank = () => {
                         <Eye className="w-5 h-5" />
                       </button>
                       <button
-                        onClick={() => navigate(`/dashboard/question-paper/edit/${question._id}`)}
+                        onClick={() => {
+                          const editUrl = `/dashboard/question-paper/edit/${question._id}`;
+                          toast(`Editing question: ${question._id}`);
+                          navigate(editUrl);
+                        }}
                         className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors"
                         title="Edit question"
                       >
@@ -528,8 +626,9 @@ const QuestionBank = () => {
                         )}
                       </button>
                       <button
+                        onClick={() => handleDownload(question)}
                         className="p-2 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition-colors"
-                        title="Download"
+                        title="Download question"
                       >
                         <Download className="w-5 h-5" />
                       </button>
@@ -639,6 +738,63 @@ const QuestionBank = () => {
                 >
                   Close
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Single Delete Confirmation Dialog */}
+        {deleteConfirm.show && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-[9999] p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full mx-4">
+              <div className="p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
+                    <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Delete Question</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">This action cannot be undone</p>
+                  </div>
+                </div>
+                
+                <div className="mb-6">
+                  <p className="text-gray-700 dark:text-gray-300">
+                    Are you sure you want to delete this question?
+                  </p>
+                  <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <p className="text-sm text-gray-900 dark:text-gray-100 italic">
+                      "{deleteConfirm.questionText}"
+                    </p>
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    This question will be permanently removed from the question bank.
+                  </p>
+                </div>
+
+                <div className="flex space-x-3">
+                  <button
+                    onClick={cancelDelete}
+                    className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-semibold"
+                    disabled={deleteLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDelete}
+                    className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={deleteLoading}
+                  >
+                    {deleteLoading ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Deleting...</span>
+                      </div>
+                    ) : (
+                      'Delete Question'
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -11,6 +11,7 @@ import {
   Loader2,
   ArrowLeft
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import {
   getQuestionById,
   updateQuestion,
@@ -26,6 +27,7 @@ const EditQuestion = () => {
   const [chapters, setChapters] = useState([]);
   const [questionTypes] = useState(['Very Short Answer', 'Short Answer', 'Long Answer', 'MCQ', 'True/False']);
   const [difficultyLevels] = useState(['Easy', 'Medium', 'Hard']);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const [formData, setFormData] = useState({
     question: '',
@@ -44,7 +46,6 @@ const EditQuestion = () => {
   });
 
   const [errors, setErrors] = useState({});
-  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     loadQuestionData();
@@ -52,10 +53,12 @@ const EditQuestion = () => {
 
   const loadQuestionData = async () => {
     try {
+      console.log('Loading question data for ID:', id);
       setLoading(true);
       
       // Load question data
       const question = await getQuestionById(id);
+      console.log('Question data received:', question);
       setFormData({
         question: question.question,
         questionType: question.questionType,
@@ -76,9 +79,10 @@ const EditQuestion = () => {
       const dropdownData = await getDropdownData();
       setSubjects(dropdownData.subjects);
       setChapters(dropdownData.chapters);
+      toast.success('Question data loaded successfully');
     } catch (error) {
       console.error('Failed to load question:', error);
-      alert('Failed to load question data. Please try again.');
+      toast.error('Failed to load question data. Please try again.');
       navigate('/dashboard/question-paper/bank');
     } finally {
       setLoading(false);
@@ -96,6 +100,22 @@ const EditQuestion = () => {
       [name]: value,
       ...(name === 'subject' && { chapter: '' }) // Reset chapter when subject changes
     }));
+    
+    // Show toast when subject changes (chapters reset)
+    if (name === 'subject' && value) {
+      const subjectName = subjects.find(s => s._id === value)?.name || value;
+      toast.success(`Subject changed to: ${subjectName}`, {
+        duration: 2000,
+      });
+    }
+    
+    // Show toast when question type changes to MCQ
+    if (name === 'questionType' && value === 'MCQ') {
+      toast('MCQ selected - Please fill in all four options and select the correct answer', {
+        icon: '📝',
+        duration: 3000,
+      });
+    }
     
     // Clear error for this field
     if (errors[name]) {
@@ -122,7 +142,14 @@ const EditQuestion = () => {
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    
+    // Show validation error toast if there are errors
+    if (Object.keys(newErrors).length > 0) {
+      toast.error('Please fill in all required fields correctly');
+      return false;
+    }
+    
+    return true;
   };
 
   const handleSubmit = async (e) => {
@@ -156,17 +183,25 @@ const EditQuestion = () => {
 
       await updateQuestion(id, questionData);
       
-      // Show success message
+      // Show success state and toast
       setShowSuccess(true);
+      toast.success('Question updated successfully!', {
+        duration: 3000,
+      });
 
-      // Redirect after 2 seconds
+      // Redirect after successful update
       setTimeout(() => {
+        toast('Redirecting to Question Bank...', {
+          icon: '🔄',
+          duration: 1500,
+        });
         navigate('/dashboard/question-paper/bank');
-      }, 2000);
+      }, 1500);
 
     } catch (error) {
       console.error('Error updating question:', error);
-      alert(error.message || 'Failed to update question. Please try again.');
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to update question. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -229,7 +264,10 @@ const EditQuestion = () => {
               <p className="text-gray-600 dark:text-gray-300 mt-2">Update question details</p>
             </div>
             <button
-              onClick={() => navigate('/dashboard/question-paper/bank')}
+              onClick={() => {
+                toast('Navigating back to Question Bank');
+                navigate('/dashboard/question-paper/bank');
+              }}
               className="flex items-center space-x-2 px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-semibold"
             >
               <ArrowLeft className="w-5 h-5" />

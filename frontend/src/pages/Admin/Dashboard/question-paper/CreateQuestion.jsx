@@ -10,6 +10,7 @@ import {
   Hash,
   Loader2
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import {
   createQuestion,
   getDropdownData,
@@ -42,7 +43,6 @@ const CreateQuestion = () => {
   });
 
   const [errors, setErrors] = useState({});
-  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     loadDropdownData();
@@ -54,9 +54,10 @@ const CreateQuestion = () => {
       const data = await getDropdownData();
       setSubjects(data.subjects);
       setChapters(data.chapters);
+      toast.success('Subjects and chapters loaded successfully');
     } catch (error) {
       console.error('Failed to load dropdown data:', error);
-      alert('Failed to load subjects and chapters. Please try again.');
+      toast.error('Failed to load subjects and chapters. Please try again.');
     } finally {
       setLoadingData(false);
     }
@@ -73,6 +74,22 @@ const CreateQuestion = () => {
       [name]: value,
       ...(name === 'subject' && { chapter: '' }) // Reset chapter when subject changes
     }));
+    
+    // Show toast when subject changes (chapters reset)
+    if (name === 'subject' && value) {
+      const subjectName = subjects.find(s => s._id === value)?.name || value;
+      toast.success(`Subject changed to: ${subjectName}`, {
+        duration: 2000,
+      });
+    }
+    
+    // Show toast when question type changes to MCQ
+    if (name === 'questionType' && value === 'MCQ') {
+      toast('MCQ selected - Please fill in all four options and select the correct answer', {
+        icon: '📝',
+        duration: 3000,
+      });
+    }
     
     // Clear error for this field
     if (errors[name]) {
@@ -99,7 +116,14 @@ const CreateQuestion = () => {
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    
+    // Show validation error toast if there are errors
+    if (Object.keys(newErrors).length > 0) {
+      toast.error('Please fill in all required fields correctly');
+      return false;
+    }
+    
+    return true;
   };
 
   const handleSubmit = async (e) => {
@@ -133,33 +157,39 @@ const CreateQuestion = () => {
 
       await createQuestion(questionData);
       
-      // Show success message
-      setShowSuccess(true);
+      // Show success toast
+      toast.success('Question created successfully!', {
+        duration: 3000,
+      });
 
-      // Reset form after 2 seconds
-      setTimeout(() => {
-        setShowSuccess(false);
-        setFormData({
-          question: '',
-          questionType: '',
-          difficulty: '',
-          marks: '',
-          subject: '',
-          chapter: '',
-          option1: '',
-          option2: '',
-          option3: '',
-          option4: '',
-          correctAnswer: '',
-          solution: '',
-          hint: ''
-        });
-        setErrors({});
-      }, 2000);
+      // Reset form after successful submission
+      setFormData({
+        question: '',
+        questionType: '',
+        difficulty: '',
+        marks: '',
+        subject: '',
+        chapter: '',
+        option1: '',
+        option2: '',
+        option3: '',
+        option4: '',
+        correctAnswer: '',
+        solution: '',
+        hint: ''
+      });
+      setErrors({});
+      
+      // Show form reset notification
+      toast('Form reset - Ready for next question', {
+        icon: '🔄',
+        duration: 2000,
+      });
 
     } catch (error) {
       console.error('Error creating question:', error);
-      alert(error.message || 'Failed to create question. Please try again.');
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to create question. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -527,24 +557,14 @@ const CreateQuestion = () => {
               </div>
             )}
 
-            {/* Success Message */}
-            {showSuccess && (
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 flex items-center space-x-3">
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="font-semibold text-green-900 dark:text-green-200">Question Created Successfully!</p>
-                  <p className="text-sm text-green-700 dark:text-green-300">The question has been added to the question bank.</p>
-                </div>
-              </div>
-            )}
-
             {/* Buttons */}
             <div className="flex space-x-4">
               <button
                 type="button"
-                onClick={() => navigate('/dashboard/question-paper/bank')}
+                onClick={() => {
+                  toast('Navigating back to Question Bank');
+                  navigate('/dashboard/question-paper/bank');
+                }}
                 className="flex-1 px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={loading}
               >
@@ -552,7 +572,7 @@ const CreateQuestion = () => {
               </button>
               <button
                 type="submit"
-                disabled={loading || showSuccess}
+                disabled={loading}
                 className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-700 text-white rounded-xl hover:from-green-700 hover:to-emerald-800 transition-all shadow-lg hover:shadow-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center dark:from-green-700 dark:to-emerald-800 dark:hover:from-green-800 dark:hover:to-emerald-900"
               >
                 {loading ? (
