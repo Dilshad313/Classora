@@ -30,7 +30,7 @@ export const getMeetings = async (req, res) => {
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
-        { meetingId: { $regex: search, $options: 'i' } },
+        { meetingLink: { $regex: search, $options: 'i' } },
         { meetingWith: { $regex: search, $options: 'i' } }
       ];
     }
@@ -127,7 +127,7 @@ export const createMeeting = async (req, res) => {
     
     const {
       title,
-      meetingId,
+      meetingLink,
       meetingType,
       meetingWith,
       specificClass,
@@ -141,35 +141,25 @@ export const createMeeting = async (req, res) => {
     } = req.body;
     
     // Validation
-    if (!title || !meetingType || !duration) {
+    if (!title || !meetingLink || !meetingType || !duration) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        message: 'Title, meeting type, and duration are required'
+        message: 'Title, meeting link, meeting type, and duration are required'
       });
     }
     
-    // Generate meeting ID if not provided
-    const generatedMeetingId = meetingId || Meeting.generateMeetingId(
-      title.substring(0, 3).toUpperCase() || 'MTG'
-    );
-    
-    // Check for duplicate meeting ID
-    const existingMeeting = await Meeting.findOne({
-      meetingId: generatedMeetingId,
-      createdBy: userId
-    });
-    
-    if (existingMeeting) {
-      return res.status(StatusCodes.CONFLICT).json({
+    // Validate Google Meet link
+    if (!meetingLink.includes('meet.google.com')) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        message: `Meeting ID "${generatedMeetingId}" already exists`
+        message: 'Please provide a valid Google Meet link'
       });
     }
     
     // Prepare meeting data
     const meetingData = {
       title: title.trim(),
-      meetingId: generatedMeetingId,
+      meetingLink: meetingLink.trim(),
       meetingType,
       meetingWith: meetingWith.trim(),
       duration: parseInt(duration) || 60,
@@ -186,7 +176,7 @@ export const createMeeting = async (req, res) => {
         // Get class details for meetingWith
         const classData = await Class.findById(specificClass);
         if (classData) {
-          meetingData.meetingWith = `${classData.name} - Section ${classData.section}`;
+          meetingData.meetingWith = classData.name || classData.className;
         }
       }
     } else if (meetingType === 'specificStudent' && specificStudent) {
@@ -252,7 +242,7 @@ export const createMeeting = async (req, res) => {
     if (error.code === 11000) {
       return res.status(StatusCodes.CONFLICT).json({
         success: false,
-        message: 'Meeting ID already exists'
+        message: 'Meeting link already exists'
       });
     }
     
@@ -292,6 +282,7 @@ export const updateMeeting = async (req, res) => {
     
     const {
       title,
+      meetingLink,
       meetingType,
       meetingWith,
       specificClass,
@@ -307,6 +298,7 @@ export const updateMeeting = async (req, res) => {
     
     // Update fields
     if (title) meeting.title = title.trim();
+    if (meetingLink) meeting.meetingLink = meetingLink.trim();
     if (meetingType) meeting.meetingType = meetingType;
     if (meetingWith) meeting.meetingWith = meetingWith.trim();
     if (duration !== undefined) meeting.duration = parseInt(duration) || 60;
@@ -320,9 +312,10 @@ export const updateMeeting = async (req, res) => {
         meeting.specificStudent = null;
         meeting.specificTeacher = null;
         
+        // Get class details for meetingWith
         const classData = await Class.findById(specificClass);
         if (classData) {
-          meeting.meetingWith = `${classData.name} - Section ${classData.section}`;
+          meeting.meetingWith = classData.name || classData.className;
         }
       }
     } else if (meetingType === 'specificStudent' && specificStudent) {
@@ -331,6 +324,7 @@ export const updateMeeting = async (req, res) => {
         meeting.specificClass = null;
         meeting.specificTeacher = null;
         
+        // Get student details for meetingWith
         const studentData = await Student.findById(specificStudent);
         if (studentData) {
           meeting.meetingWith = `${studentData.studentName} - ${studentData.registrationNo}`;
@@ -342,6 +336,7 @@ export const updateMeeting = async (req, res) => {
         meeting.specificClass = null;
         meeting.specificStudent = null;
         
+        // Get teacher details for meetingWith
         const teacherData = await Employee.findById(specificTeacher);
         if (teacherData) {
           meeting.meetingWith = `${teacherData.employeeName} - ${teacherData.employeeRole}`;
@@ -486,7 +481,7 @@ export const joinMeeting = async (req, res) => {
       success: true,
       message: 'Meeting joined successfully',
       data: {
-        meetingId: meeting.meetingId,
+        meetingLink: meeting.meetingLink,
         title: meeting.title,
         roomUrl: meeting.roomUrl,
         meetingPassword: meeting.meetingPassword

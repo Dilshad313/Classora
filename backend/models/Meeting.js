@@ -8,12 +8,11 @@ const meetingSchema = new mongoose.Schema({
     trim: true,
     maxlength: [200, 'Title cannot exceed 200 characters']
   },
-  meetingId: {
+  meetingLink: {
     type: String,
-    required: [true, 'Meeting ID is required'],
-    unique: true,
+    required: [true, 'Meeting link is required'],
     trim: true,
-    uppercase: true
+    lowercase: true
   },
   meetingType: {
     type: String,
@@ -153,14 +152,9 @@ meetingSchema.pre('save', function(next) {
     this.endTime = endTime;
   }
   
-  // Generate meeting room URL
-  if (!this.roomUrl && this.meetingId) {
-    this.roomUrl = `/meeting/${this.meetingId}`;
-  }
-  
-  // Generate password if not set
-  if (!this.meetingPassword) {
-    this.meetingPassword = Math.random().toString(36).substring(2, 8).toUpperCase();
+  // Set roomUrl to be the same as meetingLink for Google Meet
+  if (this.meetingLink) {
+    this.roomUrl = this.meetingLink;
   }
   
   next();
@@ -168,19 +162,12 @@ meetingSchema.pre('save', function(next) {
 
 // Indexes for better query performance
 meetingSchema.index({ createdBy: 1, status: 1 });
-meetingSchema.index({ meetingId: 1 }, { unique: true });
+meetingSchema.index({ meetingLink: 1 });
 meetingSchema.index({ scheduledDate: 1 });
 meetingSchema.index({ isScheduled: 1, startTime: 1 });
 meetingSchema.index({ specificClass: 1 });
 meetingSchema.index({ specificStudent: 1 });
 meetingSchema.index({ specificTeacher: 1 });
-
-// Static method to generate meeting ID
-meetingSchema.statics.generateMeetingId = function(prefix = 'MTG') {
-  const year = new Date().getFullYear();
-  const random = Math.floor(1000 + Math.random() * 9000);
-  return `${prefix}-${year}-${random}`;
-};
 
 // Static method to get meeting statistics
 meetingSchema.statics.getStatsByAdmin = async function(adminId) {

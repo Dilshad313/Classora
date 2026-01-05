@@ -16,11 +16,14 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  X
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
-// API Service Import (create this file in services/meetingApi.js)
+// API Service Import
 import meetingApi from '../../../../services/meetingApi';
+import { classApi } from '../../../../services/classApi';
 
 const LiveClass = () => {
   const navigate = useNavigate();
@@ -33,7 +36,7 @@ const LiveClass = () => {
   
   // State for form
   const [meetingTitle, setMeetingTitle] = useState('');
-  const [meetingId, setMeetingId] = useState('');
+  const [meetingLink, setMeetingLink] = useState('');
   const [meetingWith, setMeetingWith] = useState('');
   const [selectedRecipient, setSelectedRecipient] = useState('');
   const [isScheduled, setIsScheduled] = useState(false);
@@ -41,6 +44,13 @@ const LiveClass = () => {
   const [scheduledTime, setScheduledTime] = useState('');
   const [duration, setDuration] = useState(60);
   const [message, setMessage] = useState('');
+  
+  // UI State for confirmation dialog
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    show: false,
+    meetingId: null,
+    meetingTitle: ''
+  });
   
   // UI State
   const [showSuccess, setShowSuccess] = useState(false);
@@ -107,11 +117,17 @@ const LiveClass = () => {
   // Helper functions to fetch available data
   const getAvailableClasses = async () => {
     try {
-      // Using existing classApi or create a new one
-      const response = await meetingApi.getAvailableClasses();
-      return response || [];
+      // Use getAllClassNames to get only class names
+      const classNames = await classApi.getAllClassNames();
+      // Convert to array format expected by component
+      return classNames.map((name, index) => ({
+        _id: `class-${index}`,
+        name: name,
+        className: name
+      }));
     } catch (error) {
       console.error('Error fetching classes:', error);
+      toast.error('Failed to load classes');
       return [];
     }
   };
@@ -136,35 +152,39 @@ const LiveClass = () => {
     }
   };
 
-  const generateMeetingId = () => {
-    const prefix = meetingTitle.substring(0, 3).toUpperCase() || 'MTG';
-    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    const generatedId = `${prefix}-${new Date().getFullYear()}-${random}`;
-    setMeetingId(generatedId);
-    return generatedId;
-  };
 
   const handleCreateMeeting = async (e) => {
     e.preventDefault();
 
     // Validation
     if (!meetingTitle.trim()) {
-      alert('Please enter a meeting title');
+      toast.error('Please enter a meeting title');
+      return;
+    }
+
+    if (!meetingLink.trim()) {
+      toast.error('Please enter a meeting link');
+      return;
+    }
+
+    // Validate Google Meet link
+    if (!meetingLink.includes('meet.google.com')) {
+      toast.error('Please enter a valid Google Meet link');
       return;
     }
 
     if (!meetingWith) {
-      alert('Please select who to meet with');
+      toast.error('Please select who to meet with');
       return;
     }
 
     if ((meetingWith === 'specificStudent' || meetingWith === 'specificClass' || meetingWith === 'specificTeacher') && !selectedRecipient) {
-      alert('Please select a recipient');
+      toast.error('Please select a recipient');
       return;
     }
 
     if (isScheduled && (!scheduledDate || !scheduledTime)) {
-      alert('Please select date and time for scheduled meeting');
+      toast.error('Please select date and time for scheduled meeting');
       return;
     }
 
@@ -175,7 +195,7 @@ const LiveClass = () => {
       // Prepare meeting data for backend
       const meetingData = {
         title: meetingTitle,
-        meetingId: meetingId || generateMeetingId(),
+        meetingLink: meetingLink,
         meetingType: meetingWith,
         meetingWith: getMeetingWithLabel(),
         duration: duration,
@@ -195,62 +215,50 @@ const LiveClass = () => {
       
       // Add to local state
       setMeetings(prev => [newMeeting, ...prev]);
-      setShowSuccess(true);
+      toast.success('Meeting created successfully!');
 
       // Reset form
-      setTimeout(() => {
-        setShowSuccess(false);
-        resetForm();
-      }, 2000);
+      resetForm();
 
     } catch (error) {
       console.error('Error creating meeting:', error);
       setError(`Failed to create meeting: ${error.message}`);
-      alert(`Failed to create meeting: ${error.message}`);
+      toast.error(`Failed to create meeting: ${error.message}`);
     } finally {
       setLoading(prev => ({ ...prev, creating: false }));
     }
   };
 
   const handleDeleteMeeting = async (id) => {
-    if (window.confirm('Are you sure you want to delete this meeting?')) {
-      try {
-        setLoading(prev => ({ ...prev, meetings: true }));
-        await meetingApi.deleteMeeting(id);
-        
-        // Remove from local state
-        setMeetings(prev => prev.filter(meeting => meeting._id !== id));
-        
-        alert('Meeting deleted successfully!');
-      } catch (error) {
-        console.error('Error deleting meeting:', error);
-        alert(`Failed to delete meeting: ${error.message}`);
-      } finally {
-        setLoading(prev => ({ ...prev, meetings: false }));
-      }
+    try {
+      setLoading(prev => ({ ...prev, meetings: true }));
+      await meetingApi.deleteMeeting(id);
+      
+      // Remove from local state
+      setMeetings(prev => prev.filter(meeting => meeting._id !== id));
+      
+      toast.success('Meeting deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting meeting:', error);
+      toast.error(`Failed to delete meeting: ${error.message}`);
+    } finally {
+      setLoading(prev => ({ ...prev, meetings: false }));
+      setDeleteConfirm({ show: false, meetingId: null, meetingTitle: '' });
     }
   };
 
   const handleJoinRoom = async (meeting) => {
     try {
-      const result = await meetingApi.joinMeeting(meeting._id);
-      
-      // Show meeting details (in real app, you would redirect to meeting URL)
-      alert(
-        `Joining Meeting:\n\n` +
-        `Title: ${meeting.title}\n` +
-        `Meeting ID: ${meeting.meetingId}\n` +
-        `Room: ${result.roomUrl || 'Not configured'}\n` +
-        `Password: ${result.meetingPassword || 'No password'}\n\n` +
-        `Note: This is a demo. In a real application, you would be redirected to the meeting room.`
-      );
-      
-      // For demo purposes, we'll just log the join
-      console.log('Joining meeting:', meeting.title, 'with details:', result);
-      
+      // For Google Meet links, open directly in new tab
+      if (meeting.meetingLink && meeting.meetingLink.includes('meet.google.com')) {
+        window.open(meeting.meetingLink, '_blank', 'noopener,noreferrer');
+        toast.success('Opening meeting room...');
+      } else {
+        toast.error('Invalid meeting link');
+      }
     } catch (error) {
       console.error('Error joining meeting:', error);
-      alert(`Failed to join meeting: ${error.message}`);
+      toast.error(`Failed to join meeting: ${error.message}`);
     }
   };
 
@@ -262,7 +270,7 @@ const LiveClass = () => {
         return 'All Teachers';
       case 'specificClass':
         const selectedClass = classes.find(c => c._id === selectedRecipient);
-        return selectedClass ? `${selectedClass.name} - Section ${selectedClass.section}` : 'Select Class';
+        return selectedClass ? selectedClass.name || selectedClass.className : 'Select Class';
       case 'specificStudent':
         const selectedStudent = students.find(s => s._id === selectedRecipient);
         return selectedStudent ? `${selectedStudent.studentName} - ${selectedStudent.registrationNo}` : 'Select Student';
@@ -276,7 +284,7 @@ const LiveClass = () => {
 
   const resetForm = () => {
     setMeetingTitle('');
-    setMeetingId('');
+    setMeetingLink('');
     setMeetingWith('');
     setSelectedRecipient('');
     setIsScheduled(false);
@@ -408,29 +416,21 @@ const LiveClass = () => {
                     />
                   </div>
 
-                  {/* Meeting ID */}
+                  {/* Meeting Link */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                      Meeting ID <span className="text-gray-400 dark:text-gray-500 text-xs">(Optional - Auto-generated)</span>
+                      Meeting Link <span className="text-red-500">*</span>
                     </label>
-                    <div className="flex space-x-2">
-                      <input
-                        type="text"
-                        value={meetingId}
-                        onChange={(e) => setMeetingId(e.target.value)}
-                        className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-purple-500 dark:focus:border-purple-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
-                        placeholder="Leave empty for auto-generation"
-                        disabled={loading.creating}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => generateMeetingId()}
-                        className="px-4 py-2.5 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-xl hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors font-semibold disabled:opacity-50"
-                        disabled={loading.creating}
-                      >
-                        Generate
-                      </button>
-                    </div>
+                    <input
+                      type="url"
+                      value={meetingLink}
+                      onChange={(e) => setMeetingLink(e.target.value)}
+                      className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-purple-500 dark:focus:border-purple-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                      placeholder="https://meet.google.com/xxx-xxxx-xxx"
+                      required
+                      disabled={loading.creating}
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Paste a Google Meet link</p>
                   </div>
 
                   {/* Meeting With */}
@@ -594,7 +594,7 @@ const LiveClass = () => {
                           <option value="">Choose...</option>
                           {meetingWith === 'specificClass' && classes.map(cls => (
                             <option key={cls._id} value={cls._id}>
-                              {cls.name} - Section {cls.section} ({cls.studentCount || 0} students)
+                              {cls.name || cls.className}
                             </option>
                           ))}
                           {meetingWith === 'specificStudent' && students.map(student => (
@@ -796,12 +796,16 @@ const LiveClass = () => {
                                   {meeting.status}
                                 </span>
                               </div>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 font-mono bg-gray-100 dark:bg-gray-700 inline-block px-2 py-1 rounded">
-                                {meeting.meetingId}
+                              <p className="text-xs text-gray-500 dark:text-gray-400 font-mono bg-gray-100 dark:bg-gray-700 inline-block px-2 py-1 rounded truncate max-w-[200px]">
+                                {meeting.meetingLink}
                               </p>
                             </div>
                             <button
-                              onClick={() => handleDeleteMeeting(meeting._id)}
+                              onClick={() => setDeleteConfirm({
+                                show: true,
+                                meetingId: meeting._id,
+                                meetingTitle: meeting.title
+                              })}
                               className="p-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-600 rounded-lg transition-colors ml-2"
                               title="Delete meeting"
                               disabled={loading.meetings}
@@ -866,6 +870,58 @@ const LiveClass = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirm.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 max-w-md w-full mx-4">
+            <div className="p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
+                  <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Delete Meeting</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">This action cannot be undone</p>
+                </div>
+              </div>
+              
+              <div className="mb-6">
+                <p className="text-gray-700 dark:text-gray-300">
+                  Are you sure you want to delete the meeting:
+                </p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100 mt-2">
+                  "{deleteConfirm.meetingTitle}"
+                </p>
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setDeleteConfirm({ show: false, meetingId: null, meetingTitle: '' })}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-semibold"
+                  disabled={loading.meetings}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDeleteMeeting(deleteConfirm.meetingId)}
+                  className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={loading.meetings}
+                >
+                  {loading.meetings ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Deleting...</span>
+                    </div>
+                  ) : (
+                    'Delete Meeting'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
