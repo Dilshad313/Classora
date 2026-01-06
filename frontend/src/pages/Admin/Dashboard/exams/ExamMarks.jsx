@@ -38,8 +38,8 @@ const ExamMarks = () => {
   const fetchDropdownData = async () => {
     setLoading(true);
     try {
-      // Fetch exams
-      const examsResult = await examAPI.getExamDropdown();
+      // Fetch exams (only published ones)
+      const examsResult = await examAPI.getExamDropdown(true, true);
       if (examsResult.success) {
         setExams(examsResult.data);
       }
@@ -311,8 +311,8 @@ const ExamMarks = () => {
                 >
                   <option value="">Choose Class...</option>
                   {classes.map(cls => (
-                    <option key={cls._id} value={cls._id}>
-                      {cls.className} - {cls.section}
+                    <option key={cls._id} value={cls.className}>
+                      {cls.className}
                     </option>
                   ))}
                 </select>

@@ -14,10 +14,13 @@ import {
   Save,
   Loader2,
   Search,
-  Filter
+  Filter,
+  AlertTriangle,
+  X
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import * as examAPI from '../../../../services/examsApi.js';
+import * as classApi from '../../../../services/classApi.js';
 
 const CreateExam = () => {
   const navigate = useNavigate();
@@ -25,6 +28,8 @@ const CreateExam = () => {
   // State for exams list
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [classes, setClasses] = useState([]);
+  const [loadingClasses, setLoadingClasses] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
     published: 0,
@@ -36,6 +41,7 @@ const CreateExam = () => {
   const [formData, setFormData] = useState({
     examinationName: '',
     examName: '',
+    className: '',
     startDate: '',
     endDate: '',
     isPublished: false
@@ -54,12 +60,32 @@ const CreateExam = () => {
   const [editingExam, setEditingExam] = useState(null);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, examId: null, examName: '' });
+  const [publishingExam, setPublishingExam] = useState(null);
 
   // Fetch exams on component mount and when filters change
   useEffect(() => {
     fetchExams();
     fetchStats();
+    fetchClasses();
   }, [filters]);
+
+  const fetchClasses = async () => {
+    setLoadingClasses(true);
+    try {
+      const result = await classApi.getAllClasses();
+      if (result.success) {
+        setClasses(result.data || []);
+      } else {
+        toast.error(result.message || 'Failed to fetch classes');
+      }
+    } catch (error) {
+      toast.error('An error occurred while fetching classes');
+      console.error('Fetch classes error:', error);
+    } finally {
+      setLoadingClasses(false);
+    }
+  };
 
   const fetchExams = async () => {
     setLoading(true);
@@ -106,6 +132,10 @@ const CreateExam = () => {
 
   const validateForm = () => {
     const newErrors = {};
+
+    if (!formData.className.trim()) {
+      newErrors.className = 'Class is required';
+    }
 
     if (!formData.examinationName.trim()) {
       newErrors.examinationName = 'Examination Name is required';
@@ -160,6 +190,7 @@ const CreateExam = () => {
         setFormData({
           examinationName: '',
           examName: '',
+          className: '',
           startDate: '',
           endDate: '',
           isPublished: false
@@ -193,6 +224,7 @@ const CreateExam = () => {
     setFormData({
       examinationName: exam.examinationName,
       examName: exam.examName,
+      className: exam.className || '',
       startDate: `${year}-${month}-${day}`,
       endDate: `${endYear}-${endMonth}-${endDay}`,
       isPublished: exam.isPublished
@@ -207,6 +239,7 @@ const CreateExam = () => {
     setFormData({
       examinationName: '',
       examName: '',
+      className: '',
       startDate: '',
       endDate: '',
       isPublished: false
@@ -214,13 +247,19 @@ const CreateExam = () => {
     setErrors({});
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this exam?')) {
-      return;
-    }
+  const handleDelete = (exam) => {
+    setDeleteDialog({
+      isOpen: true,
+      examId: exam._id,
+      examName: exam.examName
+    });
+  };
 
+  const confirmDelete = async () => {
+    const { examId, examName } = deleteDialog;
+    
     try {
-      const result = await examAPI.deleteExam(id);
+      const result = await examAPI.deleteExam(examId);
       if (result.success) {
         toast.success(result.message);
         fetchExams();
@@ -231,10 +270,17 @@ const CreateExam = () => {
     } catch (error) {
       toast.error('An error occurred while deleting the exam');
       console.error('Delete exam error:', error);
+    } finally {
+      setDeleteDialog({ isOpen: false, examId: null, examName: '' });
     }
   };
 
+  const cancelDelete = () => {
+    setDeleteDialog({ isOpen: false, examId: null, examName: '' });
+  };
+
   const handleTogglePublish = async (id) => {
+    setPublishingExam(id);
     try {
       const result = await examAPI.togglePublishStatus(id);
       if (result.success) {
@@ -247,6 +293,8 @@ const CreateExam = () => {
     } catch (error) {
       toast.error('An error occurred while updating publish status');
       console.error('Toggle publish error:', error);
+    } finally {
+      setPublishingExam(null);
     }
   };
 
@@ -334,6 +382,33 @@ const CreateExam = () => {
                 />
                 {errors.examName && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.examName}</p>
+                )}
+              </div>
+
+              {/* Class */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  Class <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="className"
+                  value={formData.className}
+                  onChange={handleChange}
+                  disabled={loadingClasses}
+                  className={`w-full px-4 py-2.5 border ${errors.className ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-xl focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all`}
+                >
+                  <option value="">Select Class</option>
+                  {classes.map(cls => (
+                    <option key={cls._id} value={cls.className}>
+                      {cls.className}
+                    </option>
+                  ))}
+                </select>
+                {errors.className && (
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.className}</p>
+                )}
+                {loadingClasses && (
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Loading classes...</p>
                 )}
               </div>
 
@@ -597,23 +672,21 @@ const CreateExam = () => {
                           <div className="flex justify-center">
                             <button
                               onClick={() => handleTogglePublish(exam._id)}
-                              className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+                              disabled={publishingExam === exam._id}
+                              className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                                 exam.isPublished
                                   ? 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900 dark:text-green-200 dark:hover:bg-green-800'
                                   : 'bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900 dark:text-orange-200 dark:hover:bg-orange-800'
                               }`}
                             >
-                              {exam.isPublished ? (
-                                <>
-                                  <Eye className="w-4 h-4" />
-                                  <span>Published</span>
-                                </>
+                              {publishingExam === exam._id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : exam.isPublished ? (
+                                <Eye className="w-4 h-4" />
                               ) : (
-                                <>
-                                  <EyeOff className="w-4 h-4" />
-                                  <span>Unpublished</span>
-                                </>
+                                <EyeOff className="w-4 h-4" />
                               )}
+                              <span>{exam.isPublished ? 'Published' : 'Unpublished'}</span>
                             </button>
                           </div>
                         </td>
@@ -627,7 +700,7 @@ const CreateExam = () => {
                               <Edit2 className="w-5 h-5" />
                             </button>
                             <button
-                              onClick={() => handleDelete(exam._id)}
+                              onClick={() => handleDelete(exam)}
                               className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
                               title="Delete exam"
                             >
@@ -651,6 +724,50 @@ const CreateExam = () => {
             </div>
           )}
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        {deleteDialog.isOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 max-w-md mx-4">
+              <div className="p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
+                    <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Delete Exam</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">This action cannot be undone</p>
+                  </div>
+                </div>
+                
+                <div className="mb-6">
+                  <p className="text-gray-700 dark:text-gray-300">
+                    Are you sure you want to delete <span className="font-semibold text-red-600 dark:text-red-400">{deleteDialog.examName}</span>?
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    All associated data will be permanently removed.
+                  </p>
+                </div>
+
+                <div className="flex space-x-3">
+                  <button
+                    onClick={cancelDelete}
+                    className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-semibold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDelete}
+                    className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all font-semibold flex items-center justify-center space-x-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Delete Exam</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

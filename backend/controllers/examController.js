@@ -55,6 +55,7 @@ export const getAllExams = async (req, res) => {
     // Format dates for frontend
     const formattedExams = exams.map(exam => ({
       ...exam.toObject(),
+      className: exam.className,
       formattedStartDate: exam.formattedStartDate,
       formattedEndDate: exam.formattedEndDate
     }));
@@ -113,6 +114,7 @@ export const getExamById = async (req, res) => {
       message: 'Exam retrieved successfully',
       data: {
         ...exam.toObject(),
+        className: exam.className,
         formattedStartDate: exam.formattedStartDate,
         formattedEndDate: exam.formattedEndDate
       }
@@ -136,10 +138,10 @@ export const createExam = async (req, res) => {
     console.log('📥 POST /api/exams');
     console.log('Request body:', JSON.stringify(req.body, null, 2));
     
-    const { examinationName, examName, startDate, endDate, isPublished = false } = req.body;
+    const { examinationName, examName, className, startDate, endDate, isPublished = false } = req.body;
     
     // Validation
-    if (!examinationName || !examName || !startDate || !endDate) {
+    if (!examinationName || !examName || !className || !startDate || !endDate) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         message: 'All fields are required'
@@ -169,6 +171,7 @@ export const createExam = async (req, res) => {
     const examData = {
       examinationName: examinationName.trim(),
       examName: examName.trim(),
+      className: className.trim(),
       startDate: new Date(startDate),
       endDate: new Date(endDate),
       isPublished: isPublished === true || isPublished === 'true',
@@ -235,7 +238,7 @@ export const updateExam = async (req, res) => {
       });
     }
     
-    const { examinationName, examName, startDate, endDate, status } = req.body;
+    const { examinationName, examName, className, startDate, endDate, status } = req.body;
     
     // Check for duplicate if exam name changed
     if (examName && examName !== exam.examName) {
@@ -258,6 +261,7 @@ export const updateExam = async (req, res) => {
     // Update fields
     if (examinationName) exam.examinationName = examinationName.trim();
     if (examName) exam.examName = examName.trim();
+    if (className) exam.className = className.trim();
     if (startDate) exam.startDate = new Date(startDate);
     if (endDate) exam.endDate = new Date(endDate);
     if (status) exam.status = status;
@@ -271,6 +275,7 @@ export const updateExam = async (req, res) => {
       message: 'Exam updated successfully',
       data: {
         ...exam.toObject(),
+        className: exam.className,
         formattedStartDate: exam.formattedStartDate,
         formattedEndDate: exam.formattedEndDate
       }
@@ -532,7 +537,6 @@ export const getExamStats = async (req, res) => {
     });
   }
 };
-
 /**
  * Get dropdown data (exams for dropdown)
  * @route GET /api/exams/dropdown
@@ -540,7 +544,7 @@ export const getExamStats = async (req, res) => {
 export const getExamDropdown = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { activeOnly = 'true' } = req.query;
+    const { activeOnly = 'true', isPublished } = req.query;
     
     console.log(`📥 GET /api/exams/dropdown`);
     
@@ -549,9 +553,14 @@ export const getExamDropdown = async (req, res) => {
     if (activeOnly === 'true') {
       query.status = 'active';
     }
+
+    // Filter by publish status if specified
+    if (isPublished !== undefined && isPublished !== 'all') {
+      query.isPublished = isPublished === 'true';
+    }
     
     const exams = await Exam.find(query)
-      .select('examName examinationName startDate endDate')
+      .select('examName examinationName startDate endDate isPublished')
       .sort({ createdAt: -1 });
     
     const formattedExams = exams.map(exam => ({
@@ -560,7 +569,8 @@ export const getExamDropdown = async (req, res) => {
       examinationName: exam.examinationName,
       startDate: exam.formattedStartDate,
       endDate: exam.formattedEndDate,
-      label: `${exam.examName} (${exam.formattedStartDate} - ${exam.formattedEndDate})`
+      isPublished: exam.isPublished,
+      label: `${exam.examName} (${exam.formattedStartDate} - ${exam.formattedEndDate})${exam.isPublished ? ' ✓' : ''}`
     }));
     
     console.log(`✅ Found ${formattedExams.length} exams for dropdown`);
@@ -578,7 +588,6 @@ export const getExamDropdown = async (req, res) => {
     });
   }
 };
-
 /**
  * Get exam marks for specific exam and class
  * @route GET /api/exams/:examId/marks/class/:classId
@@ -590,10 +599,10 @@ export const getExamMarksByClass = async (req, res) => {
     
     console.log(`📥 GET /api/exams/${examId}/marks/class/${classId}`);
     
-    if (!mongoose.Types.ObjectId.isValid(examId) || !mongoose.Types.ObjectId.isValid(classId)) {
+    if (!mongoose.Types.ObjectId.isValid(examId)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        message: 'Invalid exam or class ID'
+        message: 'Invalid exam ID'
       });
     }
     
@@ -606,8 +615,8 @@ export const getExamMarksByClass = async (req, res) => {
       });
     }
     
-    // Verify class exists
-    const classData = await Class.findOne({ _id: classId, createdBy: userId });
+    // Find class by className (classId parameter contains the className)
+    const classData = await Class.findOne({ className: classId, createdBy: userId });
     if (!classData) {
       return res.status(StatusCodes.NOT_FOUND).json({
         success: false,
@@ -615,16 +624,15 @@ export const getExamMarksByClass = async (req, res) => {
       });
     }
     
-    // Get all students in the class
+    // Get all students in the class (matching selectClass with className)
     const students = await Student.find({ 
       selectClass: classData.className,
-      section: classData.section,
       status: 'active'
     }).select('studentName registrationNo rollNumber');
     
     // Get subjects assigned to this class
     const assignment = await SubjectAssignment.findOne({ 
-      classId, 
+      classId: classData._id, 
       createdBy: userId 
     });
     
@@ -640,7 +648,7 @@ export const getExamMarksByClass = async (req, res) => {
           },
           class: {
             _id: classData._id,
-            name: `${classData.className} - ${classData.section}`
+            name: classData.className
           },
           subjects: [],
           students: []
@@ -651,7 +659,7 @@ export const getExamMarksByClass = async (req, res) => {
     // Get existing marks for this exam and class
     const existingMarks = await ExamMark.find({
       exam: examId,
-      class: classId,
+      class: classData._id,
       createdBy: userId
     });
     
@@ -715,7 +723,7 @@ export const getExamMarksByClass = async (req, res) => {
         },
         class: {
           _id: classData._id,
-          name: `${classData.className} - ${classData.section}`
+          name: classData.className
         },
         subjects: assignment.subjects.map(sub => ({
           _id: sub._id,
@@ -733,7 +741,6 @@ export const getExamMarksByClass = async (req, res) => {
     });
   }
 };
-
 /**
  * Save/update marks in bulk
  * @route POST /api/exams/:examId/marks/bulk
@@ -744,12 +751,12 @@ export const saveBulkMarks = async (req, res) => {
     const { examId } = req.params;
     console.log('📥 POST /api/exams/:examId/marks/bulk');
     
-    const { classId, marksData } = req.body;
+    const { className, marksData } = req.body;
     
-    if (!classId || !marksData || !Array.isArray(marksData)) {
+    if (!className || !marksData || !Array.isArray(marksData)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        message: 'Class ID and marks data are required'
+        message: 'Class name and marks data are required'
       });
     }
     
@@ -762,8 +769,8 @@ export const saveBulkMarks = async (req, res) => {
       });
     }
     
-    // Verify class exists
-    const classData = await Class.findOne({ _id: classId, createdBy: userId });
+    // Find class by className
+    const classData = await Class.findOne({ className, createdBy: userId });
     if (!classData) {
       return res.status(StatusCodes.NOT_FOUND).json({
         success: false,
@@ -791,7 +798,7 @@ export const saveBulkMarks = async (req, res) => {
         
         // Validate subject exists in class assignment
         const assignment = await SubjectAssignment.findOne({ 
-          classId, 
+          classId: classData._id, 
           createdBy: userId 
         });
         
@@ -803,7 +810,7 @@ export const saveBulkMarks = async (req, res) => {
         // Prepare mark data
         const markRecord = {
           exam: examId,
-          class: classId,
+          class: classData._id,
           student: studentId,
           subject: subjectId,
           marksObtained: parseFloat(marksObtained),
@@ -815,7 +822,7 @@ export const saveBulkMarks = async (req, res) => {
         // Check if mark already exists
         const existingMark = await ExamMark.findOne({
           exam: examId,
-          class: classId,
+          class: classData._id,
           student: studentId,
           subject: subjectId,
           createdBy: userId

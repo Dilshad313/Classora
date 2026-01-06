@@ -14,6 +14,12 @@ const examSchema = new mongoose.Schema({
     trim: true,
     maxlength: [200, 'Exam name cannot exceed 200 characters']
   },
+  className: {
+    type: String,
+    required: [true, 'Class is required'],
+    trim: true,
+    maxlength: [100, 'Class name cannot exceed 100 characters']
+  },
   startDate: {
     type: Date,
     required: [true, 'Start date is required']

@@ -119,8 +119,14 @@ export const getExamStats = async () => {
 };
 
 // Get exam dropdown data
-export const getExamDropdown = async (activeOnly = true) => {
-  return handleApiCall(`${API_BASE_URL}/exams/dropdown?activeOnly=${activeOnly}`, {
+export const getExamDropdown = async (activeOnly = true, isPublished) => {
+  const params = new URLSearchParams();
+  params.append('activeOnly', activeOnly);
+  if (isPublished !== undefined) {
+    params.append('isPublished', isPublished);
+  }
+  
+  return handleApiCall(`${API_BASE_URL}/exams/dropdown?${params}`, {
     method: 'GET'
   });
 };
