@@ -163,14 +163,14 @@ const DashboardLayout = () => {
     // Clear all user data from localStorage
     localStorage.removeItem('user');
     localStorage.removeItem('token');
-    
+
     // Close any open menus
     setUserMenuOpen(false);
     setMobileMenuOpen(false);
     setShowLogoutConfirm(false);
     
-    // Navigate to login page
-    navigate('/login', { replace: true });
+    // Navigate to Landing page
+    navigate('/', { replace: true });
   };
 
   const handleLogout = () => {

@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from "react-hot-toast";
 import { InstituteProfileProvider } from './context/InstituteProfileContext';
 
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import DashboardLayout from './pages/Admin/Layout/DashboardLayout';
@@ -169,7 +170,7 @@ const SmartRedirect = () => {
   const userStr = localStorage.getItem('user');
   
   if (!userStr) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/landing" />;
   }
   
   const user = JSON.parse(userStr);
@@ -227,6 +228,7 @@ function App() {
     <Router>
       <Routes>
         {/* Public Routes */}
+        <Route path="/landing" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         

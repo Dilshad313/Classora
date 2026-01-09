@@ -69,7 +69,7 @@ export const getExamMarksByClass = async (examId, classId) => {
 export const saveBulkMarks = async (examId, classId, marksData) => {
   return handleApiCall(`${API_BASE_URL}/exams/${examId}/marks/bulk`, {
     method: 'POST',
-    body: JSON.stringify({ classId, marksData })
+    body: JSON.stringify({ className: classId, marksData }) // Send as className to match backend expectation
   });
 };
 

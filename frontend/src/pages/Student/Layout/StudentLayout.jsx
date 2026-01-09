@@ -78,7 +78,7 @@ const StudentLayout = () => {
     setUserMenuOpen(false);
     setMobileMenuOpen(false);
     setShowLogoutConfirm(false);
-    navigate('/login', { replace: true });
+    navigate('/', { replace: true });
   };
 
   const handleLogout = () => {

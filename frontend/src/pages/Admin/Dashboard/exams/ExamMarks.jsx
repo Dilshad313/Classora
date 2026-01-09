@@ -82,14 +82,34 @@ const ExamMarks = () => {
   const fetchMarks = async (examId, classId) => {
     setLoading(true);
     try {
-            const [studentsResult, marksResult] = await Promise.all([
-        studentAPI.getStudents({ class: classId, limit: 0 }), // 0 limit to get all
-        examMarksAPI.getExamMarksByClass(examId, classId)
+      // Extract grade number from class name (e.g., "Grade 1" -> "1")
+      const gradeMatch = classId.match(/\d+/);
+      const gradeNumber = gradeMatch ? gradeMatch[0] : classId;
+      
+      console.log(`📥 Fetching marks for exam: ${examId}, class: ${classId} (grade: ${gradeNumber})`);
+      
+      const [studentsResult, marksResult] = await Promise.all([
+        studentAPI.getStudents({ class: gradeNumber, limit: 1000 }), // Use large number to get all students
+        examMarksAPI.getExamMarksByClass(examId, classId) // Returns full response with success property
       ]);
 
-      if (studentsResult.success && marksResult.success) {
-        const students = studentsResult.data.students;
+      console.log('📊 Students result:', studentsResult);
+      console.log('📊 Marks result:', marksResult);
+
+      // Handle different response structures
+      const students = Array.isArray(studentsResult) ? studentsResult : studentsResult?.data?.students || studentsResult?.data || [];
+      
+      if (marksResult.success) {
         const marksData = marksResult.data;
+
+        console.log(`✅ Found ${students.length} students and ${marksData.students?.length || 0} marks records`);
+
+        // Check if students exist
+        if (!students || students.length === 0) {
+          setMarksData(null);
+          toast.error(`No students found in ${classId}. Please check if students are assigned to this class.`);
+          return;
+        }
 
         // Create a map of marks for quick lookup
         const marksMap = new Map();
@@ -101,13 +121,22 @@ const ExamMarks = () => {
         const combinedStudents = students.map(student => {
           const studentMarks = marksMap.get(student._id);
           if (studentMarks) {
-            return studentMarks;
+            // Student has existing marks, ensure consistent structure
+            return {
+              ...studentMarks,
+              student: {
+                _id: studentMarks.student._id,
+                name: studentMarks.student.name || student.studentName || student.name,
+                rollNumber: studentMarks.student.rollNumber || student.rollNumber,
+                registrationNo: studentMarks.student.registrationNo || student.registrationNo
+              }
+            };
           }
           // If no marks exist, create a default structure
           return {
             student: {
               _id: student._id,
-              name: student.name,
+              name: student.studentName || student.name, // Handle both field names
               rollNumber: student.rollNumber,
               registrationNo: student.registrationNo
             },
@@ -122,15 +151,22 @@ const ExamMarks = () => {
           students: combinedStudents
         });
 
+        console.log(`✅ Combined data prepared for ${combinedStudents.length} students`);
+        console.log('📋 Final marksData structure:', {
+          subjects: marksData.subjects?.length || 0,
+          students: combinedStudents.length,
+          sampleStudent: combinedStudents[0]
+        });
+
       } else {
         setMarksData(null);
-        if (!studentsResult.success) toast.error(studentsResult.message || 'Failed to fetch students');
-        if (!marksResult.success) toast.error(marksResult.message || 'Failed to fetch marks');
+        console.error('❌ Marks API Error:', marksResult);
+        toast.error(marksResult.message || 'Failed to fetch marks');
       }
     } catch (error) {
       setMarksData(null); // Clear any existing data on error
+      console.error('❌ Fetch marks error:', error);
       toast.error('An error occurred while fetching marks');
-      console.error('Fetch marks error:', error);
     } finally {
       setLoading(false);
     }
@@ -141,21 +177,30 @@ const ExamMarks = () => {
 
     const numValue = value === '' ? '' : parseFloat(value);
     
+    // Find subject info once at the beginning
+    const subject = marksData.subjects.find(s => s._id === subjectId);
+    
     // Validate marks
     if (numValue !== '') {
-      const subject = marksData.subjects.find(s => s._id === subjectId);
       if (numValue < 0 || numValue > (subject?.totalMarks || 100)) {
+        toast.error(`Marks must be between 0 and ${subject?.totalMarks || 100}`);
         return;
       }
     }
 
     setMarksData(prev => {
+      if (!prev) return prev;
+      
       const updatedStudents = prev.students.map(student => {
         if (student.student._id === studentId) {
+          // Initialize marks object if it doesn't exist
+          const currentMarks = student.marks || {};
+          const currentSubjectMark = currentMarks[subjectId] || {};
+          
           const updatedMarks = {
-            ...student.marks,
+            ...currentMarks,
             [subjectId]: {
-              ...student.marks[subjectId],
+              ...currentSubjectMark,
               marksObtained: numValue,
               maxMarks: subject?.totalMarks || 100
             }
@@ -167,7 +212,7 @@ const ExamMarks = () => {
           
           prev.subjects.forEach(subject => {
             const mark = updatedMarks[subject._id];
-            if (mark && mark.marksObtained !== '') {
+            if (mark && mark.marksObtained !== '' && mark.marksObtained !== null && mark.marksObtained !== undefined) {
               totalObtained += parseFloat(mark.marksObtained);
               totalMaxMarks += parseFloat(mark.maxMarks);
             } else {
@@ -205,11 +250,11 @@ const ExamMarks = () => {
     marksData.students.forEach(student => {
       marksData.subjects.forEach(subject => {
         const mark = student.marks[subject._id];
-        if (mark && mark.marksObtained !== '') {
+        if (mark && mark.marksObtained !== '' && mark.marksObtained !== null && mark.marksObtained !== undefined) {
           marksToSave.push({
             studentId: student.student._id,
             subjectId: subject._id,
-            marksObtained: mark.marksObtained,
+            marksObtained: parseFloat(mark.marksObtained),
             maxMarks: mark.maxMarks || subject.totalMarks || 100
           });
         }
@@ -223,11 +268,18 @@ const ExamMarks = () => {
 
     setSaving(true);
     try {
+      console.log('💾 Saving marks:', marksToSave);
       const result = await examMarksAPI.saveBulkMarks(selectedExam, selectedClass, marksToSave);
+      console.log('📊 Save result:', result);
+      
       if (result.success) {
-        toast.success('Marks saved successfully!');
-        // Refresh marks data
-        await fetchMarks(selectedExam, selectedClass);
+        toast.success(`Marks saved successfully! (${marksToSave.length} marks updated)`);
+        
+        // Refresh marks data to show saved values
+        // Add a small delay to ensure backend has processed the save
+        setTimeout(() => {
+          fetchMarks(selectedExam, selectedClass);
+        }, 200);
       } else {
         toast.error(result.message || 'Failed to save marks');
       }
@@ -444,12 +496,21 @@ const ExamMarks = () => {
           </div>
         )}
 
-        {/* Empty State */}
+        {/* Empty State - No Students Found */}
         {!selectedExam && !selectedClass && !loading && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
             <Award className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Select Exam and Class</h3>
             <p className="text-gray-500 dark:text-gray-400">Please select an exam and class from the dropdowns above to start entering marks</p>
+          </div>
+        )}
+
+        {/* Empty State - Students Selected but No Data */}
+        {selectedExam && selectedClass && !loading && !marksData && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
+            <Users className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">No Students Found</h3>
+            <p className="text-gray-500 dark:text-gray-400">No students were found for the selected class. Please check if students are properly assigned to this class.</p>
           </div>
         )}
       </div>
