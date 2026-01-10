@@ -109,7 +109,36 @@ const ResultCard = () => {
         const student = filteredStudents[0]; // For demo, taking the first filtered student
         const result = await resultCardsAPI.generateResultCard(student._id, selectedExam);
         if (result.success) {
-          setGeneratedResult(result.data);
+          const resultData = result.data;
+
+          // Validate that required populated fields exist
+          if (!resultData) {
+            toast.error('Invalid result data received');
+            return;
+          }
+
+          // Check for null populated references and handle gracefully
+          if (!resultData.student && !resultData.studentInfo) {
+            toast.error('Student data is missing from result card');
+            return;
+          }
+
+          if (!resultData.exam && !resultData.examInfo) {
+            toast.error('Exam data is missing from result card');
+            return;
+          }
+
+          if (!resultData.class && !resultData.classInfo) {
+            toast.error('Class data is missing from result card');
+            return;
+          }
+
+          if (!resultData.institute && !resultData.instituteInfo) {
+            toast.error('Institute data is missing from result card');
+            return;
+          }
+
+          setGeneratedResult(resultData);
           setSelectedStudentObj(student);
           setShowResults(true);
           toast.success('Result card generated successfully!');

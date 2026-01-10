@@ -52,6 +52,24 @@ const handleApiCall = async (url, options = {}) => {
     }
 
     const result = await response.json();
+
+    // Validate the result data to prevent null reference errors
+    if (result.data && typeof result.data === 'object') {
+      // Check if populated fields exist and have required properties
+      if (result.data.student && result.data.student === null) {
+        throw new Error('Student data is missing from result card');
+      }
+      if (result.data.exam && result.data.exam === null) {
+        throw new Error('Exam data is missing from result card');
+      }
+      if (result.data.class && result.data.class === null) {
+        throw new Error('Class data is missing from result card');
+      }
+      if (result.data.institute && result.data.institute === null) {
+        throw new Error('Institute data is missing from result card');
+      }
+    }
+
     return result;
   } catch (error) {
     return handleApiError(error);

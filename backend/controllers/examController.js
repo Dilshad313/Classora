@@ -6,6 +6,7 @@ import Class from '../models/Class.js';
 import Student from '../models/Student.js';
 import Subject from '../models/Subject.js';
 import SubjectAssignment from '../models/SubjectAssignment.js';
+import InstituteProfile from '../models/InstituteProfile.js';
 import { StatusCodes } from 'http-status-codes';
 
 /**
@@ -986,176 +987,51 @@ export const generateResultCard = async (req, res) => {
       });
     }
     
-    // Get all marks for this student in this exam
-    console.log(`🔍 Looking for marks with:`, {
-      studentId,
-      examId,
-      userId,
-      studentName: student.studentName,
-      examName: exam.examName
-    });
-    
-    // First try without createdBy filter to see if marks exist
-    let marks = await ExamMark.find({
-      student: studentId,
-      exam: examId
-    }).populate('subject', 'name');
-    
-    console.log(`📊 Found ${marks.length} marks without createdBy filter`);
-    
-    // If no marks found, try with different class references
-    if (marks.length === 0) {
-      console.log(`🔍 Trying different class references...`);
-      
-      // Get all classes for this user to match potential class IDs
-      const allClasses = await Class.find({ createdBy: userId });
-      const classIds = allClasses.map(cls => cls._id);
-      
-      marks = await ExamMark.find({
-        student: studentId,
-        exam: examId,
-        class: { $in: classIds }
-      }).populate('subject', 'name');
-      
-      console.log(`📊 Found ${marks.length} marks with class ID matching`);
-    }
-    
-    // If still no marks, try with createdBy filter as last resort
-    if (marks.length === 0) {
-      marks = await ExamMark.find({
-        student: studentId,
-        exam: examId,
-        createdBy: userId
-      }).populate('subject', 'name');
-      
-      console.log(`📊 Found ${marks.length} marks with createdBy filter`);
-    }
-    
-    // Log all found marks for debugging
-    if (marks.length > 0) {
-      console.log(`✅ Found marks:`, marks.map(m => ({
-        subject: m.subject ? {
-          _id: m.subject._id,
-          name: m.subject.name
-        } : null,
-        subject: m.subject?.name,
-        marksObtained: m.marksObtained,
-        maxMarks: m.maxMarks,
-        class: m.class,
-        createdBy: m.createdBy
-      })));
-    }
-    
-    if (marks.length === 0) {
-      // Try to find any marks for this student to see if they exist at all
-      const anyStudentMarks = await ExamMark.find({ student: studentId });
-      const anyExamMarks = await ExamMark.find({ exam: examId });
-      
-      console.log(`❌ No marks found. Debug info:`, {
-        anyStudentMarksCount: anyStudentMarks.length,
-        anyExamMarksCount: anyExamMarks.length,
-        studentId,
-        examId,
-        userId
+    const instituteProfile = await InstituteProfile.findOne({ createdBy: userId });
+    if (!instituteProfile) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: 'Institute profile not found. Please set up your institute profile first.'
       });
-      
-      // Create sample marks for testing if no marks exist
-      console.log(`🔄 Creating sample marks for testing...`);
-      
-      // Get subjects for this class
-      try {
-        const SubjectAssignment = (await import('../models/SubjectAssignment.js')).default;
-        const assignment = await SubjectAssignment.findOne({ 
-          classId: classData._id, 
-          createdBy: userId 
-        });
-        
-        if (assignment && assignment.subjects && assignment.subjects.length > 0) {
-          const sampleMarks = [];
-          
-          for (const subject of assignment.subjects) {
-            const randomMarks = Math.floor(Math.random() * 30) + 70; // Random marks between 70-100
-            const maxMarks = subject.totalMarks || 100;
-            const percentage = (randomMarks / maxMarks) * 100;
-            
-            let grade = 'F';
-            if (percentage >= 90) grade = 'A+';
-            else if (percentage >= 80) grade = 'A';
-            else if (percentage >= 70) grade = 'B+';
-            else if (percentage >= 60) grade = 'B';
-            else if (percentage >= 50) grade = 'C';
-            else if (percentage >= 40) grade = 'D';
-            
-            // Create sample mark
-            const sampleMark = await ExamMark.create({
-              exam: examId,
-              class: classData._id,
-              student: studentId,
-              subject: subject._id,
-              marksObtained: randomMarks,
-              maxMarks: maxMarks,
-              percentage: percentage,
-              grade: grade,
-              remarks: grade === 'A+' ? 'Outstanding' : grade === 'A' ? 'Excellent' : grade === 'B+' ? 'Very Good' : grade === 'B' ? 'Good' : grade === 'C' ? 'Average' : grade === 'D' ? 'Pass' : 'Needs Improvement',
-              createdBy: userId,
-              lastUpdatedBy: userId
-            });
-            
-            sampleMarks.push({
-              subject: {
-                _id: subject._id,
-                name: subject.subjectName
-              },
-              marksObtained: randomMarks,
-              maxMarks: maxMarks,
-              percentage: percentage,
-              grade: grade
-            });
-          }
-          
-          console.log(`✅ Created ${sampleMarks.length} sample marks`);
-          marks = sampleMarks;
-          
-          // Show success message to user
-          console.log(`🎯 Sample marks created for result card generation`);
-        } else {
-          // If no subjects assigned, create basic sample marks
-          const basicSubjects = [
-            { _id: new mongoose.Types.ObjectId(), name: 'Mathematics' },
-            { _id: new mongoose.Types.ObjectId(), name: 'Science' },
-            { _id: new mongoose.Types.ObjectId(), name: 'English' }
-          ];
-          
-          marks = basicSubjects.map(subject => {
-            const randomMarks = Math.floor(Math.random() * 30) + 70;
-            const percentage = (randomMarks / 100) * 100;
-            let grade = 'B';
-            if (percentage >= 90) grade = 'A+';
-            else if (percentage >= 80) grade = 'A';
-            else if (percentage >= 70) grade = 'B+';
-            
-            return {
-              subject: subject,
-              marksObtained: randomMarks,
-              maxMarks: 100,
-              percentage: percentage,
-              grade: grade
-            };
-          });
-          
-          console.log(`✅ Created basic sample marks`);
-        }
-      } catch (error) {
-        console.error('❌ Error creating sample marks:', error);
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-          success: false,
-          message: 'Failed to create sample marks for testing'
-        });
-      }
     }
-    
+
+    // Get all marks for this student in this exam
+    const marks = await ExamMark.find({
+      student: studentId,
+      exam: examId,
+      createdBy: userId,
+    }).populate('subject', 'subjectName totalMarks');
+
+    if (marks.length === 0) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: 'No marks found for this student in the selected exam. Please enter marks first.'
+      });
+    }
+
+    // Calculate totals and prepare subjects
+    let totalObtained = 0;
+    let totalMaxMarks = 0;
+    const subjects = marks.map((mark, idx) => {
+      const subjectName = mark.subject?.subjectName || mark.subjectName || 'N/A';
+      const maxMarks = mark.maxMarks ?? mark.subject?.totalMarks ?? 0;
+      totalObtained += mark.marksObtained;
+      totalMaxMarks += maxMarks;
+      return {
+        subject: mark.subject?._id || mark.subject || undefined,
+        subjectName,
+        marksObtained: mark.marksObtained,
+        maxMarks,
+        percentage: mark.percentage,
+        grade: mark.grade,
+      };
+    });
+
+    const overallPercentage = totalMaxMarks > 0 ? (totalObtained / totalMaxMarks) * 100 : 0;
+
+    // Determine overall grade and remarks
     let overallGrade, overallRemarks, resultStatus;
-    
+
     if (overallPercentage >= 90) {
       overallGrade = 'A+';
       overallRemarks = 'Outstanding';
@@ -1178,9 +1054,9 @@ export const generateResultCard = async (req, res) => {
       overallGrade = 'F';
       overallRemarks = 'Fail';
     }
-    
+
     resultStatus = overallPercentage >= 40 ? 'PASS' : 'FAIL';
-    
+
     // Create or update result card
     const resultCard = await ResultCard.findOneAndUpdate(
       { student: studentId, exam: examId, createdBy: userId },
@@ -1188,6 +1064,7 @@ export const generateResultCard = async (req, res) => {
         student: studentId,
         exam: examId,
         class: classData._id,
+        institute: instituteProfile._id, // Add institute ID
         subjects,
         totalObtained,
         totalMaxMarks,
@@ -1196,19 +1073,62 @@ export const generateResultCard = async (req, res) => {
         overallRemarks,
         resultStatus,
         generatedDate: new Date(),
-        createdBy: userId
+        createdBy: userId,
       },
       { new: true, upsert: true, runValidators: true }
-    ).populate('student', 'studentName registrationNo rollNumber fatherName motherName dateOfBirth')
-     .populate('exam', 'examName examinationName startDate endDate')
-     .populate('class', 'className section');
-    
+    );
+
+    // Manually populate the fields to handle potential null references
+    const populatedResultCard = {
+      ...resultCard.toObject(), // Convert to plain object to avoid mongoose quirks
+      student: await Student.findById(resultCard.student)
+        .select('studentName registrationNo rollNumber fatherName motherName dateOfBirth address photoUrl picture')
+        .lean(), // Use lean() to get plain JS object
+      exam: await Exam.findById(resultCard.exam)
+        .select('examName examinationName startDate endDate academicYear')
+        .lean(), // Use lean() to get plain JS object
+      class: await Class.findById(resultCard.class)
+        .select('className section')
+        .lean(), // Use lean() to get plain JS object
+      institute: await InstituteProfile.findById(resultCard.institute)
+        .select('instituteName tagline phone address country website logoUrl')
+        .lean() // Use lean() to get plain JS object
+    };
+
+    // Check if any of the populated fields are null
+    if (!populatedResultCard.student || !populatedResultCard.exam || !populatedResultCard.class || !populatedResultCard.institute) {
+      console.error('❌ One or more populated fields are null:', {
+        student: populatedResultCard.student,
+        exam: populatedResultCard.exam,
+        class: populatedResultCard.class,
+        institute: populatedResultCard.institute
+      });
+
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Failed to generate result card: Missing required reference data'
+      });
+    }
+
+
     console.log(`✅ Result card generated for student: ${student.studentName}`);
-    
+
+    // Log the result card data to check for null values
+    console.log('📊 Result card data:', JSON.stringify({
+      studentName: populatedResultCard.student?.studentName,
+      examName: populatedResultCard.exam?.examName,
+      className: populatedResultCard.class?.className,
+      instituteName: populatedResultCard.institute?.instituteName,
+      totalSubjects: populatedResultCard.subjects?.length,
+      overallPercentage: populatedResultCard.overallPercentage,
+      overallGrade: populatedResultCard.overallGrade,
+      resultStatus: populatedResultCard.resultStatus
+    }, null, 2));
+
     res.status(StatusCodes.OK).json({
       success: true,
       message: 'Result card generated successfully',
-      data: resultCard
+      data: populatedResultCard
     });
   } catch (error) {
     console.error('❌ Generate result card error:', error);
