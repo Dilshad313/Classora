@@ -1,8 +1,51 @@
 import mongoose from 'mongoose';
 import ClassTest from '../models/ClassTest.js';
-import Class from '../models/Class.js';
 import Student from '../models/Student.js';
+import Class from '../models/Class.js';
 import { StatusCodes } from 'http-status-codes';
+
+// Helper: normalize a ClassTest document to add percentage-based stats while retaining raw marks
+const normalizeTestStats = (testDoc) => {
+  const test = testDoc.toObject ? testDoc.toObject() : { ...testDoc };
+  const marks = test.studentMarks || [];
+  const total = test.totalMarks || 0;
+
+  if (marks.length && total > 0) {
+    const obtainedList = marks.map(m => m.obtainedMarks || 0);
+    const sum = obtainedList.reduce((a, b) => a + b, 0);
+    const avgRaw = sum / marks.length;
+    const highestRaw = Math.max(...obtainedList);
+    const lowestRaw = Math.min(...obtainedList);
+    const passThreshold = total * 0.33;
+    const passCount = obtainedList.filter(m => m >= passThreshold).length;
+    const failCount = marks.length - passCount;
+
+    const avgPct = (avgRaw / total) * 100;
+    const highestPct = (highestRaw / total) * 100;
+    const lowestPct = (lowestRaw / total) * 100;
+
+    return {
+      ...test,
+      averageMarks: avgRaw,
+      averagePercentage: Math.round(avgPct * 100) / 100,
+      highestMarks: Math.round(highestRaw * 100) / 100,
+      lowestMarks: Math.round(lowestRaw * 100) / 100,
+      passCount,
+      failCount
+    };
+  }
+
+  // Fallback: ensure averagePercentage exists even if no marks
+  const avgPct = total > 0 ? ((test.averageMarks || 0) / total) * 100 : (test.averageMarks || 0);
+  return {
+    ...test,
+    averagePercentage: Math.round(avgPct * 100) / 100,
+    passCount: test.passCount || 0,
+    failCount: test.failCount || 0,
+    highestMarks: test.highestMarks || 0,
+    lowestMarks: test.lowestMarks || 0
+  };
+};
 
 /**
  * Get all tests with filtering
@@ -557,30 +600,63 @@ export const getDropdownData = async (req, res) => {
     let subjects = [];
     let students = [];
     
-    // Get subjects based on class if classId is provided
+    // Get subjects/students for the selected class (or all classes when none provided)
     if (classId && mongoose.Types.ObjectId.isValid(classId)) {
+      // Resolve class data to bridge classId ↔ selectClass mismatch
+      const classData = await Class.findOne({ _id: classId, createdBy: userId });
+
       // Get subjects assigned to this class
-      const SubjectAssignment = mongoose.model('SubjectAssignment');
-      const assignment = await SubjectAssignment.findOne({ 
-        classId, 
-        createdBy: userId 
-      });
-      
-      if (assignment && assignment.subjects) {
-        subjects = assignment.subjects.map(sub => ({
-          _id: sub._id,
-          name: sub.subjectName,
-          totalMarks: sub.totalMarks
-        }));
+      if (classData) {
+        const SubjectAssignment = mongoose.model('SubjectAssignment');
+        const assignment = await SubjectAssignment.findOne({ 
+          classId, 
+          createdBy: userId 
+        });
+        
+        if (assignment && assignment.subjects) {
+          subjects = assignment.subjects.map(sub => ({
+            _id: sub._id,
+            name: sub.subjectName,
+            totalMarks: sub.totalMarks
+          }));
+        }
       }
       
-      // Get students in this class
+      // Get students in this class using className/grade as stored in Student.selectClass
+      let classIdentifiers = [];
+      if (classData) {
+        classIdentifiers.push(classData.className);
+        // If className contains "Grade X", also match numeric part (e.g., "1")
+        const gradeMatch = classData.className.match(/\d+/);
+        if (gradeMatch) {
+          classIdentifiers.push(gradeMatch[0]);
+        }
+      }
+
       students = await Student.find({ 
-        selectClass: classId.toString(),
+        selectClass: classIdentifiers.length ? { $in: classIdentifiers } : classId.toString(),
         status: 'active'
       })
       .select('studentName registrationNo rollNumber')
       .sort({ studentName: 1 });
+    } else {
+      // No class specified: provide all subjects user has assigned across classes
+      const SubjectAssignment = mongoose.model('SubjectAssignment');
+      const assignments = await SubjectAssignment.find({ createdBy: userId });
+      const subjectMap = new Map();
+      assignments.forEach(a => {
+        (a.subjects || []).forEach(sub => {
+          if (!subjectMap.has(sub.subjectName)) {
+            subjectMap.set(sub.subjectName, {
+              _id: sub._id,
+              name: sub.subjectName,
+              totalMarks: sub.totalMarks
+            });
+          }
+        });
+      });
+      subjects = Array.from(subjectMap.values());
+      // Students remain empty until a class is chosen
     }
     
     console.log(`✅ Dropdown data retrieved: ${classes.length} classes, ${subjects.length} subjects, ${students.length} students`);
@@ -621,14 +697,16 @@ export const getClassWiseResults = async (req, res) => {
       });
     }
     
-    // Get all published tests for this class
+    // Get all tests for this class (published or draft)
     const tests = await ClassTest.find({
       classId,
-      createdBy: userId,
-      isPublished: true
+      createdBy: userId
     })
     .select('testName testDate subjectName totalMarks averageMarks passCount failCount studentMarks')
     .sort({ testDate: -1 });
+    
+    // Normalize test stats (adds averagePercentage, recomputes pass/fail/high/low)
+    const testsWithPercentages = tests.map(normalizeTestStats);
     
     // Calculate overall statistics
     let totalTests = tests.length;
@@ -637,9 +715,9 @@ export const getClassWiseResults = async (req, res) => {
     let totalStudents = 0;
     
     if (tests.length > 0) {
-      overallAverage = tests.reduce((sum, test) => sum + test.averageMarks, 0) / tests.length;
-      totalPassCount = tests.reduce((sum, test) => sum + test.passCount, 0);
-      totalStudents = tests[0].studentMarks.length; // Assuming same students in all tests
+      overallAverage = testsWithPercentages.reduce((sum, test) => sum + (test.averagePercentage || 0), 0) / tests.length;
+      totalPassCount = testsWithPercentages.reduce((sum, test) => sum + (test.passCount || 0), 0);
+      totalStudents = testsWithPercentages[0].studentMarks.length; // Assuming same students in all tests
     }
     
     // Get subject-wise performance
@@ -651,7 +729,7 @@ export const getClassWiseResults = async (req, res) => {
       success: true,
       message: 'Class-wise results retrieved successfully',
       data: {
-        tests,
+        tests: testsWithPercentages,
         summary: {
           totalTests,
           overallAverage: Math.round(overallAverage * 100) / 100,
@@ -693,8 +771,7 @@ export const getClassSubjectResults = async (req, res) => {
     const tests = await ClassTest.find({
       classId,
       subjectName,
-      createdBy: userId,
-      isPublished: true
+      createdBy: userId
     })
     .select('testName testDate testType totalMarks averageMarks highestMarks lowestMarks studentMarks')
     .sort({ testDate: 1 });
@@ -721,6 +798,9 @@ export const getClassSubjectResults = async (req, res) => {
     const studentPerformanceMap = new Map();
     
     tests.forEach(test => {
+      const averagePercentage = test.totalMarks ? (test.averageMarks / test.totalMarks) * 100 : 0;
+      test.averagePercentage = Math.round(averagePercentage * 100) / 100;
+      
       test.studentMarks.forEach(mark => {
         if (!studentPerformanceMap.has(mark.studentId.toString())) {
           studentPerformanceMap.set(mark.studentId.toString(), {
@@ -729,6 +809,7 @@ export const getClassSubjectResults = async (req, res) => {
             rollNo: mark.rollNo,
             testsTaken: 0,
             totalMarks: 0,
+            totalPossible: 0,
             testScores: []
           });
         }
@@ -736,6 +817,7 @@ export const getClassSubjectResults = async (req, res) => {
         const student = studentPerformanceMap.get(mark.studentId.toString());
         student.testsTaken++;
         student.totalMarks += mark.obtainedMarks;
+        student.totalPossible += test.totalMarks;
         student.testScores.push({
           testName: test.testName,
           testDate: test.testDate,
@@ -749,7 +831,7 @@ export const getClassSubjectResults = async (req, res) => {
     const studentPerformance = Array.from(studentPerformanceMap.values()).map(student => ({
       ...student,
       averageScore: student.totalMarks / student.testsTaken,
-      overallPercentage: (student.totalMarks / (student.testsTaken * tests[0].totalMarks)) * 100
+      overallPercentage: (student.totalMarks / student.totalPossible) * 100
     }));
     
     // Sort by average score
@@ -772,10 +854,10 @@ export const getClassSubjectResults = async (req, res) => {
     // Calculate summary
     const summary = {
       totalTests: tests.length,
-      averageScore: tests.reduce((sum, test) => sum + test.averageMarks, 0) / tests.length,
-      highestScore: Math.max(...tests.map(t => t.highestMarks)),
-      lowestScore: Math.min(...tests.map(t => t.lowestMarks)),
-      passRate: (tests.reduce((sum, test) => sum + test.passCount, 0) / 
+      averageScore: tests.reduce((sum, test) => sum + (test.averagePercentage || 0), 0) / tests.length,
+      highestScore: Math.max(...tests.map(t => t.averagePercentage || 0)),
+      lowestScore: Math.min(...tests.map(t => t.averagePercentage || 0)),
+      passRate: (tests.reduce((sum, test) => sum + (test.passCount || 0), 0) / 
                 (tests.length * tests[0].studentMarks.length)) * 100
     };
     
@@ -831,8 +913,7 @@ export const getStudentSubjectResults = async (req, res) => {
     // Get all tests for this student
     const tests = await ClassTest.find({
       'studentMarks.studentId': studentId,
-      createdBy: userId,
-      isPublished: true
+      createdBy: userId
     })
     .select('testName testDate subjectName testType totalMarks studentMarks')
     .sort({ testDate: -1 });
@@ -867,7 +948,8 @@ export const getStudentSubjectResults = async (req, res) => {
     // Calculate subject-wise averages
     const subjectPerformance = Object.keys(subjectGroups).map(subjectName => {
       const subjectTests = subjectGroups[subjectName];
-      const totalMarks = subjectTests.reduce((sum, test) => sum + test.obtainedMarks, 0);
+      const totalMarks = subjectTests.reduce((sum, test) => sum + (test.obtainedMarks || 0), 0);
+      
       const averageScore = totalMarks / subjectTests.length;
       
       return {
@@ -883,7 +965,7 @@ export const getStudentSubjectResults = async (req, res) => {
     // Calculate overall statistics
     const overallStats = {
       totalTests: studentTests.length,
-      overallAverage: studentTests.reduce((sum, test) => sum + test.percentage, 0) / studentTests.length,
+      overallAverage: studentTests.length ? studentTests.reduce((sum, test) => sum + (test.percentage || 0), 0) / studentTests.length : 0,
       subjectsTaken: Object.keys(subjectGroups).length,
       testHistory: studentTests
     };
@@ -934,7 +1016,6 @@ export const getDateRangeResults = async (req, res) => {
     
     const query = {
       createdBy: userId,
-      isPublished: true,
       testDate: {
         $gte: new Date(startDate),
         $lte: new Date(endDate)
@@ -955,21 +1036,30 @@ export const getDateRangeResults = async (req, res) => {
       .sort({ testDate: 1 })
       .populate('classId', 'className section');
     
+    // Normalize averages to percentage for consistent frontend display
+    const testsWithPercentages = tests.map(test => {
+      const avgPct = test.totalMarks ? ((test.averageMarks || 0) / test.totalMarks) * 100 : 0;
+      return {
+        ...test.toObject(),
+        averagePercentage: Math.round(avgPct * 100) / 100
+      };
+    });
+    
     // Calculate statistics
     const totalTests = tests.length;
     let totalStudents = 0;
     let totalAverage = 0;
     let totalPassCount = 0;
     
-    if (tests.length > 0) {
-      totalStudents = tests[0].studentMarks.length;
-      totalAverage = tests.reduce((sum, test) => sum + test.averageMarks, 0) / tests.length;
-      totalPassCount = tests.reduce((sum, test) => sum + test.passCount, 0);
+    if (testsWithPercentages.length > 0) {
+      totalStudents = testsWithPercentages[0].studentMarks.length;
+      totalAverage = testsWithPercentages.reduce((sum, test) => sum + (test.averagePercentage || 0), 0) / testsWithPercentages.length;
+      totalPassCount = testsWithPercentages.reduce((sum, test) => sum + (test.passCount || 0), 0);
     }
     
     // Group by week for trend analysis
     const weeklyTrend = {};
-    tests.forEach(test => {
+    testsWithPercentages.forEach(test => {
       const weekStart = new Date(test.testDate);
       weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week (Sunday)
       const weekKey = weekStart.toISOString().split('T')[0];
@@ -984,7 +1074,7 @@ export const getDateRangeResults = async (req, res) => {
       }
       
       weeklyTrend[weekKey].tests++;
-      weeklyTrend[weekKey].totalAverage += test.averageMarks;
+      weeklyTrend[weekKey].totalAverage += test.averagePercentage || 0;
       weeklyTrend[weekKey].averageScore = weeklyTrend[weekKey].totalAverage / weeklyTrend[weekKey].tests;
     });
     
@@ -999,7 +1089,7 @@ export const getDateRangeResults = async (req, res) => {
       success: true,
       message: 'Date range results retrieved successfully',
       data: {
-        tests,
+        tests: testsWithPercentages,
         summary: {
           totalTests,
           totalStudents,
@@ -1048,11 +1138,10 @@ export const getPerformanceReport = async (req, res) => {
       });
     }
     
-    // Get all published tests for this class
+    // Get all tests for this class (published or draft)
     const tests = await ClassTest.find({
       classId,
-      createdBy: userId,
-      isPublished: true
+      createdBy: userId
     })
     .select('testName testDate subjectName studentMarks totalMarks');
     
@@ -1076,11 +1165,14 @@ export const getPerformanceReport = async (req, res) => {
       });
     }
     
+    // Normalize tests to ensure percentage fields exist
+    const normalizedTests = tests.map(normalizeTestStats);
+    
     // Calculate student performance across all tests
     const studentPerformanceMap = new Map();
     const subjectPerformanceMap = new Map();
     
-    tests.forEach(test => {
+    normalizedTests.forEach(test => {
       // Update subject performance
       if (!subjectPerformanceMap.has(test.subjectName)) {
         subjectPerformanceMap.set(test.subjectName, {
@@ -1091,7 +1183,7 @@ export const getPerformanceReport = async (req, res) => {
       }
       const subject = subjectPerformanceMap.get(test.subjectName);
       subject.tests++;
-      subject.totalAverage += test.averageMarks || 0;
+      subject.totalAverage += test.averagePercentage || 0;
       
       // Update student performance
       test.studentMarks.forEach(mark => {
@@ -1117,7 +1209,7 @@ export const getPerformanceReport = async (req, res) => {
     // Calculate subject averages
     const subjectPerformance = Array.from(subjectPerformanceMap.values()).map(subject => ({
       ...subject,
-      averageScore: subject.totalAverage / subject.tests
+      averageScore: subject.tests ? Math.round((subject.totalAverage / subject.tests) * 100) / 100 : 0
     }));
     
     // Calculate student averages and grades
@@ -1169,8 +1261,12 @@ export const getPerformanceReport = async (req, res) => {
     
     // Calculate overall statistics
     const totalStudents = studentPerformance.length;
-    const averageScore = studentPerformance.reduce((sum, student) => sum + student.averagePercentage, 0) / totalStudents;
-    const passRate = (studentPerformance.filter(s => s.status === 'Pass').length / totalStudents) * 100;
+    const averageScore = totalStudents > 0
+      ? Math.round((studentPerformance.reduce((sum, student) => sum + student.averagePercentage, 0) / totalStudents) * 100) / 100
+      : 0;
+    const passRate = totalStudents > 0
+      ? Math.round((studentPerformance.filter(s => s.status === 'Pass').length / totalStudents) * 10000) / 100
+      : 0;
     
     console.log('✅ Performance report retrieved');
     

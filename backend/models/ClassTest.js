@@ -197,9 +197,33 @@ classTestSchema.statics.getSubjectPerformance = async function(classId, adminId)
         _id: '$subjectName',
         subjectId: { $first: '$subjectId' },
         totalTests: { $sum: 1 },
-        averageScore: { $avg: '$averageMarks' },
-        highestAverage: { $max: '$averageMarks' },
-        lowestAverage: { $min: '$averageMarks' }
+        averageScore: { 
+          $avg: { 
+            $cond: [
+              { $gt: ['$totalMarks', 0] },
+              { $multiply: [ { $divide: ['$averageMarks', '$totalMarks'] }, 100 ] },
+              0
+            ]
+          } 
+        },
+        highestAverage: { 
+          $max: { 
+            $cond: [
+              { $gt: ['$totalMarks', 0] },
+              { $multiply: [ { $divide: ['$averageMarks', '$totalMarks'] }, 100 ] },
+              0
+            ]
+          } 
+        },
+        lowestAverage: { 
+          $min: { 
+            $cond: [
+              { $gt: ['$totalMarks', 0] },
+              { $multiply: [ { $divide: ['$averageMarks', '$totalMarks'] }, 100 ] },
+              0
+            ]
+          } 
+        }
       }
     },
     { $sort: { averageScore: -1 } }

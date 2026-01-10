@@ -1013,7 +1013,12 @@ export const generateResultCard = async (req, res) => {
     let totalObtained = 0;
     let totalMaxMarks = 0;
     const subjects = marks.map((mark, idx) => {
-      const subjectName = mark.subject?.subjectName || mark.subjectName || 'N/A';
+      // Subject model uses `name`, but subject assignments may store `subjectName`.
+      // Use both to avoid returning "N/A" when only one is present.
+      const subjectName = mark.subject?.subjectName
+        || mark.subject?.name
+        || mark.subjectName
+        || 'N/A';
       const maxMarks = mark.maxMarks ?? mark.subject?.totalMarks ?? 0;
       totalObtained += mark.marksObtained;
       totalMaxMarks += maxMarks;

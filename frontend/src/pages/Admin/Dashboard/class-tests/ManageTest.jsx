@@ -12,8 +12,10 @@ import {
   Edit2,
   Trash2,
   AlertCircle,
-  Loader2
+  Loader2,
+  AlertTriangle
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { 
   getDropdownData, 
   createClassTest, 
@@ -49,6 +51,9 @@ const ManageTest = () => {
   const [loading, setLoading] = useState(false);
   const [existingTestId, setExistingTestId] = useState(null);
   const [error, setError] = useState('');
+  const [shouldCheckExisting, setShouldCheckExisting] = useState(false);
+  const [isTestNameManual, setIsTestNameManual] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Load classes on component mount
   useEffect(() => {
@@ -82,10 +87,10 @@ const ManageTest = () => {
 
   // When subject, date, and marks are set, check for existing test
   useEffect(() => {
-    if (selectedClass && selectedSubject && testDate && totalMarks) {
+    if (shouldCheckExisting && selectedClass && selectedSubject && testDate && totalMarks) {
       checkExistingTest();
     }
-  }, [selectedClass, selectedSubject, testDate, totalMarks]);
+  }, [selectedClass, selectedSubject, testDate, totalMarks, shouldCheckExisting]);
 
   const fetchClassData = async (classId) => {
     try {
@@ -140,24 +145,28 @@ const ManageTest = () => {
         
         setMarks(updatedMarks);
         setTestName(existingTest.testName || `Test - ${new Date(testDate).toLocaleDateString()}`);
+        setIsTestNameManual(!!existingTest.testName);
         setTestType(existingTest.testType || 'unit');
         setIsSaved(true);
         setIsEditing(false);
       } else {
         setExistingTestId(null);
-        setTestName(`Test - ${new Date(testDate).toLocaleDateString()}`);
+        if (!isTestNameManual) {
+          setTestName(`Test - ${new Date(testDate).toLocaleDateString()}`);
+        }
         setIsSaved(false);
       }
     } catch (err) {
       console.error('Error checking existing test:', err);
     } finally {
       setLoading(false);
+      setShouldCheckExisting(false);
     }
   };
 
   const getClassName = () => {
     const cls = classes.find(c => c._id === selectedClass);
-    return cls ? `${cls.className} - Section ${cls.section}` : '';
+    return cls ? `${cls.className}${cls.section ? ` - ${cls.section}` : ''}` : '';
   };
 
   const getSubjectName = () => {
@@ -171,11 +180,13 @@ const ManageTest = () => {
     setTestDate('');
     setTotalMarks('');
     setTestName('');
+    setIsTestNameManual(false);
     setMarks([]);
     setExistingTestId(null);
     setIsSaved(false);
     setIsEditing(false);
     setError('');
+    setShouldCheckExisting(false);
   };
 
   const handleSubjectChange = (e) => {
@@ -183,6 +194,7 @@ const ManageTest = () => {
     setTestDate('');
     setTotalMarks('');
     setTestName('');
+    setIsTestNameManual(false);
     setMarks(students.map(student => ({
       studentId: student._id,
       studentName: student.studentName,
@@ -192,16 +204,22 @@ const ManageTest = () => {
     setExistingTestId(null);
     setIsSaved(false);
     setIsEditing(false);
+    setShouldCheckExisting(false);
   };
 
   const handleTestDateChange = (e) => {
-    setTestDate(e.target.value);
-    setTestName(`Test - ${new Date(e.target.value).toLocaleDateString()}`);
+    const newDate = e.target.value;
+    setTestDate(newDate);
+    setShouldCheckExisting(false);
+    if (!isTestNameManual && newDate) {
+      setTestName(`Test - ${new Date(newDate).toLocaleDateString()}`);
+    }
   };
 
   const handleTotalMarksChange = (e) => {
     const value = e.target.value;
     setTotalMarks(value);
+    setShouldCheckExisting(false);
     
     // Validate existing marks if total marks changed
     if (value) {
@@ -213,6 +231,12 @@ const ManageTest = () => {
         return mark;
       });
       setMarks(updatedMarks);
+    }
+  };
+
+  const handleTotalMarksBlur = () => {
+    if (selectedClass && selectedSubject && testDate && totalMarks) {
+      setShouldCheckExisting(true);
     }
   };
 
@@ -241,6 +265,7 @@ const ManageTest = () => {
       // Validate that all required fields are filled
       if (!selectedClass || !selectedSubject || !testDate || !totalMarks) {
         setError('Please fill all required fields');
+        toast.error('Please fill all required fields');
         return;
       }
 
@@ -249,6 +274,7 @@ const ManageTest = () => {
       
       if (!hasMarks) {
         setError('Please enter at least some marks before saving');
+        toast.error('Please enter at least some marks before saving');
         return;
       }
 
@@ -287,6 +313,7 @@ const ManageTest = () => {
         setExistingTestId(savedTest._id);
       }
 
+      toast.success('Test marks saved successfully');
       // Show success message
       setShowSuccess(true);
       setIsSaved(true);
@@ -308,28 +335,37 @@ const ManageTest = () => {
     setIsSaved(false);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!existingTestId) return;
-    
-    if (window.confirm('Are you sure you want to delete these test marks? This action cannot be undone.')) {
-      try {
-        setLoading(true);
-        await deleteClassTest(existingTestId);
-        
-        // Reset form
-        setMarks(marks.map(mark => ({ ...mark, obtainedMarks: '' })));
-        setExistingTestId(null);
-        setIsSaved(false);
-        setIsEditing(false);
-        setShowSuccess(false);
-        setError('');
-      } catch (err) {
-        setError('Failed to delete test marks');
-        console.error('Delete error:', err);
-      } finally {
-        setLoading(false);
-      }
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!existingTestId) return;
+    try {
+      setLoading(true);
+      await deleteClassTest(existingTestId);
+      
+      // Reset form
+      setMarks(marks.map(mark => ({ ...mark, obtainedMarks: '' })));
+      setExistingTestId(null);
+      setIsSaved(false);
+      setIsEditing(false);
+      setShowSuccess(false);
+      setError('');
+      toast.success('Test marks deleted successfully');
+    } catch (err) {
+      setError('Failed to delete test marks');
+      toast.error('Failed to delete test marks');
+      console.error('Delete error:', err);
+    } finally {
+      setLoading(false);
+      setShowDeleteConfirm(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
   };
 
   const showTable = selectedClass && selectedSubject && testDate && totalMarks;
@@ -351,6 +387,44 @@ const ManageTest = () => {
           <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
           <span className="text-gray-900 dark:text-gray-100 font-semibold">Manage Test</span>
         </div>
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full border border-gray-200 dark:border-gray-700">
+            <div className="px-6 py-4 flex items-center gap-3 border-b border-gray-200 dark:border-gray-700">
+              <div className="p-2 bg-red-100 dark:bg-red-900/40 rounded-full">
+                <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-300" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Delete Test Marks?</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">This action cannot be undone.</p>
+              </div>
+            </div>
+            <div className="px-6 py-5 space-y-3">
+              <p className="text-sm text-gray-700 dark:text-gray-200">
+                You are about to delete all saved marks for this test. Students' marks will be removed.
+              </p>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  onClick={handleCancelDelete}
+                  className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold shadow-md transition disabled:opacity-50"
+                  disabled={loading}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
         {/* Header */}
         <div className="mb-8">
@@ -420,7 +494,7 @@ const ManageTest = () => {
                   <option value="">Choose Class...</option>
                   {classes.map(cls => (
                     <option key={cls._id} value={cls._id}>
-                      {cls.className} - Section {cls.section}
+                      {cls.className}{cls.section ? ` - ${cls.section}` : ''}
                     </option>
                   ))}
                 </select>
@@ -472,6 +546,7 @@ const ManageTest = () => {
                   type="number"
                   value={totalMarks}
                   onChange={handleTotalMarksChange}
+                  onBlur={handleTotalMarksBlur}
                   className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   placeholder="Enter total marks"
                   min="1"
@@ -488,7 +563,10 @@ const ManageTest = () => {
                 <input
                   type="text"
                   value={testName}
-                  onChange={(e) => setTestName(e.target.value)}
+                  onChange={(e) => {
+                    setTestName(e.target.value);
+                    setIsTestNameManual(true);
+                  }}
                   className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   placeholder="Enter test name"
                   disabled={loading}

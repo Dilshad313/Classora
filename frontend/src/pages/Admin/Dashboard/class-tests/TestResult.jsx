@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart3, Home, ChevronRight, Users, BookOpen, Calendar, TrendingUp, User, School, Download, Loader2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import {
   getClassWiseResults,
   getClassSubjectResults,
@@ -11,6 +12,7 @@ import {
 
 const TestResult = () => {
   const [classes, setClasses] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [students, setStudents] = useState([]);
   const [activeSection, setActiveSection] = useState('class-wise');
   const [selectedClass, setSelectedClass] = useState('');
@@ -40,6 +42,8 @@ const TestResult = () => {
       setLoading(true);
       const data = await getDropdownData();
       setClasses(data.classes || []);
+      setSubjects(data.subjects || []);
+      setStudents(data.students || []);
     } catch (err) {
       setError('Failed to load classes');
       console.error(err);
@@ -48,33 +52,42 @@ const TestResult = () => {
     }
   };
 
-  // Fetch students when class is selected
+  // Fetch subjects/students when class is selected
   useEffect(() => {
     if (selectedClass) {
-      fetchStudents(selectedClass);
+      fetchClassData(selectedClass);
     } else {
+      setSubjects([]);
       setStudents([]);
     }
   }, [selectedClass]);
 
-  const fetchStudents = async (classId) => {
+  const fetchClassData = async (classId) => {
     try {
       const data = await getDropdownData(classId);
       setStudents(data.students || []);
+      setSubjects(data.subjects || []);
     } catch (err) {
-      console.error('Failed to load students:', err);
+      console.error('Failed to load class data:', err);
     }
   };
 
   const handleSectionChange = (sectionId) => {
     setActiveSection(sectionId);
     setResults(null);
-    setSelectedClass('');
-    setSelectedSubject('');
+    if (sectionId === 'date-range') {
+      setSelectedClass('all');
+      setSelectedSubject('all');
+    } else {
+      setSelectedClass('');
+      setSelectedSubject('');
+    }
     setSelectedStudent('');
     setStartDate('');
     setEndDate('');
     setError('');
+    setSubjects([]);
+    setStudents([]);
   };
 
   const handleSearch = async () => {
@@ -130,6 +143,7 @@ const TestResult = () => {
     } catch (err) {
       setError(err.message || 'Failed to fetch results');
       console.error('Search error:', err);
+      toast.error(err.message || 'Failed to fetch results');
     } finally {
       setLoading(false);
     }
@@ -676,7 +690,7 @@ const TestResult = () => {
               <option value="">Choose a class...</option>
               {classes.map(cls => (
                 <option key={cls._id} value={cls._id}>
-                  {cls.className} - Section {cls.section}
+                  {cls.className}
                 </option>
               ))}
             </select>
@@ -697,7 +711,7 @@ const TestResult = () => {
                 <option value="">Choose a class...</option>
                 {classes.map(cls => (
                   <option key={cls._id} value={cls._id}>
-                    {cls.className} - Section {cls.section}
+                    {cls.className}
                   </option>
                 ))}
               </select>
@@ -711,15 +725,11 @@ const TestResult = () => {
                 disabled={!selectedClass || loading}
               >
                 <option value="">Choose a subject...</option>
-                {selectedClass && (
-                  <>
-                    <option value="Mathematics">Mathematics</option>
-                    <option value="Physics">Physics</option>
-                    <option value="Chemistry">Chemistry</option>
-                    <option value="English">English</option>
-                    <option value="Biology">Biology</option>
-                  </>
-                )}
+                {subjects.map(sub => (
+                  <option key={sub._id || sub.name} value={sub.name}>
+                    {sub.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -727,21 +737,39 @@ const TestResult = () => {
 
       case 'student-subject':
         return (
-          <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Select Student</label>
-            <select
-              value={selectedStudent}
-              onChange={(e) => setSelectedStudent(e.target.value)}
-              className="w-full md:w-96 px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all"
-              disabled={loading}
-            >
-              <option value="">Choose a student...</option>
-              {students.map(student => (
-                <option key={student._id} value={student._id}>
-                  {student.rollNumber || student.registrationNo} - {student.studentName}
-                </option>
-              ))}
-            </select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Select Class</label>
+              <select
+                value={selectedClass}
+                onChange={(e) => setSelectedClass(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all"
+                disabled={loading}
+              >
+                <option value="">Choose a class...</option>
+                {classes.map(cls => (
+                  <option key={cls._id} value={cls._id}>
+                    {cls.className}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Select Student</label>
+              <select
+                value={selectedStudent}
+                onChange={(e) => setSelectedStudent(e.target.value)}
+                className="w-full md:w-96 px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all"
+                disabled={loading || !selectedClass}
+              >
+                <option value="">Choose a student...</option>
+                {students.map(student => (
+                  <option key={student._id} value={student._id}>
+                    {student.rollNumber || student.registrationNo} - {student.studentName}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         );
 
@@ -779,7 +807,7 @@ const TestResult = () => {
                 <option value="all">All Classes</option>
                 {classes.map(cls => (
                   <option key={cls._id} value={cls._id}>
-                    {cls.className} - Section {cls.section}
+                    {cls.className}
                   </option>
                 ))}
               </select>
@@ -793,11 +821,11 @@ const TestResult = () => {
                 disabled={loading}
               >
                 <option value="all">All Subjects</option>
-                <option value="Mathematics">Mathematics</option>
-                <option value="Physics">Physics</option>
-                <option value="Chemistry">Chemistry</option>
-                <option value="English">English</option>
-                <option value="Biology">Biology</option>
+                {subjects.map(sub => (
+                  <option key={sub._id || sub.name} value={sub.name}>
+                    {sub.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -816,10 +844,11 @@ const TestResult = () => {
               <option value="">Choose a class...</option>
               {classes.map(cls => (
                 <option key={cls._id} value={cls._id}>
-                  {cls.className} - Section {cls.section}
+                  {cls.className}
                 </option>
               ))}
             </select>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Select a class to generate the performance report.</p>
           </div>
         );
 
@@ -843,6 +872,19 @@ const TestResult = () => {
       default:
         return null;
     }
+  };
+
+  const handleExport = (filename, payload) => {
+    if (!payload) return;
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${filename}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
