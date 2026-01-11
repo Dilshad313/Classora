@@ -13,6 +13,7 @@ import {
 } from '../../../../services/reportApi';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import toast, { Toaster } from 'react-hot-toast';
 
 const StudentReport = () => {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ const StudentReport = () => {
   const [loading, setLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const subjects = reportData?.performance?.subjects || [];
 
   useEffect(() => {
     if (searchQuery.trim()) {
@@ -67,33 +69,44 @@ const StudentReport = () => {
   };
 
   const handleExportCSV = async () => {
-    if (!selectedStudent) return;
+    if (!selectedStudent) {
+      toast.error('Please select a student first');
+      return;
+    }
     try {
       await exportStudentInfoCSV({
         search: selectedStudent.name,
         class: selectedStudent.class
       });
+      toast.success('CSV download started');
     } catch (error) {
       console.error('Error exporting CSV:', error);
-      alert(error.message || 'Failed to export CSV');
+      toast.error(error.message || 'Failed to export CSV');
     }
   };
 
   const handleExportExcel = async () => {
-    if (!selectedStudent) return;
+    if (!selectedStudent) {
+      toast.error('Please select a student first');
+      return;
+    }
     try {
       await exportStudentInfoExcel({
         search: selectedStudent.name,
         class: selectedStudent.class
       });
+      toast.success('Excel download started');
     } catch (error) {
       console.error('Error exporting Excel:', error);
-      alert(error.message || 'Failed to export Excel');
+      toast.error(error.message || 'Failed to export Excel');
     }
   };
 
   const exportToPDF = () => {
-    if (!reportData) return;
+    if (!reportData) {
+      toast.error('Please load a student report first');
+      return;
+    }
 
     const doc = new jsPDF();
     
@@ -129,7 +142,7 @@ const StudentReport = () => {
     doc.text('Subject-wise Performance', 14, 140);
     
     const subjectHeaders = [['Subject', 'Score (%)', 'Grade', 'Attendance (%)']];
-    const subjectData = reportData.performance.subjects.map(subject => [
+    const subjectData = subjects.map(subject => [
       subject.name,
       subject.score.toFixed(1),
       subject.grade,
@@ -171,10 +184,12 @@ const StudentReport = () => {
     
     // Save PDF
     doc.save(`${reportData.student.name}_report.pdf`);
+    toast.success('PDF download started');
   };
 
   const handlePrint = () => {
     window.print();
+    toast.success('Print dialog opened');
   };
 
   const calculateGradeColor = (grade) => {
@@ -193,6 +208,7 @@ const StudentReport = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6">
+      <Toaster position="top-right" />
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-6 text-sm print:hidden">
@@ -406,18 +422,26 @@ const StudentReport = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
-                        {reportData.performance.subjects.map((subject, idx) => (
-                          <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-750">
-                            <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{subject.name}</td>
-                            <td className="px-4 py-3 text-sm font-bold text-blue-600">{subject.score.toFixed(1)}%</td>
-                            <td className="px-4 py-3">
-                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${calculateGradeColor(subject.grade)}`}>
-                                {subject.grade}
-                              </span>
+                        {subjects.length === 0 ? (
+                          <tr>
+                            <td colSpan="4" className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                              No subject performance data available.
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{subject.attendance.toFixed(1)}%</td>
                           </tr>
-                        ))}
+                        ) : (
+                          subjects.map((subject, idx) => (
+                            <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-750">
+                              <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{subject.name}</td>
+                              <td className="px-4 py-3 text-sm font-bold text-blue-600">{subject.score.toFixed(1)}%</td>
+                              <td className="px-4 py-3">
+                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${calculateGradeColor(subject.grade)}`}>
+                                  {subject.grade}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{subject.attendance.toFixed(1)}%</td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>

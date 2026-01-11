@@ -8,6 +8,7 @@ import {
 } from '../../../../services/reportApi';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import toast, { Toaster } from 'react-hot-toast';
 
 const StudentInfo = () => {
   const navigate = useNavigate();
@@ -52,7 +53,7 @@ const StudentInfo = () => {
       }
     } catch (error) {
       console.error('Error fetching student info:', error);
-      alert(error.message || 'Failed to load student information');
+      toast.error(error.message || 'Failed to load student information');
     } finally {
       setLoading(false);
     }
@@ -67,33 +68,38 @@ const StudentInfo = () => {
 
   const handleExportCSV = async () => {
     try {
+      toast.loading('Preparing CSV download...', { id: 'student-info-download' });
       await exportStudentInfoCSV({
         search: searchQuery,
         class: filters.class,
         gender: filters.gender,
         status: filters.status
       });
+      toast.success('CSV download started', { id: 'student-info-download' });
     } catch (error) {
       console.error('Error exporting CSV:', error);
-      alert(error.message || 'Failed to export CSV');
+      toast.error(error.message || 'Failed to export CSV', { id: 'student-info-download' });
     }
   };
 
   const handleExportExcel = async () => {
     try {
+      toast.loading('Preparing Excel download...', { id: 'student-info-download' });
       await exportStudentInfoExcel({
         search: searchQuery,
         class: filters.class,
         gender: filters.gender,
         status: filters.status
       });
+      toast.success('Excel download started', { id: 'student-info-download' });
     } catch (error) {
       console.error('Error exporting Excel:', error);
-      alert(error.message || 'Failed to export Excel');
+      toast.error(error.message || 'Failed to export Excel', { id: 'student-info-download' });
     }
   };
 
   const exportToPDF = () => {
+    toast.loading('Preparing PDF download...', { id: 'student-info-download' });
     const doc = new jsPDF();
     
     // Title
@@ -134,11 +140,12 @@ const StudentInfo = () => {
     
     // Save PDF
     doc.save('student_info.pdf');
+    toast.success('PDF download started', { id: 'student-info-download' });
   };
 
   const copyToClipboard = () => {
     if (studentsData.length === 0) {
-      alert('No data to copy');
+      toast.error('No data to copy');
       return;
     }
 
@@ -159,8 +166,11 @@ const StudentInfo = () => {
     
     const csvContent = [headers, ...rows].map(row => row.join('\t')).join('\n');
     navigator.clipboard.writeText(csvContent)
-      .then(() => alert('Data copied to clipboard!'))
-      .catch(err => console.error('Failed to copy:', err));
+      .then(() => toast.success('Data copied to clipboard!'))
+      .catch(err => {
+        console.error('Failed to copy:', err);
+        toast.error('Failed to copy data');
+      });
   };
 
   const handlePrint = () => {
@@ -191,6 +201,7 @@ const StudentInfo = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6">
+      <Toaster position="top-right" />
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-6 text-sm print:hidden">

@@ -5,6 +5,8 @@ import Student from '../models/Student.js';
 import Employee from '../models/Employee.js';
 import Class from '../models/Class.js';
 import TestResult from '../models/TestResult.js';
+import StudentAttendance from '../models/StudentAttendance.js';
+
 import { Parser } from 'json2csv';
 import ExcelJS from 'exceljs';
 
@@ -611,7 +613,7 @@ export const getStudentReport = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(studentId)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        message: 'Invalid student ID'
+        message: 'Student not found'
       });
     }
 
@@ -626,20 +628,82 @@ export const getStudentReport = async (req, res) => {
       });
     }
 
-    // Get test results for this student
+    // Get test results for this student (do not block on createdBy to ensure all records are considered)
     const testResults = await TestResult.find({
-      student: studentId,
-      createdBy: userId
+      student: studentId
     })
     .sort({ testDate: -1 })
     .limit(20);
 
-    // Get subject-wise performance
+    // Get attendance summary for this student
+    const attendanceSummary = await StudentAttendance.aggregate([
+      {
+        $match: {
+          student: new mongoose.Types.ObjectId(studentId)
+        }
+      },
+      {
+        $group: {
+          _id: '$student',
+          totalDays: { $sum: 1 },
+          presentDays: { $sum: { $cond: [{ $eq: ['$status', 'present'] }, 1, 0] } },
+          leaveDays: { $sum: { $cond: [{ $eq: ['$status', 'leave'] }, 1, 0] } },
+          absentDays: { $sum: { $cond: [{ $eq: ['$status', 'absent'] }, 1, 0] } }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          totalDays: 1,
+          presentDays: 1,
+          leaveDays: 1,
+          absentDays: 1,
+          attendancePercentage: {
+            $cond: [
+              { $gt: ['$totalDays', 0] },
+              {
+                $multiply: [
+                  { $divide: [{ $add: ['$presentDays', '$leaveDays'] }, '$totalDays'] },
+                  100
+                ]
+              },
+              0
+            ]
+          }
+        }
+      }
+    ]);
+
+    const attendanceData = attendanceSummary[0] || {
+      totalDays: 0,
+      presentDays: 0,
+      leaveDays: 0,
+      absentDays: 0,
+      attendancePercentage: 0
+    };
+
+    // Get subject-wise performance (compute percentage if missing)
     const subjectPerformance = await TestResult.aggregate([
       {
         $match: {
-          student: new mongoose.Types.ObjectId(studentId),
-          createdBy: new mongoose.Types.ObjectId(userId)
+          student: new mongoose.Types.ObjectId(studentId)
+        }
+      },
+      {
+        $addFields: {
+          percentageValue: {
+            $cond: [
+              { $ifNull: ['$percentage', false] },
+              '$percentage',
+              {
+                $cond: [
+                  { $gt: ['$maxScore', 0] },
+                  { $multiply: [{ $divide: ['$score', '$maxScore'] }, 100] },
+                  0
+                ]
+              }
+            ]
+          }
         }
       },
       {
@@ -647,11 +711,10 @@ export const getStudentReport = async (req, res) => {
           _id: '$subject',
           totalTests: { $sum: 1 },
           averageScore: { $avg: '$score' },
-          averagePercentage: { $avg: '$percentage' },
+          averagePercentage: { $avg: '$percentageValue' },
           bestScore: { $max: '$score' },
           worstScore: { $min: '$score' },
-          latestTest: { $max: '$testDate' },
-          attendance: { $avg: 95 } // Default attendance, you should replace with actual attendance data
+          latestTest: { $max: '$testDate' }
         }
       },
       {
@@ -662,31 +725,84 @@ export const getStudentReport = async (req, res) => {
           averagePercentage: { $round: ['$averagePercentage', 2] },
           bestScore: 1,
           worstScore: 1,
-          latestTest: 1,
-          attendance: { $round: ['$attendance', 2] }
+          latestTest: 1
         }
       },
       { $sort: { subject: 1 } }
     ]);
 
-    // Calculate overall statistics
-    const overallStats = subjectPerformance.reduce((acc, subject) => {
-      acc.totalTests += subject.totalTests;
-      acc.totalScore += subject.averageScore * subject.totalTests;
-      acc.totalAttendance += subject.attendance;
-      return acc;
-    }, { totalTests: 0, totalScore: 0, totalAttendance: 0 });
+    // Fallback aggregation in JS if Mongo pipeline returns empty (handles legacy records)
+    let computedSubjects = subjectPerformance;
+    if ((!subjectPerformance || subjectPerformance.length === 0) && testResults.length > 0) {
+      const subjectMap = {};
+      testResults.forEach(tr => {
+        const perc = typeof tr.percentage === 'number' && !Number.isNaN(tr.percentage)
+          ? tr.percentage
+          : (tr.maxScore > 0 ? (tr.score / tr.maxScore) * 100 : 0);
+        const key = tr.subject || 'Unknown';
+        if (!subjectMap[key]) {
+          subjectMap[key] = {
+            subject: key,
+            totalTests: 0,
+            totalScore: 0,
+            totalPercentage: 0,
+            bestScore: Number.NEGATIVE_INFINITY,
+            worstScore: Number.POSITIVE_INFINITY,
+            latestTest: tr.testDate ? new Date(tr.testDate) : null
+          };
+        }
+        const bucket = subjectMap[key];
+        bucket.totalTests += 1;
+        bucket.totalScore += tr.score || 0;
+        bucket.totalPercentage += perc;
+        bucket.bestScore = Math.max(bucket.bestScore, tr.score || 0);
+        bucket.worstScore = Math.min(bucket.worstScore, tr.score || 0);
+        if (tr.testDate && (!bucket.latestTest || new Date(tr.testDate) > bucket.latestTest)) {
+          bucket.latestTest = new Date(tr.testDate);
+        }
+      });
 
-    const overallAverage = overallStats.totalTests > 0 
-      ? overallStats.totalScore / overallStats.totalTests 
+      computedSubjects = Object.values(subjectMap).map(sub => ({
+        subject: sub.subject,
+        totalTests: sub.totalTests,
+        averageScore: Math.round((sub.totalScore / sub.totalTests) * 100) / 100,
+        averagePercentage: Math.round((sub.totalPercentage / sub.totalTests) * 100) / 100,
+        bestScore: sub.bestScore,
+        worstScore: sub.worstScore,
+        latestTest: sub.latestTest
+      })).sort((a, b) => a.subject.localeCompare(b.subject));
+    }
+
+    // Calculate overall statistics
+    const statsSource = (computedSubjects && computedSubjects.length > 0) ? computedSubjects : subjectPerformance;
+    const overallStats = statsSource.reduce((acc, subject) => {
+      acc.totalTests += subject.totalTests;
+      acc.totalPercentage += (subject.averagePercentage || 0) * subject.totalTests;
+      return acc;
+    }, { totalTests: 0, totalPercentage: 0 });
+
+    // Fallback calculations directly from test results to avoid 0% display when aggregation misses data
+    const testsFromResults = testResults.length;
+    const averageFromTests = testsFromResults > 0
+      ? testResults.reduce((acc, tr) => {
+          const perc = typeof tr.percentage === 'number' && !Number.isNaN(tr.percentage)
+            ? tr.percentage
+            : (tr.maxScore > 0 ? (tr.score / tr.maxScore) * 100 : 0);
+          return acc + perc;
+        }, 0) / testsFromResults
       : 0;
-    const overallAttendance = subjectPerformance.length > 0 
-      ? overallStats.totalAttendance / subjectPerformance.length 
-      : 0;
+
+    const totalTestsCount = overallStats.totalTests || testsFromResults;
+    const weightedAverage = overallStats.totalTests > 0
+      ? overallStats.totalPercentage / overallStats.totalTests
+      : null;
+    const overallAverage = weightedAverage !== null ? weightedAverage : averageFromTests;
+
+    const overallAttendance = Math.round(attendanceData.attendancePercentage);
 
     // Get recent tests
     const recentTests = testResults.slice(0, 10).map(test => ({
-      date: test.testDate.toISOString().split('T')[0],
+      date: test.testDate ? test.testDate.toISOString().split('T')[0] : '',
       subject: test.subject,
       test: test.testName,
       score: test.score,
@@ -709,22 +825,22 @@ export const getStudentReport = async (req, res) => {
         profilePic: student.picture?.url || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.studentName)}&background=0D8ABC&color=fff&size=200`
       },
       performance: {
-        subjects: subjectPerformance.map(subject => ({
+        subjects: statsSource.map(subject => ({
           name: subject.subject,
-          score: subject.averagePercentage,
-          grade: subject.averagePercentage >= 90 ? 'A+' :
-                 subject.averagePercentage >= 80 ? 'A' :
-                 subject.averagePercentage >= 70 ? 'B+' :
-                 subject.averagePercentage >= 60 ? 'B' :
-                 subject.averagePercentage >= 50 ? 'C' :
-                 subject.averagePercentage >= 40 ? 'D' : 'F',
-          attendance: subject.attendance
+          score: subject.averagePercentage ?? 0,
+          grade: (subject.averagePercentage ?? 0) >= 90 ? 'A+' :
+                 (subject.averagePercentage ?? 0) >= 80 ? 'A' :
+                 (subject.averagePercentage ?? 0) >= 70 ? 'B+' :
+                 (subject.averagePercentage ?? 0) >= 60 ? 'B' :
+                 (subject.averagePercentage ?? 0) >= 50 ? 'C' :
+                 (subject.averagePercentage ?? 0) >= 40 ? 'D' : 'F',
+          attendance: overallAttendance
         })),
         overall: {
           average: Math.round(overallAverage),
           rank: 2, // You would need to calculate this from all students
-          attendance: Math.round(overallAttendance),
-          totalTests: overallStats.totalTests
+          attendance: overallAttendance,
+          totalTests: totalTestsCount
         },
         recentTests: recentTests
       }
