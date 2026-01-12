@@ -62,8 +62,32 @@ const CreateQuestion = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
 
-  const subjects = ['Mathematics', 'English', 'Science', 'Social Studies', 'Hindi'];
-  const classes = ['Class 10-A', 'Class 10-B', 'Class 9-A', 'Class 9-B'];
+  const [subjects, setSubjects] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDropdownData = async () => {
+      try {
+        setLoading(true);
+        const [subjectsData, classesData] = await Promise.all([
+          questionPaperApi.getDropdownData(),
+          classApi.getAllClasses()
+        ]);
+        if (subjectsData.success) {
+          setSubjects(subjectsData.data.subjects);
+        }
+        if (classesData.success) {
+          setClasses(classesData.data);
+        }
+      } catch (error) {
+        toast.error('Failed to load necessary data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDropdownData();
+  }, []);
 
   const handleInputChange = (field, value) => {
     setPaperDetails(prev => ({

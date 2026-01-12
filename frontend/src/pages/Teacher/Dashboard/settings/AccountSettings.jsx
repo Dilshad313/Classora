@@ -38,25 +38,26 @@ const AccountSettings = () => {
     smsNotifications: false
   });
 
-  // Initialize form data when user changes
   useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem('user') || '{}');
-    setUser(userData);
-    setFormData({
-      username: userData.username || userData.email?.split('@')[0] || '',
-      email: userData.email || '',
-      fullName: userData.name || '',
-      phone: userData.phone || '',
-      employeeId: userData.employeeId || 'TCH001'
-    });
-  }, []);
-
-  // Load notification preferences from localStorage
-  useEffect(() => {
-    const savedPreferences = localStorage.getItem('notificationPreferences');
-    if (savedPreferences) {
-      setNotificationPreferences(JSON.parse(savedPreferences));
-    }
+    const fetchAccountSettings = async () => {
+      try {
+        setIsLoading(true);
+        const { data } = await accountSettingsApi.getAccountSettings();
+        setUser(data.user);
+        setFormData({
+          username: data.user.username || data.user.email?.split('@')[0] || '',
+          email: data.user.email || '',
+          fullName: data.user.fullName || '',
+          phone: data.user.phone || '',
+          employeeId: data.user.employeeId || 'TCH001'
+        });
+      } catch (error) {
+        toast.error('Failed to fetch account settings');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchAccountSettings();
   }, []);
 
   // Validation functions

@@ -13,13 +13,18 @@ import { StatusCodes } from 'http-status-codes';
  */
 export const getAllClasses = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const { id: userId, role } = req.user;
     const { status, subject, teacher, search, page = 1, limit = 10 } = req.query;
     
-    console.log(`📥 GET /api/classes for user: ${userId}`);
+    console.log(`📥 GET /api/classes for user: ${userId} with role: ${role}`);
     
     // Build query
-    const query = { createdBy: userId };
+    let query = {};
+    if (role === 'teacher') {
+      query = { teacherId: userId };
+    } else {
+      query = { createdBy: userId };
+    }
     
     if (status && status !== 'all') {
       query.status = status;
@@ -34,11 +39,12 @@ export const getAllClasses = async (req, res) => {
     }
     
     if (search) {
+      const searchRegex = { $regex: search, $options: 'i' };
       query.$or = [
-        { className: { $regex: search, $options: 'i' } },
-        { section: { $regex: search, $options: 'i' } },
-        { subject: { $regex: search, $options: 'i' } },
-        { teacher: { $regex: search, $options: 'i' } }
+        { className: searchRegex },
+        { section: searchRegex },
+        { subject: searchRegex },
+        { teacher: searchRegex }
       ];
     }
     
@@ -91,7 +97,12 @@ export const getClassById = async (req, res) => {
       });
     }
     
-    const classData = await Class.findOne({ _id: id, createdBy: userId });
+    let classData;
+    if (req.user.role === 'teacher') {
+      classData = await Class.findOne({ _id: id, teacherId: userId });
+    } else {
+      classData = await Class.findOne({ _id: id, createdBy: userId });
+    }
     
     if (!classData) {
       return res.status(StatusCodes.NOT_FOUND).json({

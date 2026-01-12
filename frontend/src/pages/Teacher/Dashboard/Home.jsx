@@ -1,10 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Users, Calendar, BookOpen, ClipboardCheck, Award, TrendingUp, UserCheck, UserX, BookOpenCheck, MessageSquare, Video, ChevronLeft, ChevronRight, Mail, Phone, MapPin, Briefcase, GraduationCap, DollarSign, CreditCard, TrendingDown, CheckCircle, Clock, Building } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { getDashboardStats } from '../../../services/dashboardApi';
+import toast from 'react-hot-toast';
 
 const Home = () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [stats, setStats] = useState({
+    myClasses: 0,
+    totalStudents: 0,
+    pendingHomework: 0,
+    upcomingTests: 0,
+    todaySchedule: []
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        const data = await getDashboardStats();
+        if (data) {
+          setStats(data);
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+        toast.error('Failed to load dashboard statistics');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   // Get calendar data
   const getDaysInMonth = (date) => {
@@ -33,7 +62,7 @@ const Home = () => {
   const topStats = [
     {
       title: 'My Classes',
-      value: '5',
+      value: stats.myClasses,
       subtitle: 'Active Classes',
       icon: Users,
       color: 'from-blue-500 to-blue-600',
@@ -42,7 +71,7 @@ const Home = () => {
     },
     {
       title: 'Total Students',
-      value: '156',
+      value: stats.totalStudents,
       subtitle: 'Across all classes',
       icon: Users,
       color: 'from-purple-500 to-purple-600',
@@ -51,7 +80,7 @@ const Home = () => {
     },
     {
       title: 'Pending Homework',
-      value: '12',
+      value: stats.pendingHomework,
       subtitle: 'To be reviewed',
       icon: BookOpenCheck,
       color: 'from-orange-500 to-orange-600',
@@ -60,7 +89,7 @@ const Home = () => {
     },
     {
       title: 'Upcoming Tests',
-      value: '3',
+      value: stats.upcomingTests,
       subtitle: 'This week',
       icon: ClipboardCheck,
       color: 'from-green-500 to-green-600',
@@ -70,12 +99,7 @@ const Home = () => {
   ];
 
   // Today's Schedule
-  const todaySchedule = [
-    { time: '09:00 AM', class: 'Class 10-A', subject: 'Mathematics', room: 'Room 101' },
-    { time: '10:30 AM', class: 'Class 9-B', subject: 'Mathematics', room: 'Room 203' },
-    { time: '12:00 PM', class: 'Class 10-C', subject: 'Mathematics', room: 'Room 105' },
-    { time: '02:00 PM', class: 'Class 8-A', subject: 'Mathematics', room: 'Room 201' },
-  ];
+  const todaySchedule = stats.todaySchedule || [];
 
   // Recent Activities
   const recentActivities = [
