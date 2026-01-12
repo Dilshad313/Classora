@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Student from '../models/Student.js';
+import Class from '../models/Class.js';
 import Notification from '../models/Notification.js';
 import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinaryUpload.js';
 import { StatusCodes } from 'http-status-codes';
@@ -19,7 +20,7 @@ const ownerClauses = (userId, userEmail) => {
  */
 export const getStudents = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const { id: userId, role, email } = req.user;
     const {
       search,
       class: studentClass,
@@ -28,8 +29,33 @@ export const getStudents = async (req, res) => {
       limit = 10
     } = req.query;
 
-    const baseOwner = { $or: ownerClauses(userId, req.user?.email) };
-    const andFilters = [baseOwner];
+    let baseQuery;
+
+    if (role === 'teacher') {
+      // Find all classes taught by this teacher
+      const teacherClasses = await Class.find({ teacherId: userId }).select('students');
+
+      // Get a flat, unique list of student IDs from those classes
+      const studentIds = teacherClasses.flatMap(cls => cls.students);
+      const uniqueStudentIds = [...new Set(studentIds.map(id => id.toString()))];
+
+      if (uniqueStudentIds.length === 0) {
+        // If teacher has no students, return empty array
+        return res.status(StatusCodes.OK).json({
+          success: true,
+          message: 'No students found for this teacher',
+          data: [],
+          pagination: { page: 1, limit: parseInt(limit), total: 0, totalPages: 0 }
+        });
+      }
+
+      baseQuery = { _id: { $in: uniqueStudentIds } };
+    } else {
+      // Admin/Superadmin logic
+      baseQuery = { $or: ownerClauses(userId, email) };
+    }
+
+    const andFilters = [baseQuery];
 
     if (search) {
       andFilters.push({
@@ -49,7 +75,7 @@ export const getStudents = async (req, res) => {
       andFilters.push({ status });
     }
 
-    const filter = andFilters.length > 1 ? { $and: andFilters } : baseOwner;
+    const filter = andFilters.length > 1 ? { $and: andFilters } : baseQuery;
 
     // Calculate pagination
     const skip = (page - 1) * limit;
@@ -91,10 +117,31 @@ export const getStudents = async (req, res) => {
  */
 export const getStudentById = async (req, res) => {
   try {
-    const student = await Student.findOne({
-      _id: req.params.id,
-      $or: ownerClauses(req.user.id, req.user?.email)
-    }).select('-password');
+    const { id: userId, role, email } = req.user;
+    const { id: studentId } = req.params;
+
+    let student;
+
+    if (role === 'teacher') {
+      // Find classes for the teacher to check if the student is in any of them
+      const teacherClasses = await Class.find({ teacherId: userId }).select('students');
+      const studentIds = teacherClasses.flatMap(cls => cls.students.map(s => s.toString()));
+
+      if (!studentIds.includes(studentId)) {
+        return res.status(StatusCodes.FORBIDDEN).json({
+          success: false,
+          message: 'You are not authorized to view this student'
+        });
+      }
+
+      student = await Student.findById(studentId).select('-password');
+    } else {
+      // Admin/Superadmin logic
+      student = await Student.findOne({
+        _id: studentId,
+        $or: ownerClauses(userId, email)
+      }).select('-password');
+    }
 
     if (!student) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -135,7 +182,14 @@ export const getStudentById = async (req, res) => {
  */
 export const createStudent = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const { id: userId, role } = req.user;
+
+    if (role === 'teacher') {
+      return res.status(StatusCodes.FORBIDDEN).json({
+        success: false,
+        message: 'Teachers are not authorized to create students'
+      });
+    }
     const {
       studentName,
       registrationNo,
@@ -377,6 +431,13 @@ export const createStudent = async (req, res) => {
  */
 export const updateStudent = async (req, res) => {
   try {
+    if (req.user.role === 'teacher') {
+      return res.status(StatusCodes.FORBIDDEN).json({
+        success: false,
+        message: 'Teachers are not authorized to update students'
+      });
+    }
+
     const student = await Student.findOne({
       _id: req.params.id,
       $or: ownerClauses(req.user.id, req.user?.email)
@@ -499,6 +560,13 @@ export const updateStudent = async (req, res) => {
  */
 export const deleteStudent = async (req, res) => {
   try {
+    if (req.user.role === 'teacher') {
+      return res.status(StatusCodes.FORBIDDEN).json({
+        success: false,
+        message: 'Teachers are not authorized to delete students'
+      });
+    }
+
     const student = await Student.findOne({ _id: req.params.id, createdBy: req.user.id });
 
     if (!student) {
@@ -551,6 +619,13 @@ export const deleteStudent = async (req, res) => {
  */
 export const updateStudentStatus = async (req, res) => {
   try {
+    if (req.user.role === 'teacher') {
+      return res.status(StatusCodes.FORBIDDEN).json({
+        success: false,
+        message: 'Teachers are not authorized to update student status'
+      });
+    }
+
     const { status } = req.body;
     const userId = req.user.id;
 
@@ -712,6 +787,13 @@ export const getLoginCredentials = async (req, res) => {
  */
 export const updateLoginCredentials = async (req, res) => {
   try {
+    if (req.user.role === 'teacher') {
+      return res.status(StatusCodes.FORBIDDEN).json({
+        success: false,
+        message: 'Teachers are not authorized to update login credentials'
+      });
+    }
+
     const userId = req.user.id;
     const { username, password } = req.body;
 
@@ -765,6 +847,13 @@ export const updateLoginCredentials = async (req, res) => {
  */
 export const promoteStudents = async (req, res) => {
   try {
+    if (req.user.role === 'teacher') {
+      return res.status(StatusCodes.FORBIDDEN).json({
+        success: false,
+        message: 'Teachers are not authorized to promote students'
+      });
+    }
+
     const userId = req.user.id;
     const { studentIds, promoteToClass } = req.body;
 
@@ -912,6 +1001,13 @@ export const getStudentStats = async (req, res) => {
  */
 export const bulkUpdateStudentStatus = async (req, res) => {
   try {
+    if (req.user.role === 'teacher') {
+      return res.status(StatusCodes.FORBIDDEN).json({
+        success: false,
+        message: 'Teachers are not authorized to bulk update student status'
+      });
+    }
+
     const { studentIds, status } = req.body;
     const userId = req.user.id;
 

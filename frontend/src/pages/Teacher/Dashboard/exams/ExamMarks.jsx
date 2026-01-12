@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Award, 
   Save, 
@@ -13,6 +13,9 @@ import {
   User,
   Hash
 } from 'lucide-react';
+import { examsApi, examMarksApi } from '../../../../services/examsApi';
+import { classApi } from '../../../../services/classApi';
+import toast from 'react-hot-toast';
 
 const ExamMarks = () => {
   const [selectedExam, setSelectedExam] = useState('');
@@ -21,37 +24,37 @@ const ExamMarks = () => {
   const [marksData, setMarksData] = useState({});
   const [showSuccess, setShowSuccess] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [exams, setExams] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingDropdowns, setLoadingDropdowns] = useState(true);
 
-  const exams = [
-    { id: 'mid-term', name: 'Mid-term Examination', date: '2024-11-15' },
-    { id: 'final', name: 'Final Examination', date: '2024-12-20' },
-    { id: 'unit-test-1', name: 'Unit Test 1', date: '2024-10-10' },
-    { id: 'unit-test-2', name: 'Unit Test 2', date: '2024-11-05' }
-  ];
+  useEffect(() => {
+    const fetchDropdownData = async () => {
+      try {
+        setLoadingDropdowns(true);
+        const [examsData, classesData] = await Promise.all([
+          examsApi.getExamDropdown(),
+          classApi.getAllClasses()
+        ]);
+        if (examsData.success) {
+          setExams(examsData.data);
+        }
+        if (classesData.success) {
+          setClasses(classesData.data);
+        }
+      } catch (error) {
+        console.error('Error fetching dropdown data:', error);
+        toast.error('Failed to load necessary data');
+      } finally {
+        setLoadingDropdowns(false);
+      }
+    };
 
-  const classes = [
-    { id: '10-A', name: 'Class 10-A', students: 35 },
-    { id: '10-B', name: 'Class 10-B', students: 32 },
-    { id: '9-A', name: 'Class 9-A', students: 30 },
-    { id: '9-B', name: 'Class 9-B', students: 28 }
-  ];
-
-  const subjects = [
-    { id: 'mathematics', name: 'Mathematics', maxMarks: 100 },
-    { id: 'english', name: 'English', maxMarks: 100 },
-    { id: 'science', name: 'Science', maxMarks: 100 },
-    { id: 'social-studies', name: 'Social Studies', maxMarks: 100 },
-    { id: 'hindi', name: 'Hindi', maxMarks: 100 }
-  ];
-
-  const students = [
-    { id: 1, name: 'Arun Kumar', rollNo: '001', class: '10-A' },
-    { id: 2, name: 'Priya Sharma', rollNo: '002', class: '10-A' },
-    { id: 3, name: 'Rahul Singh', rollNo: '003', class: '10-A' },
-    { id: 4, name: 'Sneha Patel', rollNo: '004', class: '10-A' },
-    { id: 5, name: 'Vikram Gupta', rollNo: '005', class: '10-A' },
-    { id: 6, name: 'Anita Verma', rollNo: '006', class: '10-A' }
-  ];
+    fetchDropdownData();
+  }, []);
 
   const filteredStudents = students.filter(student => student.class === selectedClass);
   const selectedSubjectData = subjects.find(sub => sub.id === selectedSubject);
@@ -67,17 +70,57 @@ const ExamMarks = () => {
     return marksData[`${selectedExam}-${selectedClass}-${selectedSubject}-${studentId}`] || 0;
   };
 
-  const handleSaveMarks = () => {
+  useEffect(() => {
+    const fetchMarks = async () => {
+      if (selectedExam && selectedClass && selectedSubject) {
+        try {
+          setLoading(true);
+          const { data } = await examMarksApi.getExamMarksByClass(selectedExam, selectedClass);
+          setStudents(data.students);
+          setSubjects(data.subjects);
+          const initialMarks = {};
+          data.students.forEach(student => {
+            initialMarks[`${selectedExam}-${selectedClass}-${selectedSubject}-${student.student._id}`] = student.marks[selectedSubject]?.marksObtained || '';
+          });
+          setMarksData(initialMarks);
+          setIsEditing(true); // Since we are fetching existing marks
+        } catch (error) {
+          console.error('Error fetching marks:', error);
+          toast.error('Failed to fetch marks');
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    fetchMarks();
+  }, [selectedExam, selectedClass, selectedSubject]);
+
+  const handleSaveMarks = async () => {
     if (!selectedExam || !selectedClass || !selectedSubject) {
-      alert('Please select exam, class, and subject first');
+      toast.error('Please select exam, class, and subject first');
       return;
     }
     
-    setIsEditing(true);
-    setShowSuccess(true);
-    setTimeout(() => {
-      setShowSuccess(false);
-    }, 3000);
+    const marksToSave = students.map(student => ({
+      studentId: student.student._id,
+      subjectId: selectedSubject,
+      marksObtained: getStudentMarks(student.student._id)
+    }));
+
+    try {
+      setLoading(true);
+      await examMarksApi.saveBulkMarks(selectedExam, selectedClass, marksToSave);
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+      }, 3000);
+      toast.success('Marks saved successfully!');
+    } catch (error) {
+      console.error('Error saving marks:', error);
+      toast.error('Failed to save marks');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const calculatePercentage = (marks) => {

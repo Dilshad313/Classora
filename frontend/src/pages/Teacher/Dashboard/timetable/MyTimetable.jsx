@@ -1,34 +1,43 @@
+import { useState, useEffect } from 'react';
 import { Calendar, Clock, MapPin, Users, Printer } from 'lucide-react';
+import { timetableApi } from '../../../../services/timetableApi';
+import toast from 'react-hot-toast';
 
 const MyTimetable = () => {
-  const timetable = {
-    Monday: [
-      { time: '09:00 - 10:00', class: '10-A', subject: 'Mathematics', room: 'Room 101' },
-      { time: '10:30 - 11:30', class: '9-B', subject: 'Mathematics', room: 'Room 203' },
-      { time: '12:00 - 01:00', class: '10-C', subject: 'Mathematics', room: 'Room 105' },
-      { time: '02:00 - 03:00', class: '8-A', subject: 'Mathematics', room: 'Room 201' },
-    ],
-    Tuesday: [
-      { time: '09:00 - 10:00', class: '10-A', subject: 'Mathematics', room: 'Room 101' },
-      { time: '11:00 - 12:00', class: '9-B', subject: 'Mathematics', room: 'Room 203' },
-      { time: '02:00 - 03:00', class: '10-C', subject: 'Mathematics', room: 'Room 105' },
-    ],
-    Wednesday: [
-      { time: '09:00 - 10:00', class: '10-A', subject: 'Mathematics', room: 'Room 101' },
-      { time: '10:30 - 11:30', class: '8-A', subject: 'Mathematics', room: 'Room 201' },
-      { time: '01:00 - 02:00', class: '9-B', subject: 'Mathematics', room: 'Room 203' },
-    ],
-    Thursday: [
-      { time: '09:00 - 10:00', class: '10-C', subject: 'Mathematics', room: 'Room 105' },
-      { time: '11:00 - 12:00', class: '10-A', subject: 'Mathematics', room: 'Room 101' },
-      { time: '02:00 - 03:00', class: '9-B', subject: 'Mathematics', room: 'Room 203' },
-    ],
-    Friday: [
-      { time: '09:00 - 10:00', class: '8-A', subject: 'Mathematics', room: 'Room 201' },
-      { time: '10:30 - 11:30', class: '10-A', subject: 'Mathematics', room: 'Room 101' },
-      { time: '12:00 - 01:00', class: '10-C', subject: 'Mathematics', room: 'Room 105' },
-    ],
-  };
+  const [timetable, setTimetable] = useState({});
+  const [loading, setLoading] = useState(true);
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  useEffect(() => {
+    const fetchTimetable = async () => {
+      try {
+        setLoading(true);
+        const data = await timetableApi.getTimetableByTeacher(user._id);
+        if (data) {
+          // The data is already grouped by day, we just need to format it for the table
+          const formattedTimetable = {};
+          data.groupedByDay.forEach(day => {
+            formattedTimetable[day.day.name] = day.periods.map(period => ({
+              time: `${period.periodId.startTime} - ${period.periodId.endTime}`,
+              class: `${period.className}-${period.section}`,
+              subject: period.subjectName,
+              room: period.roomName
+            }));
+          });
+          setTimetable(formattedTimetable);
+        }
+      } catch (error) {
+        console.error('Error fetching timetable:', error);
+        toast.error('Failed to load timetable');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user._id) {
+      fetchTimetable();
+    }
+  }, [user._id]);
 
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
