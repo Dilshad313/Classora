@@ -13,7 +13,7 @@ const studentSchema = new mongoose.Schema({
   registrationNo: {
   type: String,
   required: [true, 'Registration number is required'],
-  unique: true,
+  unique: false,
   trim: true,
   uppercase: true,
   validate: {
@@ -42,7 +42,7 @@ const studentSchema = new mongoose.Schema({
   email: {
     type: String,
     required: [true, 'Email is required'],
-    unique: true,
+    unique: false,
     trim: true,
     lowercase: true,
     validate: {
@@ -163,7 +163,7 @@ const studentSchema = new mongoose.Schema({
   // Login Credentials
   username: {
   type: String,
-  unique: true,
+  unique: false,
   sparse: true,
   trim: true,
   lowercase: true,
@@ -203,8 +203,15 @@ const studentSchema = new mongoose.Schema({
   // Admission Details
   admissionNumber: {
     type: String,
-    unique: true,
+    unique: false,
     sparse: true
+  },
+
+  // Ownership (Admin who created the student)
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Admin',
+    required: true
   }
 
 }, {
@@ -212,6 +219,13 @@ const studentSchema = new mongoose.Schema({
   toJSON: { virtuals: true },
   toObject: { virtuals: true }
 });
+
+// Indexes to enforce per-admin uniqueness and query performance
+studentSchema.index({ createdBy: 1 });
+studentSchema.index({ registrationNo: 1, createdBy: 1 }, { unique: true });
+studentSchema.index({ admissionNumber: 1, createdBy: 1 }, { unique: true, sparse: true });
+studentSchema.index({ email: 1, createdBy: 1 }, { unique: true });
+studentSchema.index({ username: 1, createdBy: 1 }, { unique: true, sparse: true });
 
 // Virtual for full class display
 studentSchema.virtual('classDisplay').get(function() {

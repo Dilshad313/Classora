@@ -42,7 +42,7 @@ const employeeSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Email address is required'],
     trim: true,
-    unique: true
+    unique: false
   },
   dateOfBirth: Date,
   homeAddress: String,
@@ -50,11 +50,11 @@ const employeeSchema = new mongoose.Schema({
   // System Fields
   employeeId: {
     type: String,
-    unique: true
+    unique: false
   },
   username: {
     type: String,
-    unique: true,
+    unique: false,
     sparse: true
   },
   password: {
@@ -71,6 +71,13 @@ const employeeSchema = new mongoose.Schema({
     type: String,
     enum: ['active', 'inactive'],
     default: 'active'
+  },
+
+  // Ownership (Admin who created the employee)
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Admin',
+    required: true
   }
 
 }, {
@@ -82,6 +89,10 @@ employeeSchema.index({ emailAddress: 1 });
 employeeSchema.index({ employeeId: 1 });
 employeeSchema.index({ status: 1 });
 employeeSchema.index({ employeeRole: 1 });
+employeeSchema.index({ createdBy: 1 });
+employeeSchema.index({ emailAddress: 1, createdBy: 1 }, { unique: true });
+employeeSchema.index({ employeeId: 1, createdBy: 1 }, { unique: true });
+employeeSchema.index({ username: 1, createdBy: 1 }, { unique: true, sparse: true });
 
 // Generate employee ID and username before saving
 employeeSchema.pre('save', async function(next) {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { getInstituteProfile } from '../../../services/instituteApi';
 import { globalSearch } from '../../../services/searchApi';
@@ -12,10 +12,11 @@ import {
   Smartphone, MonitorPlay, HelpCircle, FileQuestion, GraduationCapIcon,
   ClipboardCheck, FileSpreadsheet, FileBadge, Plus, List, Users2, 
   UserCheck, IdCard, Printer, UserCog2, TrendingUpIcon, DollarSignIcon,
-  PiggyBank, FileBarChart, Trash2, Coins, FileOutput, CalendarDays,
+  PiggyBank, FileBarChart, Trash2, Coins, FileOutput, CalendarDays, Loader2,
   DoorClosed, Table, Send, Wifi, MessageCircle, FileEdit, Maximize,
   Minimize, Sun, Moon
 } from 'lucide-react';
+import { notificationApi } from '../../../services/notificationApi';
 
 const DashboardLayout = () => {
   const navigate = useNavigate();
@@ -38,6 +39,12 @@ const DashboardLayout = () => {
   const [searchResults, setSearchResults] = useState({ students: [], employees: [], classes: [], subjects: [] });
   const [showResults, setShowResults] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const [notifError, setNotifError] = useState(null);
+  const [notifList, setNotifList] = useState([]);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const notifDropdownRef = useRef(null);
 
   // Handle Search
   useEffect(() => {
@@ -73,6 +80,49 @@ const DashboardLayout = () => {
     const handleClickOutside = (event) => {
       if (!event.target.closest('.relative.w-full')) {
         setShowResults(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Load notification stats & preview
+  const fetchNotificationStats = async () => {
+    try {
+      const res = await notificationApi.getUserNotificationStats();
+      if (res.success && res.data) {
+        setUnreadNotifCount(res.data.unread || 0);
+      }
+    } catch (error) {
+      console.error('Failed to fetch notification stats:', error);
+    }
+  };
+
+  const fetchNotificationPreview = async () => {
+    try {
+      setNotifLoading(true);
+      setNotifError(null);
+      const res = await notificationApi.getUserNotifications({ page: 1, limit: 6 });
+      if (res.success && res.data) {
+        setNotifList(res.data.notifications || []);
+        fetchNotificationStats();
+      }
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+      setNotifError('Failed to load notifications');
+    } finally {
+      setNotifLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotificationStats();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notifDropdownRef.current && !notifDropdownRef.current.contains(event.target)) {
+        setNotifDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -681,14 +731,80 @@ const DashboardLayout = () => {
               </button>
 
               {/* Notifications */}
-              <button 
-                onClick={() => navigate('/dashboard/notifications')}
-                className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all"
-                title="View Notifications"
-              >
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-              </button>
+              <div className="relative" ref={notifDropdownRef}>
+                <button 
+                  onClick={() => {
+                    const next = !notifDropdownOpen;
+                    setNotifDropdownOpen(next);
+                    if (next) {
+                      fetchNotificationPreview();
+                    }
+                  }}
+                  className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all"
+                  title="View Notifications"
+                >
+                  <Bell className="w-5 h-5" />
+                  {unreadNotifCount > 0 && (
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                  )}
+                </button>
+
+                {notifDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-30">
+                    <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Notifications</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {unreadNotifCount > 0 ? `${unreadNotifCount} unread` : 'All caught up'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => navigate('/dashboard/notifications')}
+                        className="text-xs text-blue-600 dark:text-blue-400 font-medium hover:underline"
+                      >
+                        View all
+                      </button>
+                    </div>
+
+                    <div className="max-h-96 overflow-y-auto">
+                      {notifLoading ? (
+                        <div className="flex items-center gap-3 px-4 py-6 text-gray-600 dark:text-gray-300">
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span>Loading notifications...</span>
+                        </div>
+                      ) : notifError ? (
+                        <div className="px-4 py-6 text-sm text-red-600 dark:text-red-400">
+                          {notifError}
+                        </div>
+                      ) : notifList.length === 0 ? (
+                        <div className="px-4 py-6 text-sm text-gray-600 dark:text-gray-300">
+                          No notifications yet
+                        </div>
+                      ) : (
+                        notifList.map((notif) => (
+                          <div
+                            key={notif._id}
+                            className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 last:border-0"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className={`w-2 h-2 mt-1 rounded-full ${notif.isRead ? 'bg-transparent' : 'bg-blue-500'}`}></div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
+                                  {notif.title}
+                                </p>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                                  {notif.message}
+                                </p>
+                                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">{notif.timeAgo || 'Just now'}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <div className="relative">
                 <button

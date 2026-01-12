@@ -1,7 +1,16 @@
 import mongoose from 'mongoose';
 import Employee from '../models/Employee.js';
+import Notification from '../models/Notification.js';
 import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinaryUpload.js';
 import { StatusCodes } from 'http-status-codes';
+
+const ownerClauses = (userId, userEmail) => {
+  const clauses = [{ createdBy: userId }];
+  if (userEmail && userEmail.toLowerCase() === 'soft@gmail.com') {
+    clauses.push({ createdBy: { $exists: false } });
+  }
+  return clauses;
+};
 
 /**
  * Get all employees with filters
@@ -9,27 +18,33 @@ import { StatusCodes } from 'http-status-codes';
  */
 export const getAllEmployees = async (req, res) => {
   try {
+    const userId = req.user.id;
     const { role, status, search, page = 1, limit = 50 } = req.query;
     
     console.log('📥 GET /api/employees');
     
-    const query = {};
+    const baseOwner = { $or: ownerClauses(userId, req.user?.email) };
+    const andFilters = [baseOwner];
     
     if (role) {
-      query.employeeRole = { $regex: role, $options: 'i' };
+      andFilters.push({ employeeRole: { $regex: role, $options: 'i' } });
     }
     
     if (status) {
-      query.status = status;
+      andFilters.push({ status });
     }
     
     if (search) {
-      query.$or = [
-        { employeeName: { $regex: search, $options: 'i' } },
-        { emailAddress: { $regex: search, $options: 'i' } },
-        { employeeId: { $regex: search, $options: 'i' } }
-      ];
+      andFilters.push({
+        $or: [
+          { employeeName: { $regex: search, $options: 'i' } },
+          { emailAddress: { $regex: search, $options: 'i' } },
+          { employeeId: { $regex: search, $options: 'i' } }
+        ]
+      });
     }
+
+    const query = andFilters.length > 1 ? { $and: andFilters } : baseOwner;
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
@@ -40,8 +55,8 @@ export const getAllEmployees = async (req, res) => {
         .skip(skip)
         .limit(parseInt(limit)),
       Employee.countDocuments(query),
-      Employee.countDocuments({ status: 'active' }),
-      Employee.countDocuments({ status: 'inactive' })
+      Employee.countDocuments({ status: 'active', ...baseOwner }),
+      Employee.countDocuments({ status: 'inactive', ...baseOwner })
     ]);
     
     console.log(`✅ Found ${employees.length} employees`);
@@ -75,19 +90,24 @@ export const getAllEmployees = async (req, res) => {
  */
 export const getEmployeeLoginCredentials = async (req, res) => {
   try {
+    const userId = req.user.id;
     const { department, search } = req.query;
     console.log('📥 GET /api/employees/login-credentials');
-    const query = {};
+    const baseOwner = { $or: ownerClauses(userId, req.user?.email) };
+    const andFilters = [baseOwner];
     if (department && department !== 'all') {
-      query.department = department;
+      andFilters.push({ department });
     }
     if (search) {
-      query.$or = [
-        { employeeName: { $regex: search, $options: 'i' } },
-        { employeeId: { $regex: search, $options: 'i' } },
-        { username: { $regex: search, $options: 'i' } }
-      ];
+      andFilters.push({
+        $or: [
+          { employeeName: { $regex: search, $options: 'i' } },
+          { employeeId: { $regex: search, $options: 'i' } },
+          { username: { $regex: search, $options: 'i' } }
+        ]
+      });
     }
+    const query = andFilters.length > 1 ? { $and: andFilters } : baseOwner;
 
     const employees = await Employee.find(query).select('+username +password +originalPassword');
     console.log(`✅ Found ${employees.length} employee login credentials`);
@@ -125,11 +145,14 @@ export const updateEmployeeLoginCredentials = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        message: 'Invalid employee ID',
+        message: 'Invalid employee ID'
       });
     }
 
-    const employee = await Employee.findById(id).select('+password');
+    const employee = await Employee.findOne({
+      _id: id,
+      $or: ownerClauses(req.user.id, req.user?.email)
+    }).select('+password');
     if (!employee) {
       return res.status(StatusCodes.NOT_FOUND).json({
         success: false,
@@ -175,7 +198,10 @@ export const getEmployeeById = async (req, res) => {
       });
     }
     
-    const employee = await Employee.findById(id).select('-password');
+    const employee = await Employee.findOne({
+      _id: id,
+      $or: ownerClauses(req.user.id, req.user?.email)
+    }).select('-password');
     
     if (!employee) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -208,6 +234,7 @@ export const createEmployee = async (req, res) => {
   try {
     console.log('📥 POST /api/employees');
     console.log('Body fields:', Object.keys(req.body));
+    const userId = req.user.id;
     
     const {
       employeeName,
@@ -245,7 +272,7 @@ export const createEmployee = async (req, res) => {
     }
 
     // Check if email already exists (optimized with lean())
-    const existingEmployee = await Employee.findOne({ emailAddress: emailAddress.trim() }).lean();
+    const existingEmployee = await Employee.findOne({ emailAddress: emailAddress.trim(), createdBy: userId }).lean();
     if (existingEmployee) {
       return res.status(StatusCodes.CONFLICT).json({
         success: false,
@@ -326,7 +353,8 @@ export const createEmployee = async (req, res) => {
       password: password,
       dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
       homeAddress: homeAddress?.trim() || '',
-      department: department?.trim() || ''
+      department: department?.trim() || '',
+      createdBy: userId
     };
 
     if (pictureUrl) {
@@ -340,13 +368,33 @@ export const createEmployee = async (req, res) => {
     
     console.log('✅ Employee created:', employee._id);
 
-    // Return without password (use lean for better performance)
-    const employeeResponse = await Employee.findById(employee._id).select('-password').lean();
+    // Create notification
+    try {
+      await Notification.create({
+        title: 'Employee added',
+        message: `Employee "${employee.employeeName}" was added successfully${employee.department ? ` to ${employee.department}` : ''}.`,
+        type: 'success',
+        priority: 'medium',
+        category: 'general',
+        targetType: 'all',
+        sender: req.user.id,
+        senderName: req.user.name || 'Admin',
+        senderRole: 'Admin',
+        createdBy: req.user.id,
+        status: 'sent',
+        isActive: true,
+        totalRecipients: 0,
+        deliveredCount: 0,
+        readCount: 0
+      });
+    } catch (notifyErr) {
+      console.error('❌ Failed to create notification for new employee:', notifyErr);
+    }
 
     res.status(StatusCodes.CREATED).json({
       success: true,
       message: 'Employee created successfully',
-      data: employeeResponse
+      data: employee
     });
   } catch (error) {
     console.error('❌ Create employee error:', error);
@@ -390,7 +438,7 @@ export const updateEmployee = async (req, res) => {
       });
     }
 
-    const employee = await Employee.findById(id);
+    const employee = await Employee.findOne({ _id: id, createdBy: req.user.id });
     
     if (!employee) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -470,7 +518,7 @@ export const updateEmployee = async (req, res) => {
     
     console.log('✅ Employee updated');
 
-    const employeeResponse = await Employee.findById(id).select('-password').lean();
+    const employeeResponse = await Employee.findOne({ _id: id, createdBy: req.user.id }).select('-password').lean();
 
     res.status(StatusCodes.OK).json({
       success: true,
@@ -513,7 +561,7 @@ export const deleteEmployee = async (req, res) => {
       });
     }
 
-    const employee = await Employee.findById(id);
+    const employee = await Employee.findOne({ _id: id, createdBy: req.user.id });
     
     if (!employee) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -527,7 +575,7 @@ export const deleteEmployee = async (req, res) => {
       await deleteFromCloudinary(employee.picture.publicId);
     }
 
-    await Employee.findByIdAndDelete(id);
+    await Employee.deleteOne({ _id: id, createdBy: req.user.id });
     
     console.log('✅ Employee deleted:', id);
 
@@ -572,7 +620,7 @@ export const bulkDeleteEmployees = async (req, res) => {
     }
 
     // Get employees to delete pictures
-    const employees = await Employee.find({ _id: { $in: validIds } });
+    const employees = await Employee.find({ _id: { $in: validIds }, createdBy: req.user.id });
 
     // Delete pictures from Cloudinary
     for (const employee of employees) {
@@ -581,7 +629,7 @@ export const bulkDeleteEmployees = async (req, res) => {
       }
     }
 
-    const result = await Employee.deleteMany({ _id: { $in: validIds } });
+    const result = await Employee.deleteMany({ _id: { $in: validIds }, createdBy: req.user.id });
     
     console.log(`✅ Deleted ${result.deletedCount} employees`);
 
@@ -621,14 +669,14 @@ export const updateEmployeeStatus = async (req, res) => {
     if (!status || !validStatuses.includes(status)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`
+        message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` // eslint-disable-line
       });
     }
 
-    const employee = await Employee.findByIdAndUpdate(
-      id,
+    const employee = await Employee.findOneAndUpdate(
+      { _id: id, createdBy: req.user.id },
       { status },
-      { new: true }
+      { new: true, runValidators: true }
     ).select('-password');
     
     if (!employee) {
@@ -661,15 +709,22 @@ export const updateEmployeeStatus = async (req, res) => {
 export const getEmployeeStats = async (req, res) => {
   try {
     console.log('📥 GET /api/employees/stats/summary');
+    const userId = req.user.id;
+    const ownerMatch = { $or: ownerClauses(userId, req.user?.email) };
     
-    const totalEmployees = await Employee.countDocuments();
-    const activeEmployees = await Employee.countDocuments({ status: 'active' });
+    const totalEmployees = await Employee.countDocuments(ownerMatch);
+    const activeEmployees = await Employee.countDocuments({ status: 'active', ...ownerMatch });
+    const inactiveEmployees = await Employee.countDocuments({ status: 'inactive', ...ownerMatch });
     const teachers = await Employee.countDocuments({ 
-      employeeRole: { $regex: /teacher/i } 
+      employeeRole: { $regex: /teacher/i },
+      ...ownerMatch
     });
     
     // Get role distribution
     const roleDistribution = await Employee.aggregate([
+      {
+        $match: { ...ownerMatch, createdBy: { $exists: true } }
+      },
       {
         $group: {
           _id: '$employeeRole',

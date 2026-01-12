@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import SubjectAssignment from '../models/SubjectAssignment.js';
 import Class from '../models/Class.js';
 import Subject from '../models/Subject.js';
+import Notification from '../models/Notification.js';
 import Employee from '../models/Employee.js';
 import { StatusCodes } from 'http-status-codes';
 
@@ -533,6 +534,29 @@ export const createSubject = async (req, res) => {
     });
 
     console.log('✅ Subject created:', subject._id);
+
+    // Create notification
+    try {
+      await Notification.create({
+        title: 'Subject added',
+        message: `Subject "${subject.name}" (${subject.code}) was added successfully.`,
+        type: 'success',
+        priority: 'medium',
+        category: 'academic',
+        targetType: 'all',
+        sender: userId,
+        senderName: req.user.name || 'Admin',
+        senderRole: 'Admin',
+        createdBy: userId,
+        status: 'sent',
+        isActive: true,
+        totalRecipients: 0,
+        deliveredCount: 0,
+        readCount: 0
+      });
+    } catch (notifyErr) {
+      console.error('❌ Failed to create notification for new subject:', notifyErr);
+    }
 
     res.status(StatusCodes.CREATED).json({
       success: true,

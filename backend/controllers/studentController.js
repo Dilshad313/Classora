@@ -1,7 +1,17 @@
+import mongoose from 'mongoose';
 import Student from '../models/Student.js';
+import Notification from '../models/Notification.js';
 import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinaryUpload.js';
 import { StatusCodes } from 'http-status-codes';
-import bcrypt from 'bcryptjs';
+
+const ownerClauses = (userId, userEmail) => {
+  const clauses = [{ createdBy: userId }];
+  // Legacy records without createdBy belong to first admin (soft@gmail.com)
+  if (userEmail && userEmail.toLowerCase() === 'soft@gmail.com') {
+    clauses.push({ createdBy: { $exists: false } });
+  }
+  return clauses;
+};
 
 /**
  * Get all students with filtering and pagination
@@ -9,6 +19,7 @@ import bcrypt from 'bcryptjs';
  */
 export const getStudents = async (req, res) => {
   try {
+    const userId = req.user.id;
     const {
       search,
       class: studentClass,
@@ -17,24 +28,28 @@ export const getStudents = async (req, res) => {
       limit = 10
     } = req.query;
 
-    // Build filter object
-    const filter = {};
-    
+    const baseOwner = { $or: ownerClauses(userId, req.user?.email) };
+    const andFilters = [baseOwner];
+
     if (search) {
-      filter.$or = [
-        { studentName: { $regex: search, $options: 'i' } },
-        { registrationNo: { $regex: search, $options: 'i' } },
-        { admissionNumber: { $regex: search, $options: 'i' } }
-      ];
+      andFilters.push({
+        $or: [
+          { studentName: { $regex: search, $options: 'i' } },
+          { registrationNo: { $regex: search, $options: 'i' } },
+          { admissionNumber: { $regex: search, $options: 'i' } }
+        ]
+      });
     }
 
     if (studentClass && studentClass !== 'all') {
-      filter.selectClass = studentClass;
+      andFilters.push({ selectClass: studentClass });
     }
 
     if (status && status !== 'all') {
-      filter.status = status;
+      andFilters.push({ status });
     }
+
+    const filter = andFilters.length > 1 ? { $and: andFilters } : baseOwner;
 
     // Calculate pagination
     const skip = (page - 1) * limit;
@@ -76,7 +91,10 @@ export const getStudents = async (req, res) => {
  */
 export const getStudentById = async (req, res) => {
   try {
-    const student = await Student.findById(req.params.id).select('-password');
+    const student = await Student.findOne({
+      _id: req.params.id,
+      $or: ownerClauses(req.user.id, req.user?.email)
+    }).select('-password');
 
     if (!student) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -117,6 +135,7 @@ export const getStudentById = async (req, res) => {
  */
 export const createStudent = async (req, res) => {
   try {
+    const userId = req.user.id;
     const {
       studentName,
       registrationNo,
@@ -172,7 +191,8 @@ export const createStudent = async (req, res) => {
     // Check if registration number already exists
     // Only check registrationNo field, not admissionNumber, as they serve different purposes
     const existingStudent = await Student.findOne({ 
-      registrationNo: normalizedRegNo
+      registrationNo: normalizedRegNo,
+      $or: ownerClauses(userId, req.user?.email)
     });
     
     if (existingStudent) {
@@ -231,7 +251,7 @@ export const createStudent = async (req, res) => {
     let username = `${firstName}${lastName}${normalizedRegNo.toLowerCase()}`.replace(/\s+/g, '');
 
     // Check if username already exists
-    const existingUsername = await Student.findOne({ username });
+    const existingUsername = await Student.findOne({ username, $or: ownerClauses(userId, req.user?.email) });
     if (existingUsername) {
       // If username exists, append random number
       const randomSuffix = Math.floor(Math.random() * 1000);
@@ -275,8 +295,32 @@ export const createStudent = async (req, res) => {
       picture: pictureData,
       documents,
       username,
-      rollNumber: `${Math.floor(Math.random() * 300) + 1}/236`
+      rollNumber: `${Math.floor(Math.random() * 300) + 1}/236`,
+      createdBy: userId
     });
+
+    // Create notification
+    try {
+      await Notification.create({
+        title: 'Student added',
+        message: `Student "${student.studentName}" was added successfully to class ${student.selectClass}${student.section ? ` - Section ${student.section}` : ''}.`,
+        type: 'success',
+        priority: 'medium',
+        category: 'academic',
+        targetType: 'all',
+        sender: req.user.id,
+        senderName: req.user.name || 'Admin',
+        senderRole: 'Admin',
+        createdBy: req.user.id,
+        status: 'sent',
+        isActive: true,
+        totalRecipients: 0,
+        deliveredCount: 0,
+        readCount: 0
+      });
+    } catch (notifyErr) {
+      console.error('❌ Failed to create notification for new student:', notifyErr);
+    }
 
     // Return student without password
     const studentResponse = student.toObject();
@@ -333,7 +377,10 @@ export const createStudent = async (req, res) => {
  */
 export const updateStudent = async (req, res) => {
   try {
-    const student = await Student.findById(req.params.id);
+    const student = await Student.findOne({
+      _id: req.params.id,
+      $or: ownerClauses(req.user.id, req.user?.email)
+    });
     
     if (!student) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -452,7 +499,7 @@ export const updateStudent = async (req, res) => {
  */
 export const deleteStudent = async (req, res) => {
   try {
-    const student = await Student.findById(req.params.id);
+    const student = await Student.findOne({ _id: req.params.id, createdBy: req.user.id });
 
     if (!student) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -475,7 +522,7 @@ export const deleteStudent = async (req, res) => {
       }
     }
 
-    await Student.findByIdAndDelete(req.params.id);
+    await Student.deleteOne({ _id: req.params.id, createdBy: req.user.id });
 
     res.status(StatusCodes.OK).json({
       success: true,
@@ -505,6 +552,7 @@ export const deleteStudent = async (req, res) => {
 export const updateStudentStatus = async (req, res) => {
   try {
     const { status } = req.body;
+    const userId = req.user.id;
 
     if (!status || !['active', 'inactive'].includes(status)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
@@ -513,8 +561,8 @@ export const updateStudentStatus = async (req, res) => {
       });
     }
 
-    const student = await Student.findByIdAndUpdate(
-      req.params.id,
+    const student = await Student.findOneAndUpdate(
+      { _id: req.params.id, $or: ownerClauses(userId, req.user?.email) },
       { 
         status,
         lastActive: status === 'active' ? new Date() : undefined
@@ -557,7 +605,10 @@ export const updateStudentStatus = async (req, res) => {
  */
 export const getAdmissionLetter = async (req, res) => {
   try {
-    const student = await Student.findById(req.params.id).select('-password');
+    const student = await Student.findOne({
+      _id: req.params.id,
+      $or: ownerClauses(req.user.id, req.user?.email)
+    }).select('-password');
 
     if (!student) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -617,19 +668,25 @@ export const getAdmissionLetter = async (req, res) => {
  */
 export const getLoginCredentials = async (req, res) => {
   try {
+    const userId = req.user.id;
     const { class: studentClass, search } = req.query;
 
-    const filter = {};
+    const ownerFilter = { $or: ownerClauses(userId, req.user?.email) };
+    const andFilters = [ownerFilter];
     if (studentClass && studentClass !== 'all') {
-      filter.selectClass = studentClass;
+      andFilters.push({ selectClass: studentClass });
     }
 
     if (search) {
-      filter.$or = [
-        { studentName: { $regex: search, $options: 'i' } },
-        { registrationNo: { $regex: search, $options: 'i' } }
-      ];
+      andFilters.push({
+        $or: [
+          { studentName: { $regex: search, $options: 'i' } },
+          { registrationNo: { $regex: search, $options: 'i' } }
+        ]
+      });
     }
+
+    const filter = andFilters.length > 1 ? { $and: andFilters } : ownerFilter;
 
     const students = await Student.find(filter)
       .select('studentName registrationNo selectClass section username password plainPassword email')
@@ -655,6 +712,7 @@ export const getLoginCredentials = async (req, res) => {
  */
 export const updateLoginCredentials = async (req, res) => {
   try {
+    const userId = req.user.id;
     const { username, password } = req.body;
 
     const updateData = {};
@@ -666,8 +724,8 @@ export const updateLoginCredentials = async (req, res) => {
       updateData.plainPassword = password;
     }
 
-    const student = await Student.findByIdAndUpdate(
-      req.params.id,
+    const student = await Student.findOneAndUpdate(
+      { _id: req.params.id, $or: ownerClauses(userId, req.user?.email) },
       updateData,
       { new: true, runValidators: true }
     ).select('-password');
@@ -707,6 +765,7 @@ export const updateLoginCredentials = async (req, res) => {
  */
 export const promoteStudents = async (req, res) => {
   try {
+    const userId = req.user.id;
     const { studentIds, promoteToClass } = req.body;
 
     if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
@@ -733,7 +792,7 @@ export const promoteStudents = async (req, res) => {
 
     // Update students
     const result = await Student.updateMany(
-      { _id: { $in: studentIds } },
+      { _id: { $in: studentIds }, createdBy: userId },
       { 
         selectClass: promoteToClass,
         // Reset section to default when promoting
@@ -763,12 +822,15 @@ export const promoteStudents = async (req, res) => {
  */
 export const getBasicList = async (req, res) => {
   try {
+    const userId = req.user.id;
     const { class: studentClass } = req.query;
 
-    const filter = {};
+    const ownerFilter = { $or: ownerClauses(userId, req.user?.email) };
+    const andFilters = [ownerFilter];
     if (studentClass && studentClass !== 'all') {
-      filter.selectClass = studentClass;
+      andFilters.push({ selectClass: studentClass });
     }
+    const filter = andFilters.length > 1 ? { $and: andFilters } : ownerFilter;
 
     const students = await Student.find(filter)
       .select('studentName registrationNo fatherName selectClass section feeRemaining mobileNo')
@@ -804,12 +866,15 @@ export const getBasicList = async (req, res) => {
  */
 export const getStudentStats = async (req, res) => {
   try {
-    const total = await Student.countDocuments();
-    const active = await Student.countDocuments({ status: 'active' });
-    const inactive = await Student.countDocuments({ status: 'inactive' });
+    const userId = req.user.id;
+    const ownerMatch = { $or: ownerClauses(userId, req.user?.email) };
+    const total = await Student.countDocuments(ownerMatch);
+    const active = await Student.countDocuments({ status: 'active', ...ownerMatch });
+    const inactive = await Student.countDocuments({ status: 'inactive', ...ownerMatch });
     
     // Calculate average attendance
     const avgAttendanceResult = await Student.aggregate([
+      { $match: { ...ownerMatch, createdBy: { $exists: true } } },
       {
         $group: {
           _id: null,
@@ -848,6 +913,7 @@ export const getStudentStats = async (req, res) => {
 export const bulkUpdateStudentStatus = async (req, res) => {
   try {
     const { studentIds, status } = req.body;
+    const userId = req.user.id;
 
     if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
       return res.status(StatusCodes.BAD_REQUEST).json({
@@ -870,7 +936,7 @@ export const bulkUpdateStudentStatus = async (req, res) => {
     }
 
     const result = await Student.updateMany(
-      { _id: { $in: studentIds } },
+      { _id: { $in: studentIds }, $or: ownerClauses(userId, req.user?.email) },
       updateData
     );
 

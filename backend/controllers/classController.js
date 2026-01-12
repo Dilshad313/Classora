@@ -2,6 +2,7 @@
 
 import mongoose from 'mongoose';
 import Class from '../models/Class.js';
+import Notification from '../models/Notification.js';
 import Employee from '../models/Employee.js';
 import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinaryUpload.js';
 import { StatusCodes } from 'http-status-codes';
@@ -212,6 +213,29 @@ export const createClass = async (req, res) => {
     const newClass = await Class.create(classData);
     
     console.log('✅ Class created:', newClass._id);
+
+    // Create notification
+    try {
+      await Notification.create({
+        title: 'Class added',
+        message: `Class "${newClass.className}" (${newClass.section}) was added successfully.`,
+        type: 'success',
+        priority: 'medium',
+        category: 'academic',
+        targetType: 'all',
+        sender: userId,
+        senderName: req.user.name || 'Admin',
+        senderRole: 'Admin',
+        createdBy: userId,
+        status: 'sent',
+        isActive: true,
+        totalRecipients: 0,
+        deliveredCount: 0,
+        readCount: 0
+      });
+    } catch (notifyErr) {
+      console.error('❌ Failed to create notification for new class:', notifyErr);
+    }
 
     res.status(StatusCodes.CREATED).json({
       success: true,
