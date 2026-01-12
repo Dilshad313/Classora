@@ -1,5 +1,7 @@
 import jwt from 'jsonwebtoken';
 import Admin from '../models/Admin.js';
+import Student from '../models/Student.js';
+import Employee from '../models/Employee.js';
 import { StatusCodes } from 'http-status-codes';
 
 /**
@@ -7,7 +9,6 @@ import { StatusCodes } from 'http-status-codes';
  */
 export const authenticateToken = async (req, res, next) => {
   try {
-    // Get token from header
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
@@ -18,12 +19,19 @@ export const authenticateToken = async (req, res, next) => {
       });
     }
 
-    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    // Find user by ID from token
-    const user = await Admin.findById(decoded.id).select('-password');
-    
+
+    let user = null;
+    const role = decoded.role || 'admin';
+
+    if (role === 'admin' || role === 'superadmin') {
+      user = await Admin.findById(decoded.id).select('-password');
+    } else if (role === 'student') {
+      user = await Student.findById(decoded.id).select('-password');
+    } else if (role === 'teacher') {
+      user = await Employee.findById(decoded.id).select('-password');
+    }
+
     if (!user) {
       return res.status(StatusCodes.UNAUTHORIZED).json({
         success: false,
@@ -31,8 +39,13 @@ export const authenticateToken = async (req, res, next) => {
       });
     }
 
-    // Attach user to request object
-    req.user = user;
+    const plainUser = user.toObject();
+    req.user = {
+      ...plainUser,
+      role,
+      id: plainUser._id?.toString?.() || decoded.id
+    };
+
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {

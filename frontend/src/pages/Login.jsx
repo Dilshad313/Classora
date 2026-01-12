@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogIn, Mail, Lock, Eye, EyeOff, GraduationCap, Crown, Shield, Loader2 } from 'lucide-react';
+import { LogIn, Mail, Lock, Eye, EyeOff, GraduationCap, Crown, Shield, Loader2, Briefcase } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Login = () => {
@@ -10,6 +10,7 @@ const Login = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    adminKey: '',
     role: 'admin'
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -18,14 +19,22 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Check if already logged in
     const token = localStorage.getItem('token');
-    if (token) {
-      navigate('/dashboard');
+    const userStr = localStorage.getItem('user');
+
+    if (token && userStr) {
+      const user = JSON.parse(userStr);
+      const role = user.role;
+      if (role === 'student') {
+        navigate('/student/dashboard');
+      } else if (role === 'teacher') {
+        navigate('/teacher/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     }
     
-    const user = localStorage.getItem('user');
-    setHasAccount(!!user);
+    setHasAccount(!!userStr);
   }, [navigate]);
 
   const handleChange = (e) => {
@@ -48,6 +57,10 @@ const Login = () => {
       newErrors.password = 'Password must be at least 6 characters';
     }
 
+    if (!formData.adminKey) {
+      newErrors.adminKey = 'Admin key is required';
+    }
+
     return newErrors;
   };
 
@@ -64,12 +77,19 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/admin/login', {
+      const endpoints = {
+        admin: 'http://localhost:5000/api/admin/login',
+        student: 'http://localhost:5000/api/admin/login/student',
+        employee: 'http://localhost:5000/api/admin/login/employee'
+      };
+
+      const response = await fetch(endpoints[formData.role], {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: formData.email.toLowerCase().trim(),
-          password: formData.password
+          password: formData.password,
+          adminKey: formData.adminKey.trim()
         })
       });
 
@@ -92,9 +112,16 @@ const Login = () => {
         duration: 3000,
       });
 
-      // Navigate to dashboard
+      const targetRole = data.user?.role || formData.role;
+      const destination = targetRole === 'student'
+        ? '/student/dashboard'
+        : targetRole === 'teacher'
+          ? '/teacher/dashboard'
+          : '/dashboard';
+
+      // Navigate to role-specific dashboard
       setTimeout(() => {
-        navigate('/dashboard');
+        navigate(destination);
       }, 500);
 
     } catch (error) {
@@ -106,8 +133,16 @@ const Login = () => {
   };
 
   const roles = [
-    { id: 'admin', label: 'Administrator', icon: Crown }
+    { id: 'admin', label: 'Administrator', icon: Crown },
+    { id: 'student', label: 'Student', icon: GraduationCap },
+    { id: 'employee', label: 'Employee / Teacher', icon: Briefcase }
   ];
+
+  const placeholders = {
+    admin: 'admin@example.com',
+    student: 'student@example.com',
+    employee: 'teacher@example.com'
+  };
 
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden relative">
@@ -187,7 +222,7 @@ const Login = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    placeholder="admin@example.com"
+                    placeholder={placeholders[formData.role]}
                     disabled={isLoading}
                     className={`w-full pl-14 pr-5 py-5 rounded-2xl bg-white/5 border backdrop-blur-xl text-white placeholder-gray-500 transition-all
                       ${errors.email ? 'border-red-500/80 focus:border-red-500' : 'border-white/10 focus:border-purple-500'}
@@ -237,21 +272,31 @@ const Login = () => {
                 )}
               </div>
 
-              {/* Remember me & Forgot password */}
-              <div className="flex justify-between items-center text-sm">
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    className="w-5 h-5 rounded bg-white/10 border-white/20 text-purple-600 focus:ring-purple-500"
-                  />
-                  <span className="text-gray-400 group-hover:text-gray-300 transition-colors">Remember me</span>
+              {/* Admin Key */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                  <Shield className="w-4 h-4" /> Admin Key
                 </label>
-                <Link
-                  to="/forgot-password"
-                  className="text-purple-400 hover:text-purple-300 transition-colors"
-                >
-                  Forgot password?
-                </Link>
+                <div className="relative">
+                  <input
+                    type="password"
+                    name="adminKey"
+                    value={formData.adminKey}
+                    onChange={handleChange}
+                    placeholder="Enter admin security key"
+                    disabled={isLoading}
+                    className={`w-full pl-5 pr-5 py-5 rounded-2xl bg-white/5 border backdrop-blur-xl text-white placeholder-gray-500 transition-all
+                      ${errors.adminKey ? 'border-red-500/80 focus:border-red-500' : 'border-white/10 focus:border-purple-500'}
+                      disabled:opacity-50 disabled:cursor-not-allowed
+                    `}
+                  />
+                </div>
+                {errors.adminKey && (
+                  <p className="text-red-400 text-sm ml-2 flex items-center gap-1">
+                    <span className="inline-block w-1 h-1 bg-red-400 rounded-full"></span>
+                    {errors.adminKey}
+                  </p>
+                )}
               </div>
 
               {/* Submit button */}

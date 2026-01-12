@@ -1,6 +1,8 @@
 // controllers/authController.js
 
 import Admin from "../models/Admin.js";
+import Student from "../models/Student.js";
+import Employee from "../models/Employee.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { StatusCodes } from 'http-status-codes';
@@ -64,7 +66,7 @@ export const registerAdmin = async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { id: admin._id, email: admin.email },
+      { id: admin._id, email: admin.email, role: 'admin' },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -117,15 +119,23 @@ export const registerAdmin = async (req, res) => {
 // LOGIN
 export const loginAdmin = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, adminKey } = req.body;
 
-    console.log('📥 Login attempt for:', email);
+    console.log('📥 Admin login attempt for:', email);
 
     // Validate required fields
-    if (!email || !password) {
+    if (!email || !password || !adminKey) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        message: "Email and password are required"
+        message: "Email, password and admin key are required"
+      });
+    }
+
+    // Validate admin key
+    if (adminKey !== ADMIN_KEY) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        message: "Invalid admin key"
       });
     }
 
@@ -154,7 +164,7 @@ export const loginAdmin = async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { id: admin._id, email: admin.email },
+      { id: admin._id, email: admin.email, role: 'admin' },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -169,7 +179,7 @@ export const loginAdmin = async (req, res) => {
       updatedAt: admin.updatedAt
     };
 
-    console.log('✅ Login successful:', admin.email);
+    console.log('✅ Admin login successful:', admin.email);
 
     res.status(StatusCodes.OK).json({
       success: true,
@@ -178,7 +188,164 @@ export const loginAdmin = async (req, res) => {
       token
     });
   } catch (error) {
-    console.error("❌ Login error:", error);
+    console.error("❌ Admin login error:", error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: "Server error during login"
+    });
+  }
+};
+
+export const loginStudent = async (req, res) => {
+  try {
+    const { email, password, adminKey } = req.body;
+
+    console.log('📥 Student login attempt for:', email);
+
+    if (!email || !password || !adminKey) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Email, password and admin key are required"
+      });
+    }
+
+    if (adminKey !== ADMIN_KEY) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        message: "Invalid admin key"
+      });
+    }
+
+    const student = await Student.findOne({ email: email.toLowerCase().trim() });
+
+    if (!student) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        message: "Invalid email or password"
+      });
+    }
+
+    if (student.status && student.status !== 'active') {
+      return res.status(StatusCodes.FORBIDDEN).json({
+        success: false,
+        message: "Account is inactive. Please contact administrator."
+      });
+    }
+
+    const isMatch = await student.comparePassword(password);
+
+    if (!isMatch) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        message: "Invalid email or password"
+      });
+    }
+
+    const token = jwt.sign(
+      { id: student._id, email: student.email, role: 'student' },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    const studentResponse = {
+      _id: student._id,
+      fullName: student.studentName,
+      email: student.email,
+      role: 'student',
+      class: student.selectClass,
+      section: student.section,
+      createdAt: student.createdAt,
+      updatedAt: student.updatedAt
+    };
+
+    console.log('✅ Student login successful:', student.email);
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Login successful",
+      user: studentResponse,
+      token
+    });
+  } catch (error) {
+    console.error("❌ Student login error:", error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: "Server error during login"
+    });
+  }
+};
+
+export const loginEmployee = async (req, res) => {
+  try {
+    const { email, password, adminKey } = req.body;
+
+    console.log('📥 Employee login attempt for:', email);
+
+    if (!email || !password || !adminKey) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Email, password and admin key are required"
+      });
+    }
+
+    if (adminKey !== ADMIN_KEY) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        message: "Invalid admin key"
+      });
+    }
+
+    const employee = await Employee.findOne({ emailAddress: email.trim().toLowerCase() }).select('+password');
+
+    if (!employee) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        message: "Invalid email or password"
+      });
+    }
+
+    if (employee.status && employee.status !== 'active') {
+      return res.status(StatusCodes.FORBIDDEN).json({
+        success: false,
+        message: "Account is inactive. Please contact administrator."
+      });
+    }
+
+    const isMatch = await employee.comparePassword(password);
+
+    if (!isMatch) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        message: "Invalid email or password"
+      });
+    }
+
+    const token = jwt.sign(
+      { id: employee._id, email: employee.emailAddress, role: 'teacher' },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    const employeeResponse = {
+      _id: employee._id,
+      fullName: employee.employeeName,
+      email: employee.emailAddress,
+      role: 'teacher',
+      department: employee.department,
+      createdAt: employee.createdAt,
+      updatedAt: employee.updatedAt
+    };
+
+    console.log('✅ Employee login successful:', employee.emailAddress);
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Login successful",
+      user: employeeResponse,
+      token
+    });
+  } catch (error) {
+    console.error("❌ Employee login error:", error);
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: "Server error during login"
@@ -189,9 +356,18 @@ export const loginAdmin = async (req, res) => {
 // GET CURRENT USER
 export const getCurrentUser = async (req, res) => {
   try {
-    const admin = await Admin.findById(req.user.id).select('-password');
-    
-    if (!admin) {
+    const role = req.user.role || 'admin';
+    let user = null;
+
+    if (role === 'admin' || role === 'superadmin') {
+      user = await Admin.findById(req.user.id).select('-password');
+    } else if (role === 'student') {
+      user = await Student.findById(req.user.id).select('-password');
+    } else if (role === 'teacher') {
+      user = await Employee.findById(req.user.id).select('-password');
+    }
+
+    if (!user) {
       return res.status(StatusCodes.NOT_FOUND).json({
         success: false,
         message: "User not found"
@@ -201,8 +377,8 @@ export const getCurrentUser = async (req, res) => {
     res.status(StatusCodes.OK).json({
       success: true,
       user: {
-        ...admin.toObject(),
-        role: 'admin'
+        ...user.toObject(),
+        role
       }
     });
   } catch (error) {
