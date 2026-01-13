@@ -170,10 +170,16 @@ export const getHomeworkStats = async () => {
 
 /**
  * Get dropdown data (classes, teachers, subjects)
+ * @param {Object} params - Filter options
  * @returns {Promise<Object>} Dropdown data
  */
-export const getDropdownData = async () => {
-  return handleApiCall(`${API_BASE_URL}/homework/dropdown-data`, { method: 'GET' });
+export const getDropdownData = async (params = {}) => {
+  const queryParams = new URLSearchParams();
+  if (params.classId) {
+    queryParams.append('classId', params.classId);
+  }
+  const url = `${API_BASE_URL}/homework/dropdown-data${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+  return handleApiCall(url, { method: 'GET' });
 };
 
 /**

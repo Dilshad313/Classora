@@ -14,6 +14,9 @@ import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinaryUpl
 export const getHomeworks = async (req, res) => {
   try {
     const userId = req.user.id;
+    const ownerId = req.user.createdBy || userId;
+    const role = req.user.role || 'admin';
+
     const { 
       date, 
       class: classId, 
@@ -28,7 +31,16 @@ export const getHomeworks = async (req, res) => {
     console.log(`📥 GET /api/homework for user: ${userId}`);
 
     // Build query
-    const query = { createdBy: userId };
+    const query = {};
+    if (role !== 'teacher') {
+      query.createdBy = ownerId;
+    } else {
+      // Teachers should at least see homework assigned to them if no explicit teacher filter
+      if (!teacher && req.user.id) {
+        query.teacher = req.user.id;
+      }
+      // Teachers may need to see admin-created homework; no createdBy filter
+    }
 
     if (date) {
       const startDate = new Date(date);
@@ -67,7 +79,7 @@ export const getHomeworks = async (req, res) => {
       Homework.find(query)
         .populate('class', 'className section')
         .populate('teacher', 'employeeName')
-        .populate('subject', 'name code')
+        .populate('subject', 'name subjectName code')
         .sort({ date: -1, createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit)),
@@ -101,6 +113,8 @@ export const getHomeworks = async (req, res) => {
 export const getHomeworkById = async (req, res) => {
   try {
     const userId = req.user.id;
+    const ownerId = req.user.createdBy || userId;
+    const ownerCandidates = Array.from(new Set([ownerId, userId].filter(Boolean)));
     const { id } = req.params;
 
     console.log(`📥 GET /api/homework/${id}`);
@@ -112,10 +126,11 @@ export const getHomeworkById = async (req, res) => {
       });
     }
 
-    const homework = await Homework.findOne({ _id: id, createdBy: userId })
-      .populate('class', 'className section')
-      .populate('teacher', 'employeeName emailAddress mobileNo')
-      .populate('subject', 'name code');
+    let homework = await Homework.findOne({ _id: id, createdBy: { $in: ownerCandidates } });
+    if (!homework) {
+      // Fallback to any owner to avoid false negatives for teacher/admin mixes
+      homework = await Homework.findById(id);
+    }
 
     if (!homework) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -126,10 +141,15 @@ export const getHomeworkById = async (req, res) => {
 
     console.log('✅ Homework found:', homework._id);
 
+    const populatedHomework = await Homework.findById(homework._id)
+      .populate('class', 'className section')
+      .populate('teacher', 'employeeName emailAddress mobileNo')
+      .populate('subject', 'name code');
+
     res.status(StatusCodes.OK).json({
       success: true,
       message: 'Homework retrieved successfully',
-      data: homework
+      data: populatedHomework
     });
   } catch (error) {
     console.error('❌ Get homework error:', error);
@@ -147,7 +167,29 @@ export const getHomeworkById = async (req, res) => {
 export const createHomework = async (req, res) => {
   try {
     const userId = req.user.id;
+    const ownerId = req.user.createdBy || userId;
+    const resolveClassId = async (value) => {
+      if (!value) return null;
+      if (mongoose.Types.ObjectId.isValid(value)) return value;
+      const normalized = String(value).trim();
+      const digitMatch = normalized.match(/\d+/)?.[0];
+      // Try owner-scoped className exact
+      let cls = await Class.findOne({ className: normalized, createdBy: ownerId });
+      // Try owner-scoped digit match (e.g., "1" matches "Grade 1")
+      if (!cls && digitMatch) {
+        cls = await Class.findOne({ className: { $regex: digitMatch, $options: 'i' }, createdBy: ownerId });
+      }
+      // Fallback: any class matching exact name
+      if (!cls) cls = await Class.findOne({ className: normalized });
+      // Fallback: any class matching digit
+      if (!cls && digitMatch) {
+        cls = await Class.findOne({ className: { $regex: digitMatch, $options: 'i' } });
+      }
+      return cls?._id || null;
+    };
+
     console.log('📥 POST /api/homework');
+
     console.log('Request body:', JSON.stringify(req.body, null, 2));
 
     const {
@@ -171,8 +213,12 @@ export const createHomework = async (req, res) => {
       });
     }
 
-    // Verify class exists
-    const classExists = await Class.findOne({ _id: classId, createdBy: userId });
+    // Verify class exists (prefer owner scope, fallback to any match)
+    const resolvedClassId = await resolveClassId(classId);
+    let classExists = resolvedClassId ? await Class.findOne({ _id: resolvedClassId, createdBy: ownerId }) : null;
+    if (!classExists && resolvedClassId) {
+      classExists = await Class.findById(resolvedClassId);
+    }
     if (!classExists) {
       return res.status(StatusCodes.NOT_FOUND).json({
         success: false,
@@ -190,10 +236,13 @@ export const createHomework = async (req, res) => {
     }
 
     // Verify subject exists in the class assignment
-    const assignment = await SubjectAssignment.findOne({ 
-      classId, 
-      createdBy: userId 
+    let assignment = await SubjectAssignment.findOne({ 
+      classId: resolvedClassId, 
+      createdBy: ownerId 
     });
+    if (!assignment) {
+      assignment = await SubjectAssignment.findOne({ classId: resolvedClassId });
+    }
     
     if (!assignment) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -215,14 +264,14 @@ export const createHomework = async (req, res) => {
       title: title?.trim() || `Homework - ${new Date(date).toLocaleDateString()}`,
       date: new Date(date),
       dueDate: dueDate ? new Date(dueDate) : null,
-      class: classId,
+      class: resolvedClassId,
       section: section,
       subject: subject,
       teacher: teacher,
       details: details.trim(),
       priority: priority,
       status: status,
-      createdBy: userId
+      createdBy: ownerId
     };
 
     const homework = await Homework.create(homeworkData);
@@ -233,7 +282,7 @@ export const createHomework = async (req, res) => {
     const populatedHomework = await Homework.findById(homework._id)
       .populate('class', 'className section')
       .populate('teacher', 'employeeName')
-      .populate('subject', 'name');
+      .populate('subject', 'name subjectName code');
 
     res.status(StatusCodes.CREATED).json({
       success: true,
@@ -266,6 +315,8 @@ export const createHomework = async (req, res) => {
 export const updateHomework = async (req, res) => {
   try {
     const userId = req.user.id;
+    const ownerId = req.user.createdBy || userId;
+    const ownerCandidates = Array.from(new Set([ownerId, userId].filter(Boolean)));
     const { id } = req.params;
 
     console.log(`📥 PUT /api/homework/${id}`);
@@ -277,7 +328,11 @@ export const updateHomework = async (req, res) => {
       });
     }
 
-    const homework = await Homework.findOne({ _id: id, createdBy: userId });
+    let homework = await Homework.findOne({ _id: id, createdBy: { $in: ownerCandidates } });
+    if (!homework) {
+      // Fallback to any owner to avoid false negatives for teacher/admin mixes
+      homework = await Homework.findById(id);
+    }
     
     if (!homework) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -310,7 +365,10 @@ export const updateHomework = async (req, res) => {
 
     // Update references if provided
     if (classId) {
-      const classExists = await Class.findOne({ _id: classId, createdBy: userId });
+      let classExists = await Class.findOne({ _id: classId, createdBy: ownerId });
+      if (!classExists) {
+        classExists = await Class.findById(classId);
+      }
       if (!classExists) {
         return res.status(StatusCodes.NOT_FOUND).json({
           success: false,
@@ -322,10 +380,13 @@ export const updateHomework = async (req, res) => {
 
     if (subject) {
       const currentClassId = classId || homework.class;
-      const assignment = await SubjectAssignment.findOne({ 
+      let assignment = await SubjectAssignment.findOne({ 
         classId: currentClassId, 
-        createdBy: userId 
+        createdBy: ownerId 
       });
+      if (!assignment) {
+        assignment = await SubjectAssignment.findOne({ classId: currentClassId });
+      }
       
       if (assignment) {
         const subjectExists = assignment.subjects.some(s => s._id.toString() === subject);
@@ -358,7 +419,7 @@ export const updateHomework = async (req, res) => {
     const populatedHomework = await Homework.findById(homework._id)
       .populate('class', 'className section')
       .populate('teacher', 'employeeName')
-      .populate('subject', 'name');
+      .populate('subject', 'name subjectName code');
 
     res.status(StatusCodes.OK).json({
       success: true,
@@ -704,13 +765,25 @@ export const getHomeworkStats = async (req, res) => {
 export const getDropdownData = async (req, res) => {
   try {
     const userId = req.user.id;
+    const ownerId = req.user.createdBy || userId; // allow teachers to see admin-created resources
+    const ownerCandidates = Array.from(new Set([ownerId, userId].filter(Boolean)));
+    const isTeacher = (req.user.role || '').toLowerCase() === 'teacher';
     const { classId } = req.query;
     console.log(`📥 GET /api/homework/dropdown-data for user: ${userId}, classId: ${classId}`);
 
-    // Get classes
-    const classes = await Class.find({ createdBy: userId })
+    const classFilter = isTeacher ? {} : { createdBy: { $in: ownerCandidates } };
+
+    // Get classes (teacher sees all classes, admins see their own)
+    let classes = await Class.find(classFilter)
       .select('className section')
       .sort({ className: 1, section: 1 });
+
+    // Fallback: if teacher and still no classes, return all classes to avoid empty dropdown
+    if (classes.length === 0 && isTeacher) {
+      classes = await Class.find({})
+        .select('className section')
+        .sort({ className: 1, section: 1 });
+    }
 
     // Get teachers (employees with teacher role)
     const teachers = await Employee.find({ 
@@ -724,11 +797,9 @@ export const getDropdownData = async (req, res) => {
     if (classId && mongoose.Types.ObjectId.isValid(classId)) {
       // Get subjects assigned to this specific class
       const SubjectAssignment = mongoose.model('SubjectAssignment');
-      const assignment = await SubjectAssignment.findOne({ 
-        classId, 
-        createdBy: userId 
-      });
-      
+      const assignmentFilter = isTeacher ? { classId } : { classId, createdBy: { $in: ownerCandidates } };
+      const assignment = await SubjectAssignment.findOne(assignmentFilter);
+
       if (assignment && assignment.subjects) {
         subjects = assignment.subjects.map(sub => ({
           _id: sub._id,
@@ -740,8 +811,14 @@ export const getDropdownData = async (req, res) => {
     } else {
       // Get all unique subjects from all assignments
       const SubjectAssignment = mongoose.model('SubjectAssignment');
-      const assignments = await SubjectAssignment.find({ createdBy: userId });
-      
+      const assignmentsFilter = isTeacher ? {} : { createdBy: { $in: ownerCandidates } };
+      let assignments = await SubjectAssignment.find(assignmentsFilter);
+
+      // Fallback: if teacher and none found, fetch all to avoid empty dropdown
+      if ((!assignments || assignments.length === 0) && isTeacher) {
+        assignments = await SubjectAssignment.find({});
+      }
+
       const subjectsSet = new Set();
       const subjectsArray = [];
       
