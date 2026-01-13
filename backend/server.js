@@ -42,6 +42,9 @@ import certificateRoutes from './routes/certificateRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import userNotificationRoutes from './routes/userNotificationRoutes.js';
+import behaviourRoutes from './routes/behaviourRoutes.js';
+import skillRoutes from './routes/skillRoutes.js';
+import dashboardRoutes from './routes/dashboardRoutes.js';
 
 import { requestLogger, errorLogger } from './middleware/logging.js';
 import notificationScheduler from './utils/notificationScheduler.js';
@@ -84,10 +87,6 @@ app.options('*', cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-import dashboardRoutes from './routes/dashboardRoutes.js';
-
-// ... existing imports ...
-
 // Routes
 app.use("/api/admin", adminRoutes);
 app.use("/api/dashboard", dashboardRoutes);
@@ -109,7 +108,6 @@ app.use('/api/fees', feesRoutes);
 app.use("/api/salary", salaryRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/timetable", timetableRoutes);
-app.use("/api/homework", homeworkRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/sms", smsRoutes);
 app.use("/api/meetings", meetingRoutes);
@@ -121,6 +119,8 @@ app.use("/api/certificates", certificateRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/user-notifications", userNotificationRoutes);
+app.use("/api/behaviours", behaviourRoutes);
+app.use("/api/skills", skillRoutes);
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({

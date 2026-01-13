@@ -1,28 +1,123 @@
-import { useState } from 'react';
-import { Star, Users, Save, Search, Award, TrendingUp, BarChart3, UserCheck } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'react-hot-toast';
+import { Star, Users, Save, Search, Award, TrendingUp, BarChart3, UserCheck, Loader2 } from 'lucide-react';
+import { behaviourApi } from '../../../../services/behaviourApi';
 
 const RateBehaviours = () => {
   const [selectedClass, setSelectedClass] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [classes, setClasses] = useState([]);
+  const [loadingClasses, setLoadingClasses] = useState(false);
+  const [students, setStudents] = useState([]);
+  const [loadingStudents, setLoadingStudents] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const behaviourCriteria = [
     'Discipline', 'Punctuality', 'Respect', 'Cooperation', 'Leadership'
   ];
 
-  const students = [
-    { id: 1, name: 'John Doe', rollNo: '001', class: '10-A' },
-    { id: 2, name: 'Jane Smith', rollNo: '002', class: '10-A' },
-    { id: 3, name: 'Mike Johnson', rollNo: '003', class: '10-A' },
-  ];
-
+  // ratings state: { [studentId]: { [criteria]: number } }
   const [ratings, setRatings] = useState({});
+
+  const filteredStudents = useMemo(() => {
+    return students.filter(student => {
+      const matchesSearch =
+        !searchTerm ||
+        student.studentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.rollNumber?.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesSearch;
+    });
+  }, [students, searchTerm]);
+
+  useEffect(() => {
+    const loadClasses = async () => {
+      try {
+        setLoadingClasses(true);
+        const data = await behaviourApi.getTeacherClasses();
+        setClasses(data || []);
+      } catch (error) {
+        console.error('Failed to load classes', error);
+        toast.error(error.message || 'Failed to load classes');
+      } finally {
+        setLoadingClasses(false);
+      }
+    };
+
+    loadClasses();
+  }, []);
+
+  const loadStudents = async (classId) => {
+    if (!classId) {
+      setStudents([]);
+      setRatings({});
+      return;
+    }
+    try {
+      setLoadingStudents(true);
+      const data = await behaviourApi.getClassStudentsWithRatings(classId);
+      setStudents(data || []);
+
+      const prefill = {};
+      data.forEach(stu => {
+        prefill[stu._id] = {};
+        Object.entries(stu.ratings || {}).forEach(([criteria, value]) => {
+          prefill[stu._id][criteria] = Number(value);
+        });
+      });
+      setRatings(prefill);
+    } catch (error) {
+      console.error('Failed to load students', error);
+      toast.error(error.message || 'Failed to load students');
+      setStudents([]);
+      setRatings({});
+    } finally {
+      setLoadingStudents(false);
+    }
+  };
 
   const handleRating = (studentId, criteria, rating) => {
     setRatings(prev => ({
       ...prev,
-      [`${studentId}-${criteria}`]: rating
+      [studentId]: {
+        ...(prev[studentId] || {}),
+        [criteria]: rating
+      }
     }));
   };
+
+  const handleClassChange = (e) => {
+    const value = e.target.value;
+    setSelectedClass(value);
+    loadStudents(value);
+  };
+
+  const handleSave = async () => {
+    if (!selectedClass) {
+      toast.error('Please select a class first');
+      return;
+    }
+    const payload = {
+      classId: selectedClass,
+      ratings: students.map(stu => ({
+        studentId: stu._id,
+        ratings: ratings[stu._id] || {}
+      }))
+    };
+    try {
+      setSaving(true);
+      await behaviourApi.saveBehaviourRatings(payload);
+      toast.success('Ratings saved successfully');
+      await loadStudents(selectedClass);
+    } catch (error) {
+      console.error('Save ratings failed', error);
+      toast.error(error.message || 'Failed to save ratings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const totalStudents = students.length;
+  const ratedCount = Object.values(ratings).filter(r => Object.keys(r || {}).length > 0).length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-6">
@@ -57,9 +152,13 @@ const RateBehaviours = () => {
 
         {/* Save Button */}
         <div className="flex justify-end">
-          <button className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2">
-            <Save className="w-5 h-5" />
-            Save Ratings
+          <button
+            onClick={handleSave}
+            disabled={saving || loadingStudents || !selectedClass}
+            className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
+          >
+            {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+            {saving ? 'Saving...' : 'Save Ratings'}
           </button>
         </div>
 
@@ -72,7 +171,7 @@ const RateBehaviours = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Total Students</p>
-                <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">24</p>
+                <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">{totalStudents}</p>
               </div>
             </div>
           </div>
@@ -83,7 +182,7 @@ const RateBehaviours = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Rated Today</p>
-                <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">12</p>
+                <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">{ratedCount}</p>
               </div>
             </div>
           </div>
@@ -94,7 +193,15 @@ const RateBehaviours = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Avg Rating</p>
-                <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">4.2</p>
+                <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+                  {students.length
+                    ? (students.reduce((sum, stu) => {
+                        const vals = Object.values(ratings[stu._id] || {});
+                        if (!vals.length) return sum;
+                        return sum + vals.reduce((a, b) => a + b, 0) / vals.length;
+                      }, 0) / students.length).toFixed(1)
+                    : '0.0'}
+                </p>
               </div>
             </div>
           </div>
@@ -131,17 +238,24 @@ const RateBehaviours = () => {
                   <Users className="w-4 h-4 inline mr-2 text-purple-600 dark:text-purple-400" />
                   Select Class
                 </label>
-                <select 
-                  value={selectedClass} 
-                  onChange={(e) => setSelectedClass(e.target.value)} 
-                  className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-500/20 dark:focus:ring-purple-400/20 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all duration-200"
-                >
-                  <option value="">Select a class</option>
-                  <option value="10-A">Class 10-A</option>
-                  <option value="9-B">Class 9-B</option>
-                  <option value="10-C">Class 10-C</option>
-                  <option value="9-A">Class 9-A</option>
-                </select>
+                {loadingClasses ? (
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Loading classes...
+                  </div>
+                ) : (
+                  <select 
+                    value={selectedClass} 
+                    onChange={handleClassChange} 
+                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-500/20 dark:focus:ring-purple-400/20 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all duration-200"
+                  >
+                    <option value="">Select a class</option>
+                    {classes.map(cls => (
+                      <option key={cls._id} value={cls._id}>
+                        {cls.className}{cls.section ? ` - ${cls.section}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -196,17 +310,34 @@ const RateBehaviours = () => {
                 </tr>
               </thead>
               <tbody>
-                {students.map(student => (
-                  <tr key={student.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                {loadingStudents ? (
+                  <tr>
+                    <td colSpan={behaviourCriteria.length + 1} className="py-8 text-center text-gray-600 dark:text-gray-300">
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-5 h-5 animate-spin" /> Loading students...
+                      </div>
+                    </td>
+                  </tr>
+                ) : filteredStudents.length === 0 ? (
+                  <tr>
+                    <td colSpan={behaviourCriteria.length + 1} className="py-8 text-center text-gray-600 dark:text-gray-300">
+                      {selectedClass ? 'No students found for this class' : 'Select a class to view students'}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredStudents.map(student => (
+                  <tr key={student._id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                          {student.name.charAt(0)}
+                          {student.studentName?.charAt(0)}
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{student.name}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Roll No: {student.rollNo}</p>
-                          <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">{student.class}</p>
+                          <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{student.studentName}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Roll No: {student.rollNumber || 'N/A'}</p>
+                          <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">
+                            Class {student.selectClass}{student.section ? ` - ${student.section}` : ''}
+                          </p>
                         </div>
                       </div>
                     </td>
@@ -217,9 +348,9 @@ const RateBehaviours = () => {
                             {[1, 2, 3, 4, 5].map(rating => (
                               <button
                                 key={rating}
-                                onClick={() => handleRating(student.id, criteria, rating)}
+                                onClick={() => handleRating(student._id, criteria, rating)}
                                 className={`w-7 h-7 rounded-full transition-all duration-200 transform hover:scale-110 ${
-                                  ratings[`${student.id}-${criteria}`] >= rating
+                                  (ratings[student._id]?.[criteria] || 0) >= rating
                                     ? 'bg-yellow-400 text-yellow-800 shadow-lg'
                                     : 'bg-gray-200 dark:bg-gray-600 text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-500'
                                 }`}
@@ -231,16 +362,16 @@ const RateBehaviours = () => {
                           </div>
                           <div className="text-center">
                             <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                              ratings[`${student.id}-${criteria}`] 
-                                ? ratings[`${student.id}-${criteria}`] >= 4 
+                              ratings[student._id]?.[criteria] 
+                                ? ratings[student._id][criteria] >= 4 
                                   ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                                  : ratings[`${student.id}-${criteria}`] >= 3
+                                  : ratings[student._id][criteria] >= 3
                                   ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
                                   : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                                 : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
                             }`}>
-                              {ratings[`${student.id}-${criteria}`] 
-                                ? `${ratings[`${student.id}-${criteria}`]} Star${ratings[`${student.id}-${criteria}`] !== 1 ? 's' : ''}`
+                              {ratings[student._id]?.[criteria] 
+                                ? `${ratings[student._id][criteria]} Star${ratings[student._id][criteria] !== 1 ? 's' : ''}`
                                 : 'Not Rated'
                               }
                             </span>
@@ -249,7 +380,7 @@ const RateBehaviours = () => {
                       </td>
                     ))}
                   </tr>
-                ))}
+                )))}
               </tbody>
             </table>
           </div>
