@@ -4,6 +4,10 @@ import Transaction from '../models/Transaction.js';
 import FeePayment from '../models/Fees.js';
 import StudentAttendance from '../models/StudentAttendance.js';
 import EmployeeAttendance from '../models/EmployeeAttendance.js';
+import Class from '../models/Class.js';
+import Homework from '../models/Homework.js';
+import ClassTest from '../models/ClassTest.js';
+import Salary from '../models/Salary.js';
 
 export const getDashboardStats = async (req, res) => {
   try {
@@ -140,6 +144,109 @@ export const getDashboardStats = async (req, res) => {
 
   } catch (error) {
     console.error('Dashboard Stats Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * Teacher-scoped dashboard statistics
+ * @route GET /api/dashboard/teacher/stats
+ */
+export const getTeacherDashboardStats = async (req, res) => {
+  try {
+    const teacherId = req.user?.id;
+    const teacherName = req.user?.employeeName || req.user?.name;
+
+    if (!teacherId) {
+      return res.status(400).json({ success: false, message: 'Teacher id missing in token' });
+    }
+
+    const today = new Date();
+    const startOfDay = new Date(today);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(today);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Classes assigned to this teacher
+    const teacherClasses = await Class.find({
+      $or: [
+        { teacherId: teacherId },
+        teacherName ? { teacher: teacherName } : {}
+      ]
+    }).select('className section studentCount');
+
+    const classIds = teacherClasses.map((c) => c._id);
+    const classNames = teacherClasses.map((c) => c.className);
+    const totalStudents = teacherClasses.reduce((acc, cls) => acc + (cls.studentCount || 0), 0);
+
+    // Homework stats
+    const pendingHomework = await Homework.countDocuments({
+      teacher: teacherId,
+      status: { $in: ['active'] }
+    });
+    const recentHomeworks = await Homework.find({ teacher: teacherId })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate('class', 'className section')
+      .select('title dueDate status createdAt class section');
+
+    // Upcoming class tests for the teacher's classes
+    const upcomingTests = await ClassTest.countDocuments({
+      classId: { $in: classIds },
+      testDate: { $gte: startOfDay }
+    });
+
+    // Attendance today for teacher classes
+    const attendanceAgg = await StudentAttendance.aggregate([
+      {
+        $match: {
+          date: { $gte: startOfDay, $lte: endOfDay },
+          class: { $in: classNames }
+        }
+      },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+    const attendanceToday = attendanceAgg.reduce(
+      (acc, cur) => ({ ...acc, [cur._id]: cur.count }),
+      { present: 0, absent: 0, leave: 0 }
+    );
+    const attendanceTotal = attendanceToday.present + attendanceToday.absent + attendanceToday.leave;
+
+    // Salary info
+    const salaryHistory = await Salary.find({ employee: teacherId })
+      .sort({ salaryDate: -1 })
+      .limit(4)
+      .select('month salaryDate netSalary status');
+    const latestSalary = salaryHistory[0];
+
+    res.status(200).json({
+      success: true,
+      data: {
+        classesCount: teacherClasses.length,
+        totalStudents,
+        pendingHomework,
+        upcomingTests,
+        attendanceToday: {
+          present: attendanceToday.present,
+          absent: attendanceToday.absent,
+          leave: attendanceToday.leave,
+          total: attendanceTotal
+        },
+        recentHomeworks,
+        salary: {
+          latestNet: latestSalary?.netSalary || req.user?.monthlySalary || 0,
+          latestMonth: latestSalary?.month || null,
+          history: salaryHistory
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Teacher Dashboard Stats Error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

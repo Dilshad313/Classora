@@ -9,7 +9,7 @@ const getAuthToken = () => {
 };
 
 /**
- * Get Dashboard Statistics
+ * Get Admin Dashboard Statistics
  * @returns {Promise<Object>} Dashboard stats object
  */
 export const getDashboardStats = async () => {
@@ -40,8 +40,41 @@ export const getDashboardStats = async () => {
   }
 };
 
+/**
+ * Get Teacher Dashboard Statistics (scoped to logged-in teacher)
+ * @returns {Promise<Object>} Teacher dashboard stats
+ */
+export const getTeacherDashboardStats = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/dashboard/teacher/stats`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getAuthToken()}`
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+        throw new Error('Session expired. Please login again.');
+      }
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result.data;
+  } catch (error) {
+    console.error('Failed to fetch teacher dashboard stats:', error);
+    throw error;
+  }
+};
+
 export const dashboardApi = {
-    getDashboardStats
+  getDashboardStats,
+  getTeacherDashboardStats
 };
 
 export default dashboardApi;
