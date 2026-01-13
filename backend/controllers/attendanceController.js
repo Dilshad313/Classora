@@ -5,6 +5,17 @@ import Employee from '../models/Employee.js';
 import StudentAttendance from '../models/StudentAttendance.js';
 import EmployeeAttendance from '../models/EmployeeAttendance.js';
 
+const normalizeClassName = (value = '') => {
+  const match = value.toString().match(/\d+/);
+  return match ? match[0] : value.toString().trim();
+};
+
+const normalizeSection = (value = '') => {
+  const trimmed = value?.toString().trim() || 'A';
+  if (trimmed.toUpperCase() === 'N/A' || trimmed === '') return 'A';
+  return trimmed;
+};
+
 /**
  * Mark student attendance
  * @route POST /api/attendance/students
@@ -13,6 +24,8 @@ export const markStudentAttendance = async (req, res) => {
   try {
     const userId = req.user.id;
     const { date, class: classData, section, attendance } = req.body;
+    const className = normalizeClassName(classData);
+    const normalizedSection = normalizeSection(section);
 
     console.log('📥 POST /api/attendance/students');
 
@@ -35,8 +48,8 @@ export const markStudentAttendance = async (req, res) => {
             student: record.studentId,
             date: new Date(date),
             status: record.status,
-            class: classData,
-            section: section,
+            class: className,
+            section: normalizedSection,
             markedBy: userId,
             remark: record.remark || ''
           }
@@ -60,8 +73,8 @@ export const markStudentAttendance = async (req, res) => {
       {
         $match: {
           date: { $gte: attendanceDate, $lt: nextDay },
-          class: classData,
-          section: section
+          class: className,
+          section: normalizedSection
         }
       },
       {
@@ -99,6 +112,8 @@ export const markStudentAttendance = async (req, res) => {
 export const getStudentsForAttendance = async (req, res) => {
   try {
     const { class: classData, section, date } = req.query;
+    const className = normalizeClassName(classData);
+    const normalizedSection = normalizeSection(section);
 
     console.log(`📥 GET /api/attendance/students/class`);
 
@@ -109,11 +124,11 @@ export const getStudentsForAttendance = async (req, res) => {
       });
     }
 
-    // Get students in the class
+    // Get students in the class (normalize to match stored value) and include legacy/inactive-null statuses
     const students = await Student.find({
-      selectClass: classData,
-      section: section,
-      status: 'active'
+      selectClass: { $in: [className, classData] },
+      section: { $in: [normalizedSection, section] },
+      status: { $in: ['active', null, undefined] }
     })
     .select('studentName registrationNo rollNumber section picture')
     .sort({ rollNumber: 1 });
@@ -302,38 +317,69 @@ export const getEmployeesForAttendance = async (req, res) => {
  */
 export const getClassWiseReport = async (req, res) => {
   try {
-    const { date } = req.query;
+    const { date, class: classFilter, classRaw, section: sectionFilter, month, year } = req.query;
 
     console.log(`📥 GET /api/attendance/reports/class-wise`);
 
-    if (!date) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        message: 'Date is required'
-      });
+    // Determine date range
+    let startDate;
+    let endDate;
+
+    if (month && year) {
+      // Month is 0-indexed on frontend; ensure number
+      const m = parseInt(month, 10);
+      const y = parseInt(year, 10);
+      if (Number.isNaN(m) || Number.isNaN(y)) {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          success: false,
+          message: 'Invalid month or year'
+        });
+      }
+      startDate = new Date(Date.UTC(y, m, 1));
+      endDate = new Date(Date.UTC(y, m + 1, 0, 23, 59, 59, 999));
+    } else if (date) {
+      startDate = new Date(date);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(date);
+      endDate.setHours(23, 59, 59, 999);
+    } else {
+      const today = new Date();
+      startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
     }
 
-    // Get class-wise attendance report
-    const report = await StudentAttendance.getClassWiseReport(date);
+    // Build flexible class filter (normalized + raw)
+    let classValues;
+    if (classFilter || classRaw) {
+      classValues = Array.from(new Set(
+        [
+          classFilter ? normalizeClassName(classFilter) : null,
+          classFilter || null,
+          classRaw ? normalizeClassName(classRaw) : null,
+          classRaw || null
+        ].filter(Boolean)
+      ));
+    }
 
-    // Calculate overall statistics
-    const overallStats = report.reduce((acc, curr) => {
-      acc.totalStudents += curr.totalStudents || 0;
-      acc.present += curr.present || 0;
-      acc.absent += curr.absent || 0;
-      acc.leave += curr.leave || 0;
-      return acc;
-    }, { totalStudents: 0, present: 0, absent: 0, leave: 0 });
+    const report = await StudentAttendance.getClassWiseReport({
+      startDate,
+      endDate,
+      classFilter: classValues,
+      sectionFilter: sectionFilter ? normalizeSection(sectionFilter) : undefined
+    });
 
-    console.log(`✅ Generated class-wise report for ${date}`);
+    const summary = report.summary || {};
 
     res.status(StatusCodes.OK).json({
       success: true,
       message: 'Class-wise report generated successfully',
       data: {
-        report,
-        overallStats,
-        date: new Date(date).toISOString().split('T')[0]
+        summary,
+        daily: report.daily || [],
+        range: {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString()
+        }
       }
     });
   } catch (error) {

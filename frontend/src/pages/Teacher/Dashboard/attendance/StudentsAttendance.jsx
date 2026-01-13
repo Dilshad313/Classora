@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Users, Check, X, Save, Search, UserCheck } from 'lucide-react';
+import { Calendar, Users, Check, X, Save, UserCheck } from 'lucide-react';
 import { attendanceApi } from '../../../../services/attendanceApi';
 import { classApi } from '../../../../services/classApi';
 import toast from 'react-hot-toast';
@@ -12,18 +12,26 @@ const StudentsAttendance = () => {
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingClasses, setLoadingClasses] = useState(true);
+  const [loadingStudents, setLoadingStudents] = useState(false);
   const [attendance, setAttendance] = useState({});
+  const [classLoadError, setClassLoadError] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchClasses = async () => {
       try {
         setLoadingClasses(true);
+        setClassLoadError(null);
         const data = await classApi.getAllClasses();
-        if (data.success) {
-          setClasses(data.data);
+        if (data?.success) {
+          setClasses(data.data || []);
+        } else {
+          setClasses([]);
+          setClassLoadError('Unable to load classes');
         }
       } catch (error) {
         console.error('Error fetching classes:', error);
+        setClassLoadError('Failed to load classes');
         toast.error('Failed to load classes');
       } finally {
         setLoadingClasses(false);
@@ -38,10 +46,14 @@ const StudentsAttendance = () => {
       toast.error('Please select both class and date');
       return;
     }
+    const [className, rawSection] = selectedClass.split('::');
+    const section = rawSection || 'A';
     try {
-      setLoading(true);
-      const [classData, section] = selectedClass.split('-');
-      const data = await attendanceApi.getStudentsForAttendance(classData, section, selectedDate);
+      setLoadingStudents(true);
+      setShowAttendanceSection(false);
+      setStudents([]);
+      setAttendance({});
+      const data = await attendanceApi.getStudentsForAttendance(className, section, selectedDate);
       setStudents(data);
       const initialAttendance = data.reduce((acc, student) => {
         acc[student._id] = student.attendanceStatus || 'present';
@@ -53,7 +65,7 @@ const StudentsAttendance = () => {
       console.error('Error fetching students:', error);
       toast.error('Failed to fetch students');
     } finally {
-      setLoading(false);
+      setLoadingStudents(false);
     }
   };
 
@@ -64,8 +76,32 @@ const StudentsAttendance = () => {
     }));
   };
 
-  const handleSaveAttendance = () => {
-    alert('Attendance saved successfully!');
+  const handleSaveAttendance = async () => {
+    if (!selectedClass || !selectedDate) {
+      toast.error('Please select both class and date');
+      return;
+    }
+    const [className, section] = selectedClass.split('::');
+    const payload = {
+      date: selectedDate,
+      class: className,
+      section,
+      attendance: students.map((s) => ({
+        studentId: s._id,
+        status: attendance[s._id] || 'present',
+        remark: ''
+      }))
+    };
+    try {
+      setSaving(true);
+      await attendanceApi.markStudentAttendance(payload);
+      toast.success('Attendance saved successfully');
+    } catch (error) {
+      console.error('Error saving attendance:', error);
+      toast.error(error.message || 'Failed to save attendance');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const presentCount = Object.values(attendance).filter(status => status === 'present').length;
@@ -101,27 +137,38 @@ const StudentsAttendance = () => {
               <Users className="w-4 h-4 inline mr-2" />
               Search / Select Class
             </label>
-            <select
-              value={selectedClass}
-              onChange={(e) => setSelectedClass(e.target.value)}
-              className="input-field"
-            >
-              <option value="">Select a class</option>
-              <option value="10-A">Class 10-A</option>
-              <option value="10-B">Class 10-B</option>
-              <option value="9-A">Class 9-A</option>
-              <option value="9-B">Class 9-B</option>
-              <option value="8-A">Class 8-A</option>
-              <option value="8-B">Class 8-B</option>
-            </select>
+            {loadingClasses ? (
+              <div className="text-sm text-gray-500 dark:text-gray-400">Loading classes...</div>
+            ) : classes.length === 0 ? (
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                {classLoadError || 'No classes assigned to you yet.'}
+              </div>
+            ) : (
+              <select
+                value={selectedClass}
+                onChange={(e) => setSelectedClass(e.target.value)}
+                className="input-field"
+              >
+                <option value="">Select a class</option>
+                {classes.map((cls) => (
+                  <option
+                    key={`${cls._id}`}
+                    value={`${cls.className}::${cls.section || 'A'}`}
+                  >
+                    {cls.className}{cls.section ? ` - ${cls.section}` : ''}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           <div className="flex items-end">
             <button
               onClick={handleSubmit}
-              className="btn-primary w-full flex items-center justify-center gap-2"
+              className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-70"
+              disabled={loadingStudents}
             >
               <UserCheck className="w-5 h-5" />
-              Submit
+              {loadingStudents ? 'Loading...' : 'Submit'}
             </button>
           </div>
         </div>
@@ -178,89 +225,100 @@ const StudentsAttendance = () => {
 
           {/* Students Attendance Table */}
           <div className="card">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="text-left py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">ID</th>
-                    <th className="text-left py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Photo</th>
-                    <th className="text-left py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Student Name</th>
-                    <th className="text-left py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Guardian</th>
-                    <th className="text-center py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {students.map((student) => (
-                    <tr key={student.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                      <td className="py-4 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">{student.rollNo}</td>
-                      <td className="py-4 px-4">
-                        <img
-                          src={student.photo}
-                          alt={student.name}
-                          className="w-12 h-12 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.nextSibling.style.display = 'flex';
-                          }}
-                        />
-                        <div 
-                          className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full hidden items-center justify-center text-white font-semibold text-lg"
-                        >
-                          {student.name.charAt(0)}
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-gray-800 dark:text-gray-100">{student.name}</span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">Roll: {student.rollNo}</span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 text-sm text-gray-700 dark:text-gray-300">{student.guardian}</td>
-                      <td className="py-4 px-4 text-center">
-                        <div className="flex items-center justify-center gap-3">
-                          <button
-                            onClick={() => setAttendance(prev => ({ ...prev, [student.id]: 'present' }))}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                              attendance[student.id] === 'present'
-                                ? 'bg-green-500 text-white shadow-lg'
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-green-100 dark:hover:bg-green-900/30'
-                            }`}
-                          >
-                            Present
-                          </button>
-                          <button
-                            onClick={() => setAttendance(prev => ({ ...prev, [student.id]: 'absent' }))}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                              attendance[student.id] === 'absent'
-                                ? 'bg-red-500 text-white shadow-lg'
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-red-100 dark:hover:bg-red-900/30'
-                            }`}
-                          >
-                            Absent
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {loadingStudents ? (
+              <div className="text-center py-10 text-gray-500 dark:text-gray-400">Loading students...</div>
+            ) : students.length === 0 ? (
+              <div className="text-center py-10 text-gray-500 dark:text-gray-400">
+                No students found for this class.
+              </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200 dark:border-gray-700">
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Reg. No</th>
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Photo</th>
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Student Name</th>
+                        <th className="text-left py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Section</th>
+                        <th className="text-center py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {students.map((student) => (
+                        <tr key={student._id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                          <td className="py-4 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">{student.registrationNo || student.rollNumber}</td>
+                          <td className="py-4 px-4">
+                            <img
+                              src={student.picture || student.photo}
+                              alt={student.studentName}
+                              className="w-12 h-12 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                            <div 
+                              className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full hidden items-center justify-center text-white font-semibold text-lg"
+                            >
+                              {student.studentName?.charAt(0)}
+                            </div>
+                          </td>
+                          <td className="py-4 px-4">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium text-gray-800 dark:text-gray-100">{student.studentName}</span>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">Roll: {student.rollNumber || student.registrationNo}</span>
+                            </div>
+                          </td>
+                          <td className="py-4 px-4 text-sm text-gray-700 dark:text-gray-300">{student.section}</td>
+                          <td className="py-4 px-4 text-center">
+                            <div className="flex items-center justify-center gap-3">
+                              <button
+                                onClick={() => setAttendance(prev => ({ ...prev, [student._id]: 'present' }))}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                  attendance[student._id] === 'present'
+                                    ? 'bg-green-500 text-white shadow-lg'
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-green-100 dark:hover:bg-green-900/30'
+                                }`}
+                              >
+                                Present
+                              </button>
+                              <button
+                                onClick={() => setAttendance(prev => ({ ...prev, [student._id]: 'absent' }))}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                  attendance[student._id] === 'absent'
+                                    ? 'bg-red-500 text-white shadow-lg'
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-red-100 dark:hover:bg-red-900/30'
+                                }`}
+                              >
+                                Absent
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
-            {/* Submit Button */}
-            <div className="mt-6 flex justify-center">
-              <button
-                onClick={handleSaveAttendance}
-                className="btn-primary flex items-center gap-2 px-8 py-3 text-lg"
-              >
-                <Save className="w-5 h-5" />
-                Submit Attendance
-              </button>
-            </div>
+                {/* Submit Button */}
+                <div className="mt-6 flex justify-center">
+                  <button
+                    onClick={handleSaveAttendance}
+                    className="btn-primary flex items-center gap-2 disabled:opacity-70"
+                    disabled={saving}
+                  >
+                    <Save className="w-4 h-4" />
+                    {saving ? 'Saving...' : 'Save Attendance'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
     </div>
   );
-};
+}
 
 export default StudentsAttendance;

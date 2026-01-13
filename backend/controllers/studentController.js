@@ -14,6 +14,31 @@ const ownerClauses = (userId, userEmail) => {
   return clauses;
 };
 
+const normalizeClassName = (value = '') => {
+  const match = value.toString().match(/\d+/);
+  return match ? match[0] : value.toString().trim();
+};
+
+const findMatchingClass = async (classValue, sectionValue, userId) => {
+  const normalized = normalizeClassName(classValue);
+  const normalizedSection = sectionValue?.trim() || 'A';
+
+  // Try exact section match first
+  const classes = await Class.find({ createdBy: userId, section: normalizedSection });
+  const exact = classes.find(cls => {
+    const clsNormalized = normalizeClassName(cls.className);
+    return cls.className === classValue || clsNormalized === normalized;
+  });
+  if (exact) return exact;
+
+  // Fallback: ignore section and match by class name/normalized number
+  const classAnySection = await Class.find({ createdBy: userId });
+  return classAnySection.find(cls => {
+    const clsNormalized = normalizeClassName(cls.className);
+    return cls.className === classValue || clsNormalized === normalized;
+  }) || null;
+};
+
 /**
  * Get all students with filtering and pagination
  * @route GET /api/students
@@ -33,23 +58,37 @@ export const getStudents = async (req, res) => {
 
     if (role === 'teacher') {
       // Find all classes taught by this teacher
-      const teacherClasses = await Class.find({ teacherId: userId }).select('students');
+      const teacherClasses = await Class.find({ teacherId: userId }).select('students className section');
 
       // Get a flat, unique list of student IDs from those classes
       const studentIds = teacherClasses.flatMap(cls => cls.students);
+
       const uniqueStudentIds = [...new Set(studentIds.map(id => id.toString()))];
 
       if (uniqueStudentIds.length === 0) {
-        // If teacher has no students, return empty array
-        return res.status(StatusCodes.OK).json({
-          success: true,
-          message: 'No students found for this teacher',
-          data: [],
-          pagination: { page: 1, limit: parseInt(limit), total: 0, totalPages: 0 }
+        // Fallback: match students by class/section taught by this teacher
+        const classClauses = teacherClasses.map(cls => {
+          const clsSection = (cls.section || '').trim();
+          const normalizedSection = !clsSection || clsSection === 'N/A' ? 'A' : clsSection;
+          return {
+            selectClass: normalizeClassName(cls.className),
+            section: normalizedSection
+          };
         });
-      }
 
-      baseQuery = { _id: { $in: uniqueStudentIds } };
+        if (classClauses.length === 0) {
+          return res.status(StatusCodes.OK).json({
+            success: true,
+            message: 'No students found for this teacher',
+            data: [],
+            pagination: { page: 1, limit: parseInt(limit), total: 0, totalPages: 0 }
+          });
+        }
+
+        baseQuery = { $or: classClauses };
+      } else {
+        baseQuery = { _id: { $in: uniqueStudentIds } };
+      }
     } else {
       // Admin/Superadmin logic
       baseQuery = { $or: ownerClauses(userId, email) };
@@ -68,7 +107,7 @@ export const getStudents = async (req, res) => {
     }
 
     if (studentClass && studentClass !== 'all') {
-      andFilters.push({ selectClass: studentClass });
+      andFilters.push({ selectClass: normalizeClassName(studentClass) });
     }
 
     if (status && status !== 'all') {
@@ -256,6 +295,17 @@ export const createStudent = async (req, res) => {
       });
     }
 
+    // Normalize class/section
+    const normalizedClass = normalizeClassName(selectClass);
+    const normalizedSection = section?.trim() || 'A';
+
+    if (!normalizedClass) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Class value is invalid'
+      });
+    }
+
     // Generate admission number (function handles uniqueness internally)
     const admissionNumber = await Student.generateAdmissionNumber();
 
@@ -318,11 +368,11 @@ export const createStudent = async (req, res) => {
       registrationNo: normalizedRegNo,
       admissionNumber,
       dateOfAdmission,
-      selectClass,
+      selectClass: normalizedClass,
       email: email.trim(),
       password: password,
       plainPassword: password,
-      section,
+      section: normalizedSection,
       discountInFee: parseFloat(discountInFee) || 0,
       mobileNo: mobileNo || '',
       dateOfBirth: dateOfBirth || null,
@@ -352,6 +402,24 @@ export const createStudent = async (req, res) => {
       rollNumber: `${Math.floor(Math.random() * 300) + 1}/236`,
       createdBy: userId
     });
+
+    // Link student to matching class and update count
+    try {
+      const matchedClass = await findMatchingClass(selectClass, normalizedSection, userId);
+      if (matchedClass) {
+        const studentIdStr = student._id.toString();
+        const hasStudent = matchedClass.students.some(s => s.toString() === studentIdStr);
+        if (!hasStudent) {
+          matchedClass.students.push(student._id);
+          matchedClass.studentCount = matchedClass.students.length;
+          await matchedClass.save();
+        }
+      } else {
+        console.warn(`⚠️ No matching class found for student ${student.studentName} with class "${selectClass}" section "${normalizedSection}"`);
+      }
+    } catch (linkErr) {
+      console.error('❌ Failed to link student to class:', linkErr);
+    }
 
     // Create notification
     try {
@@ -424,12 +492,12 @@ export const createStudent = async (req, res) => {
     });
   }
 };
-
 /**
  * Update student
  * @route PUT /api/students/:id
  */
 export const updateStudent = async (req, res) => {
+
   try {
     if (req.user.role === 'teacher') {
       return res.status(StatusCodes.FORBIDDEN).json({
@@ -450,46 +518,9 @@ export const updateStudent = async (req, res) => {
       });
     }
 
-    // Handle picture upload if new picture provided
-    if (req.files && req.files.picture) {
-      try {
-        // Delete old picture if exists
-        if (student.picture && student.picture.publicId) {
-          await deleteFromCloudinary(student.picture.publicId);
-        }
-
-        // Upload new picture
-        const uploadResult = await uploadToCloudinary(
-          req.files.picture[0].buffer,
-          'student-photos'
-        );
-        student.picture = {
-          url: uploadResult.url,
-          publicId: uploadResult.publicId
-        };
-      } catch (uploadError) {
-        console.error('Picture upload error:', uploadError);
-      }
-    }
-
-    // Handle additional documents upload
-    if (req.files && req.files.documents) {
-      for (const file of req.files.documents) {
-        try {
-          const uploadResult = await uploadToCloudinary(
-            file.buffer,
-            'student-documents'
-          );
-          student.documents.push({
-            name: file.originalname,
-            url: uploadResult.url,
-            publicId: uploadResult.publicId
-          });
-        } catch (uploadError) {
-          console.error('Document upload error:', uploadError);
-        }
-      }
-    }
+    // Track old class/section before changes
+    const oldClass = student.selectClass;
+    const oldSection = student.section || 'A';
 
     // Update other fields
     const updateFields = [
@@ -510,6 +541,23 @@ export const updateStudent = async (req, res) => {
       }
     });
 
+    // Normalize and update class/section if provided
+    if (req.body.selectClass !== undefined) {
+      const normalizedClass = normalizeClassName(req.body.selectClass);
+
+      if (!normalizedClass) {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          success: false,
+          message: 'Class value is invalid'
+        });
+      }
+      student.selectClass = normalizedClass;
+    }
+
+    if (req.body.section !== undefined) {
+      student.section = req.body.section?.trim() || 'A';
+    }
+
     // Handle password update separately
     if (req.body.password) {
       // Don't hash here - the pre-save hook handles it
@@ -519,6 +567,35 @@ export const updateStudent = async (req, res) => {
     }
 
     await student.save();
+
+    // Re-link class if class/section changed
+    if ((req.body.selectClass !== undefined && student.selectClass !== oldClass) ||
+        (req.body.section !== undefined && student.section !== oldSection)) {
+      try {
+        // Remove from old class
+        const oldClassDoc = await findMatchingClass(oldClass, oldSection, req.user.id);
+        if (oldClassDoc) {
+          oldClassDoc.students = oldClassDoc.students.filter(s => s.toString() !== student._id.toString());
+          oldClassDoc.studentCount = oldClassDoc.students.length;
+          await oldClassDoc.save();
+        }
+
+        // Add to new class
+        const newClassDoc = await findMatchingClass(student.selectClass, student.section, req.user.id);
+        if (newClassDoc) {
+          const hasStudent = newClassDoc.students.some(s => s.toString() === student._id.toString());
+          if (!hasStudent) {
+            newClassDoc.students.push(student._id);
+            newClassDoc.studentCount = newClassDoc.students.length;
+            await newClassDoc.save();
+          }
+        } else {
+          console.warn(`⚠️ No matching class found while relinking student ${student.studentName}`);
+        }
+      } catch (linkErr) {
+        console.error('❌ Failed to relink student between classes:', linkErr);
+      }
+    }
 
     const studentResponse = student.toObject();
     delete studentResponse.password;

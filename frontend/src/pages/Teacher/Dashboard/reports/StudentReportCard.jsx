@@ -4,7 +4,7 @@ import {
   GraduationCap, Award, TrendingUp, BookOpen, Clock, Star,
   FileText, Printer, Eye, Filter, ChevronDown, Users, CheckCircle, XCircle
 } from 'lucide-react';
-import { reportApi } from '../../../../services/reportApi';
+import * as reportApi from '../../../../services/reportApi';
 import { classApi } from '../../../../services/classApi';
 import toast from 'react-hot-toast';
 

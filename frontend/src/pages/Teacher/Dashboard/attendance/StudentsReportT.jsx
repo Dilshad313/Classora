@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { 
   Search, 
   Filter, 
@@ -11,8 +11,11 @@ import {
   CheckCircle,
   XCircle,
   Eye,
-  ChevronDown
+  ChevronDown,
+  Loader2
 } from 'lucide-react';
+import { attendanceApi } from '../../../../services/attendanceApi';
+import toast from 'react-hot-toast';
 
 const StudentsReportT = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,70 +27,8 @@ const StudentsReportT = () => {
     startDate: '',
     endDate: ''
   });
-
-  // Sample attendance data
-  const attendanceData = [
-    {
-      id: 1,
-      date: '2024-01-15',
-      day: 'Monday',
-      studentId: 'STU001',
-      name: 'John Doe',
-      class: '10-A',
-      status: 'present',
-      photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
-    },
-    {
-      id: 2,
-      date: '2024-01-15',
-      day: 'Monday',
-      studentId: 'STU002',
-      name: 'Jane Smith',
-      class: '10-A',
-      status: 'absent',
-      photo: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face'
-    },
-    {
-      id: 3,
-      date: '2024-01-15',
-      day: 'Monday',
-      studentId: 'STU003',
-      name: 'Mike Johnson',
-      class: '9-B',
-      status: 'present',
-      photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
-    },
-    {
-      id: 4,
-      date: '2024-01-14',
-      day: 'Sunday',
-      studentId: 'STU001',
-      name: 'John Doe',
-      class: '10-A',
-      status: 'present',
-      photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
-    },
-    {
-      id: 5,
-      date: '2024-01-14',
-      day: 'Sunday',
-      studentId: 'STU004',
-      name: 'Sarah Williams',
-      class: '8-A',
-      status: 'absent',
-      photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
-    },
-    {
-      id: 6,
-      date: '2024-01-13',
-      day: 'Saturday',
-      studentId: 'STU005',
-      name: 'Tom Brown',
-      class: '9-A',
-      status: 'present',
-      photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face'
-    }
-  ];
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const filterOptions = [
     { value: 'today', label: 'Today' },
@@ -115,17 +56,124 @@ const StudentsReportT = () => {
     { value: 'absent', label: 'Absent Only' }
   ];
 
-  // Filter data based on selected filters
-  const filteredData = attendanceData.filter(record => {
-    const matchesSearch = record.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         record.studentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         record.class.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesClass = selectedClass === 'all' || record.class === selectedClass;
-    const matchesStatus = selectedStatus === 'all' || record.status === selectedStatus;
-    
-    return matchesSearch && matchesClass && matchesStatus;
-  });
+  const getDateRange = () => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    let start;
+    let end;
+
+    switch (selectedFilter) {
+      case 'today':
+        start = today.toISOString().split('T')[0];
+        end = start;
+        break;
+      case 'yesterday':
+        start = yesterday.toISOString().split('T')[0];
+        end = start;
+        break;
+      case 'last7days': {
+        const last7 = new Date(today);
+        last7.setDate(last7.getDate() - 7);
+        start = last7.toISOString().split('T')[0];
+        end = today.toISOString().split('T')[0];
+        break;
+      }
+      case 'last30days': {
+        const last30 = new Date(today);
+        last30.setDate(last30.getDate() - 30);
+        start = last30.toISOString().split('T')[0];
+        end = today.toISOString().split('T')[0];
+        break;
+      }
+      case 'thismonth':
+        start = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+        end = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+        break;
+      case 'lastmonth': {
+        const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        start = lastMonth.toISOString().split('T')[0];
+        end = new Date(today.getFullYear(), today.getMonth(), 0).toISOString().split('T')[0];
+        break;
+      }
+      case 'custom':
+        if (!customDateRange.startDate || !customDateRange.endDate) {
+          toast.error('Please select both start and end dates');
+          return null;
+        }
+        start = customDateRange.startDate;
+        end = customDateRange.endDate;
+        break;
+      default:
+        return null;
+    }
+
+    return { start, end };
+  };
+
+  const normalizeClassValue = (value = '') => value.toString().replace(/^Class\s*/i, '').trim();
+
+  const loadReport = async () => {
+    const dateRange = getDateRange();
+    if (!dateRange) return;
+
+    setLoading(true);
+    try {
+      const classForApi = selectedClass === 'all' ? undefined : normalizeClassValue(selectedClass).split('-')[0];
+      const filters = {
+        startDate: dateRange.start,
+        endDate: dateRange.end,
+        search: searchTerm || undefined,
+        class: classForApi,
+        status: selectedStatus,
+        page: 1,
+        limit: 500
+      };
+
+      const result = await attendanceApi.getStudentAttendanceReport(filters);
+      setRecords(result.data || []);
+    } catch (error) {
+      console.error('Failed to load student attendance report:', error);
+      toast.error(error.message || 'Failed to load attendance');
+      setRecords([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadReport();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFilter, selectedClass, selectedStatus, customDateRange.startDate, customDateRange.endDate]);
+
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      loadReport();
+    }, 400);
+    return () => clearTimeout(debounceTimer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm]);
+
+  const filteredData = useMemo(() => {
+    return records.filter(record => {
+      const recordClassNormalized = normalizeClassValue(record.class);
+      const matchesSearch = record.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        record.studentId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        recordClassNormalized?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesClass = selectedClass === 'all' || recordClassNormalized === normalizeClassValue(selectedClass);
+
+      const matchesStatus = (() => {
+        if (selectedStatus === 'all') return true;
+        if (selectedStatus === 'present') return record.status === 'present' || record.status === 'P';
+        if (selectedStatus === 'absent') return record.status === 'absent' || record.status === 'A';
+        return true;
+      })();
+
+      return matchesSearch && matchesClass && matchesStatus;
+    });
+  }, [records, searchTerm, selectedClass, selectedStatus]);
 
   const handleExport = (type) => {
     switch(type) {
@@ -157,14 +205,26 @@ const StudentsReportT = () => {
 
   const getTotalStats = () => {
     const total = filteredData.length;
-    const present = filteredData.filter(record => record.status === 'present').length;
-    const absent = filteredData.filter(record => record.status === 'absent').length;
+    const present = filteredData.filter(record => record.status === 'P' || record.status === 'present').length;
+    const absent = filteredData.filter(record => record.status === 'A' || record.status === 'absent').length;
     const attendanceRate = total > 0 ? ((present / total) * 100).toFixed(1) : 0;
     
     return { total, present, absent, attendanceRate };
   };
 
   const stats = getTotalStats();
+
+  const getDayName = (dateString) => {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const date = new Date(dateString);
+    return days[date.getDay()];
+  };
+
+  const normalizeStatus = (status) => {
+    if (status === 'P' || status === 'present') return { label: 'Present', color: 'green' };
+    if (status === 'A' || status === 'absent') return { label: 'Absent', color: 'red' };
+    return { label: 'Leave', color: 'yellow' };
+  };
 
   return (
     <div className="space-y-6">
@@ -364,6 +424,11 @@ const StudentsReportT = () => {
           <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">
             Attendance Records ({filteredData.length} records)
           </h3>
+          {loading && (
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <Loader2 className="w-4 h-4 animate-spin" /> Loading...
+            </div>
+          )}
         </div>
         
         <div className="overflow-x-auto">
@@ -379,9 +444,11 @@ const StudentsReportT = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredData.length > 0 ? (
-                filteredData.map((record) => (
-                  <tr key={record.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+              {!loading && filteredData.length > 0 ? (
+                filteredData.map((record) => {
+                  const statusMeta = normalizeStatus(record.status);
+                  return (
+                  <tr key={record._id || `${record.studentId}-${record.date}`} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     <td className="py-4 px-4 text-sm text-gray-700 dark:text-gray-300">
                       {new Date(record.date).toLocaleDateString('en-US', { 
                         year: 'numeric', 
@@ -389,21 +456,26 @@ const StudentsReportT = () => {
                         day: 'numeric' 
                       })}
                     </td>
-                    <td className="py-4 px-4 text-sm text-gray-600 dark:text-gray-400">{record.day}</td>
+                    <td className="py-4 px-4 text-sm text-gray-600 dark:text-gray-400">{getDayName(record.date)}</td>
                     <td className="py-4 px-4 text-sm font-medium text-gray-800 dark:text-gray-100">{record.studentId}</td>
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
-                        <img
-                          src={record.photo}
-                          alt={record.name}
-                          className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.nextSibling.style.display = 'flex';
-                          }}
-                        />
-                        <div 
+                        {record.photo && (
+                          <img
+                            src={record.photo}
+                            alt={record.name}
+                            className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              if (e.target.nextSibling) {
+                                e.target.nextSibling.style.display = 'flex';
+                              }
+                            }}
+                          />
+                        )}
+                        <div
                           className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full hidden items-center justify-center text-white font-semibold text-sm"
+                          style={{ display: record.photo ? 'none' : 'flex' }}
                         >
                           {record.name.charAt(0)}
                         </div>
@@ -413,20 +485,33 @@ const StudentsReportT = () => {
                     <td className="py-4 px-4 text-sm text-gray-700 dark:text-gray-300">{record.class}</td>
                     <td className="py-4 px-4 text-center">
                       <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${
-                        record.status === 'present'
+                        statusMeta.color === 'green'
                           ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                          : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                          : statusMeta.color === 'red'
+                          ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                          : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
                       }`}>
-                        {record.status === 'present' ? (
+                        {statusMeta.color === 'green' ? (
                           <CheckCircle className="w-3 h-3" />
+                        ) : statusMeta.color === 'red' ? (
+                          <XCircle className="w-3 h-3" />
                         ) : (
                           <XCircle className="w-3 h-3" />
                         )}
-                        {record.status === 'present' ? 'Present' : 'Absent'}
+                        {statusMeta.label}
                       </span>
                     </td>
                   </tr>
-                ))
+                )})
+              ) : loading ? (
+                <tr>
+                  <td colSpan="6" className="py-12 text-center">
+                    <div className="flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Loading attendance records...</span>
+                    </div>
+                  </td>
+                </tr>
               ) : (
                 <tr>
                   <td colSpan="6" className="py-12 text-center">

@@ -52,57 +52,72 @@ studentAttendanceSchema.virtual('formattedDate').get(function() {
 });
 
 // Static method to get attendance summary by class
-studentAttendanceSchema.statics.getClassWiseReport = async function(date) {
-  const startOfDay = new Date(date);
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(date);
-  endOfDay.setHours(23, 59, 59, 999);
+studentAttendanceSchema.statics.getClassWiseReport = async function({
+  startDate,
+  endDate,
+  classFilter,
+  sectionFilter
+}) {
+  const matchStage = {
+    date: { $gte: new Date(startDate), $lte: new Date(endDate) }
+  };
 
-  return await this.aggregate([
+  if (classFilter) {
+    matchStage.class = Array.isArray(classFilter) ? { $in: classFilter } : classFilter;
+  }
+
+  if (sectionFilter) {
+    matchStage.section = Array.isArray(sectionFilter) ? { $in: sectionFilter } : sectionFilter;
+  }
+
+  const [result] = await this.aggregate([
+    { $match: matchStage },
     {
-      $match: {
-        date: { $gte: startOfDay, $lte: endOfDay }
+      $facet: {
+        summary: [
+          {
+            $group: {
+              _id: null,
+              totalRecords: { $sum: 1 },
+              present: { $sum: { $cond: [{ $eq: ['$status', 'present'] }, 1, 0] } },
+              absent: { $sum: { $cond: [{ $eq: ['$status', 'absent'] }, 1, 0] } },
+              leave: { $sum: { $cond: [{ $eq: ['$status', 'leave'] }, 1, 0] } },
+              classes: { $addToSet: '$class' },
+              sections: { $addToSet: '$section' }
+            }
+          }
+        ],
+        daily: [
+          {
+            $group: {
+              _id: {
+                date: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
+                class: '$class',
+                section: '$section'
+              },
+              total: { $sum: 1 },
+              present: { $sum: { $cond: [{ $eq: ['$status', 'present'] }, 1, 0] } },
+              absent: { $sum: { $cond: [{ $eq: ['$status', 'absent'] }, 1, 0] } },
+              leave: { $sum: { $cond: [{ $eq: ['$status', 'leave'] }, 1, 0] } }
+            }
+          },
+          { $sort: { '_id.date': 1 } }
+        ]
       }
-    },
-    {
-      $lookup: {
-        from: 'students',
-        localField: 'student',
-        foreignField: '_id',
-        as: 'studentData'
-      }
-    },
-    { $unwind: '$studentData' },
-    {
-      $group: {
-        _id: {
-          class: '$class',
-          section: '$section'
-        },
-        totalStudents: { $sum: 1 },
-        present: {
-          $sum: { $cond: [{ $eq: ['$status', 'present'] }, 1, 0] }
-        },
-        absent: {
-          $sum: { $cond: [{ $eq: ['$status', 'absent'] }, 1, 0] }
-        },
-        leave: {
-          $sum: { $cond: [{ $eq: ['$status', 'leave'] }, 1, 0] }
-        }
-      }
-    },
-    {
-      $project: {
-        className: { $concat: ['Class ', '$_id.class', '-', '$_id.section'] },
-        section: '$_id.section',
-        totalStudents: 1,
-        present: 1,
-        absent: 1,
-        leave: 1
-      }
-    },
-    { $sort: { 'className': 1 } }
+    }
   ]);
+
+  return {
+    summary: result?.summary?.[0] || {
+      totalRecords: 0,
+      present: 0,
+      absent: 0,
+      leave: 0,
+      classes: [],
+      sections: []
+    },
+    daily: result?.daily || []
+  };
 };
 
 // Static method to get student attendance records

@@ -14,7 +14,7 @@ import {
   Plus,
   Search
 } from 'lucide-react';
-import { classTestApi } from '../../../../services/classTestApi';
+import * as classTestApi from '../../../../services/classTestApi';
 import { classApi } from '../../../../services/classApi';
 import toast from 'react-hot-toast';
 

@@ -13,7 +13,8 @@ import {
   User,
   Hash
 } from 'lucide-react';
-import { examsApi, examMarksApi } from '../../../../services/examsApi';
+import * as examsApi from '../../../../services/examsApi';
+import * as examMarksApi from '../../../../services/examMarksApi';
 import { classApi } from '../../../../services/classApi';
 import toast from 'react-hot-toast';
 

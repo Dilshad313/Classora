@@ -104,10 +104,14 @@ export const attendanceApi = {
   },
 
   // Get class-wise report
-  getClassWiseReport: async (date) => {
+  getClassWiseReport: async ({ date, classId, section, month, year } = {}) => {
     try {
       const params = new URLSearchParams();
-      params.append('date', date);
+      if (date) params.append('date', date);
+      if (month !== undefined) params.append('month', month);
+      if (year !== undefined) params.append('year', year);
+      if (classId) params.append('class', classId);
+      if (section) params.append('section', section);
 
       const response = await fetch(`${API_BASE_URL}/attendance/reports/class-wise?${params}`, {
         headers: getAuthHeaders()

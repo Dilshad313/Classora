@@ -6,31 +6,46 @@ import toast from 'react-hot-toast';
 
 const Homework = () => {
   const [showAddModal, setShowAddModal] = useState(false);
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const loggedInTeacher = user?.name || user?.fullName || user?.username || '';
   const [searchFilters, setSearchFilters] = useState({
-    date: '',
+    homeworkDate: '',
     class: '',
+    teacher: loggedInTeacher,
   });
   const [searchResults, setSearchResults] = useState([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [formData, setFormData] = useState({
-    date: '',
+    homeworkDate: '',
     class: '',
     subject: '',
-    details: ''
+    homeworkDetails: '',
+    setBy: loggedInTeacher,
   });
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
+  const [teachers, setTeachers] = useState(loggedInTeacher ? [loggedInTeacher] : []);
+  const [allHomeworkData, setAllHomeworkData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingDropdowns, setLoadingDropdowns] = useState(true);
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
     const fetchDropdownData = async () => {
       try {
         setLoadingDropdowns(true);
-        const classData = await classApi.getAllClasses();
-        if (classData.success) {
-          setClasses(classData.data);
+        try {
+          const classNames = await classApi.getAllClassNames();
+          // Normalize to strings to avoid rendering object values
+          const normalizedClasses = (classNames || []).map(cls => {
+            if (typeof cls === 'string') return cls;
+            if (cls?.className && cls?.section) return `${cls.className}${cls.section ? ` - ${cls.section}` : ''}`;
+            return cls?.className || cls?.name || cls?._id || '';
+          }).filter(Boolean);
+          setClasses(normalizedClasses);
+        } catch (classError) {
+          console.error('Error fetching classes:', classError);
+          toast.error('Failed to load classes');
+          setClasses([]);
         }
         // Assuming teacher is logged in, no need to fetch teachers
         // Fetch subjects based on the logged in teacher's classes
@@ -38,7 +53,23 @@ const Homework = () => {
         // A more complex implementation would fetch subjects based on the selected class
         const dropdownData = await homeworkApi.getDropdownData();
         if (dropdownData.success) {
-          setSubjects(dropdownData.data.subjects);
+          setSubjects(dropdownData.data.subjects || []);
+          setTeachers(dropdownData.data.teachers || (loggedInTeacher ? [loggedInTeacher] : []));
+        }
+
+        // Fetch homework for the logged-in teacher so the page has content
+        try {
+          const homeworkResponse = await homeworkApi.getHomeworks({
+            teacher: loggedInTeacher || undefined
+          });
+          if (homeworkResponse?.success) {
+            const homeworkList = homeworkResponse.data || [];
+            setAllHomeworkData(homeworkList);
+            setSearchResults(homeworkList);
+            setHasSearched(true);
+          }
+        } catch (error) {
+          console.error('Error fetching homework list:', error);
         }
       } catch (error) {
         console.error('Error fetching dropdown data:', error);
@@ -59,11 +90,20 @@ const Homework = () => {
     }));
   };
 
+  const getClassName = (homework) => {
+    if (!homework) return '';
+    const cls = homework.class;
+    if (cls && typeof cls === 'object') {
+      return cls.className || cls.name || cls._id || '';
+    }
+    return cls || '';
+  };
+
   // Handle search functionality
   const handleSearch = () => {
     const filtered = allHomeworkData.filter(homework => {
       const matchesDate = !searchFilters.homeworkDate || homework.assignedDate === searchFilters.homeworkDate;
-      const matchesClass = !searchFilters.class || homework.class === searchFilters.class;
+      const matchesClass = !searchFilters.class || getClassName(homework) === searchFilters.class;
       const matchesTeacher = !searchFilters.teacher || homework.teacherName === searchFilters.teacher;
       
       return matchesDate && matchesClass && matchesTeacher;
@@ -88,7 +128,7 @@ const Homework = () => {
     setShowAddModal(false);
     setFormData({
       homeworkDate: '',
-      setBy: '',
+      setBy: loggedInTeacher,
       class: '',
       subject: '',
       homeworkDetails: ''
@@ -265,7 +305,7 @@ const Homework = () => {
                                 <Users className="w-4 h-4 text-green-600 dark:text-green-400" />
                                 <p className="text-sm font-medium text-green-600 dark:text-green-400">Class</p>
                               </div>
-                              <p className="text-lg font-bold text-gray-800 dark:text-gray-100 pl-6">{homework.class}</p>
+                              <p className="text-lg font-bold text-gray-800 dark:text-gray-100 pl-6">{getClassName(homework)}</p>
                             </div>
                             <div className="space-y-1">
                               <div className="flex items-center gap-2 mb-2">

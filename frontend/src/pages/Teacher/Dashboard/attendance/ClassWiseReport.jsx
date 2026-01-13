@@ -1,40 +1,101 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { School, Calendar, Download, TrendingUp, Users, UserCheck, UserX, BarChart3, PieChart } from 'lucide-react';
+import { attendanceApi } from '../../../../services/attendanceApi';
+import { classApi } from '../../../../services/classApi';
+import toast from 'react-hot-toast';
+
+const normalizeClassName = (value = '') => {
+  const match = value.toString().match(/\d+/);
+  return match ? match[0] : value.toString().trim();
+};
 
 const ClassWiseReport = () => {
-  const [selectedClass, setSelectedClass] = useState('10-A');
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedClass, setSelectedClass] = useState('');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [viewType, setViewType] = useState('chart');
+  const [classes, setClasses] = useState([]);
+  const [loadingClasses, setLoadingClasses] = useState(true);
+  const [loadingReport, setLoadingReport] = useState(false);
+  const [reportSummary, setReportSummary] = useState(null);
+  const [reportDaily, setReportDaily] = useState([]);
 
-  const classData = [
-    { class: '10-A', totalStudents: 35, avgAttendance: 94.5, present: 33, absent: 2, color: '#10B981' },
-    { class: '9-B', totalStudents: 32, avgAttendance: 91.2, present: 29, absent: 3, color: '#3B82F6' },
-    { class: '10-C', totalStudents: 38, avgAttendance: 96.8, present: 37, absent: 1, color: '#8B5CF6' },
-    { class: '8-A', totalStudents: 30, avgAttendance: 89.5, present: 27, absent: 3, color: '#F59E0B' },
-    { class: '9-A', totalStudents: 33, avgAttendance: 92.8, present: 31, absent: 2, color: '#EF4444' },
-    { class: '8-B', totalStudents: 29, avgAttendance: 88.2, present: 26, absent: 3, color: '#06B6D4' },
-  ];
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        setLoadingClasses(true);
+        const res = await classApi.getAllClasses({ limit: 100 });
+        const list = res?.data || res?.data?.data || res?.classes || [];
+        setClasses(list);
+        if (list.length > 0) {
+          setSelectedClass(list[0].className);
+        }
+      } catch (error) {
+        console.error('Failed to load classes', error);
+        toast.error('Failed to load classes');
+        setClasses([]);
+      } finally {
+        setLoadingClasses(false);
+      }
+    };
+    fetchClasses();
+  }, []);
 
-  const monthlyData = [
-    { date: '2024-01-01', present: 33, absent: 2, percentage: 94.3, day: 'Mon' },
-    { date: '2024-01-02', present: 32, absent: 3, percentage: 91.4, day: 'Tue' },
-    { date: '2024-01-03', present: 34, absent: 1, percentage: 97.1, day: 'Wed' },
-    { date: '2024-01-04', present: 33, absent: 2, percentage: 94.3, day: 'Thu' },
-    { date: '2024-01-05', present: 35, absent: 0, percentage: 100, day: 'Fri' },
-    { date: '2024-01-08', present: 31, absent: 4, percentage: 88.6, day: 'Mon' },
-    { date: '2024-01-09', present: 33, absent: 2, percentage: 94.3, day: 'Tue' },
-  ];
+  const fetchReport = async () => {
+    if (!selectedClass) {
+      toast.error('Please select a class');
+      return;
+    }
+    if (!selectedDate) {
+      toast.error('Please select a date');
+      return;
+    }
+    try {
+      setLoadingReport(true);
+      const data = await attendanceApi.getClassWiseReport({
+        date: selectedDate,
+        classId: normalizeClassName(selectedClass)
+      });
+      setReportSummary(data?.summary || null);
+      setReportDaily(data?.daily || []);
+    } catch (error) {
+      console.error('Failed to load report', error);
+      toast.error(error.message || 'Failed to load report');
+      setReportSummary(null);
+      setReportDaily([]);
+    } finally {
+      setLoadingReport(false);
+    }
+  };
 
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
+  const totalStudentsAllClasses = reportSummary?.totalRecords || 0;
+  const totalPresentAllClasses = reportSummary?.present || 0;
+  const totalAbsentAllClasses = reportSummary?.absent || 0;
+  const overallAttendanceRate = totalStudentsAllClasses
+    ? ((totalPresentAllClasses / totalStudentsAllClasses) * 100).toFixed(1)
+    : '0.0';
 
-  const maxAttendance = Math.max(...classData.map(item => item.avgAttendance));
-  const totalStudentsAllClasses = classData.reduce((sum, item) => sum + item.totalStudents, 0);
-  const totalPresentAllClasses = classData.reduce((sum, item) => sum + item.present, 0);
-  const overallAttendanceRate = ((totalPresentAllClasses / totalStudentsAllClasses) * 100).toFixed(1);
+  const classesOptions = classes.map(cls => ({
+    value: cls.className,
+    label: `${cls.className}${cls.section ? ` - ${cls.section}` : ''}`
+  }));
+
+  const chartDaily = useMemo(() => {
+    if (!reportDaily || reportDaily.length === 0) return [];
+    return reportDaily.map(item => {
+      const total = item.total || 0;
+      const present = item.present || 0;
+      const absent = item.absent || 0;
+      const leave = item.leave || 0;
+      const percentage = total ? Number(((present / total) * 100).toFixed(1)) : 0;
+      return {
+        date: item._id?.date,
+        day: new Date(item._id?.date).toLocaleDateString('en-US', { weekday: 'short' }),
+        present,
+        absent: absent + leave,
+        percentage
+      };
+    });
+  }, [reportDaily]);
 
   return (
     <div className="space-y-6">
@@ -45,7 +106,7 @@ const ClassWiseReport = () => {
           <p className="text-gray-600 dark:text-gray-400 mt-1">Visual analytics and statistics for class attendance</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setViewType('chart')}
               className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -78,51 +139,49 @@ const ClassWiseReport = () => {
 
       {/* Filters */}
       <div className="card">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="label">
               <School className="w-4 h-4 inline mr-2" />
               Select Class
             </label>
-            <select
-              value={selectedClass}
-              onChange={(e) => setSelectedClass(e.target.value)}
-              className="input-field"
-            >
-              {classData.map((item) => (
-                <option key={item.class} value={item.class}>Class {item.class}</option>
-              ))}
-            </select>
+            {loadingClasses ? (
+              <div className="text-sm text-gray-500 dark:text-gray-400">Loading classes...</div>
+            ) : classesOptions.length === 0 ? (
+              <div className="text-sm text-gray-500 dark:text-gray-400">No classes found</div>
+            ) : (
+              <select
+                value={selectedClass}
+                onChange={(e) => setSelectedClass(e.target.value)}
+                className="input-field"
+              >
+                {classesOptions.map((item) => (
+                  <option key={item.value} value={item.value}>{item.label}</option>
+                ))}
+              </select>
+            )}
           </div>
           <div>
             <label className="label">
               <Calendar className="w-4 h-4 inline mr-2" />
-              Select Month
+              Select Date
             </label>
-            <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
               className="input-field"
-            >
-              {months.map((month, index) => (
-                <option key={index} value={index}>{month}</option>
-              ))}
-            </select>
+            />
           </div>
-          <div>
-            <label className="label">
-              Select Year
-            </label>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              className="input-field"
-            >
-              <option value="2024">2024</option>
-              <option value="2023">2023</option>
-              <option value="2022">2022</option>
-            </select>
-          </div>
+        </div>
+        <div className="mt-4 flex justify-end">
+          <button
+            className="btn-primary"
+            onClick={fetchReport}
+            disabled={loadingReport || loadingClasses || !selectedClass || !selectedDate}
+          >
+            {loadingReport ? 'Loading...' : 'Load Report'}
+          </button>
         </div>
       </div>
 
@@ -147,7 +206,7 @@ const ClassWiseReport = () => {
             <UserX className="w-8 h-8 text-red-600 dark:text-red-400" />
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400">Total Absent</p>
-          <p className="text-3xl font-bold text-red-600 dark:text-red-400">{totalStudentsAllClasses - totalPresentAllClasses}</p>
+          <p className="text-3xl font-bold text-red-600 dark:text-red-400">{totalAbsentAllClasses}</p>
         </div>
         <div className="card bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-800">
           <div className="flex items-center justify-between mb-2">
@@ -164,85 +223,89 @@ const ClassWiseReport = () => {
           {/* Class Attendance Chart */}
           <div className="card">
             <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-6">Class Attendance Overview</h3>
-            <div className="space-y-6">
-              {classData.map((item, index) => (
-                <div key={index} className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div 
-                        className="w-4 h-4 rounded-full"
-                        style={{ backgroundColor: item.color }}
-                      ></div>
-                      <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                        Class {item.class}
-                      </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        ({item.totalStudents} students)
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <span className="text-sm font-bold text-green-600 dark:text-green-400">
-                        {item.present} Present
-                      </span>
-                      <span className="text-sm font-bold text-red-600 dark:text-red-400">
-                        {item.absent} Absent
-                      </span>
-                      <span className="text-lg font-bold text-gray-800 dark:text-gray-100">
-                        {item.avgAttendance}%
-                      </span>
-                    </div>
+            {!reportSummary ? (
+              <div className="text-sm text-gray-500 dark:text-gray-400">Load a report to see data.</div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-4 h-4 rounded-full bg-emerald-500"></div>
+                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                      {selectedClass}
+                    </span>
                   </div>
-                  <div className="relative">
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-6">
-                      <div 
-                        className="h-6 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
-                        style={{ 
-                          width: `${item.avgAttendance}%`,
-                          background: `linear-gradient(90deg, ${item.color}CC, ${item.color})`
-                        }}
-                      >
-                        <span className="text-xs font-semibold text-white">
-                          {item.avgAttendance}%
-                        </span>
-                      </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm font-bold text-green-600 dark:text-green-400">
+                      {reportSummary.present || 0} Present
+                    </span>
+                    <span className="text-sm font-bold text-red-600 dark:text-red-400">
+                      {(reportSummary.absent || 0) + (reportSummary.leave || 0)} Absent/Leave
+                    </span>
+                    <span className="text-lg font-bold text-gray-800 dark:text-gray-100">
+                      {overallAttendanceRate}%
+                    </span>
+                  </div>
+                </div>
+                <div className="relative">
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-6">
+                    <div
+                      className="h-6 rounded-full transition-all duration-500 flex items-center justify-end pr-2 bg-emerald-500"
+                      style={{ width: `${overallAttendanceRate}%` }}
+                    >
+                      <span className="text-xs font-semibold text-white">
+                        {overallAttendanceRate}%
+                      </span>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
           </div>
-
+          
           {/* Daily Trend Chart */}
           <div className="card">
             <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-6">
               Daily Attendance Trend - {selectedClass}
             </h3>
-            <div className="space-y-4">
-              <div className="grid grid-cols-7 gap-2">
-                {monthlyData.map((item, index) => (
-                  <div key={index} className="text-center">
-                    <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-                      {item.day}
-                    </div>
-                    <div 
-                      className="w-full bg-gray-200 dark:bg-gray-700 rounded-lg flex flex-col justify-end relative overflow-hidden"
-                      style={{ height: '120px' }}
-                    >
-                      <div 
-                        className="bg-gradient-to-t from-green-500 to-green-400 rounded-lg transition-all duration-700 flex items-end justify-center pb-1"
-                        style={{ height: `${item.percentage}%` }}
-                      >
-                        <span className="text-xs font-bold text-white">
-                          {item.percentage}%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                      {new Date(item.date).getDate()}
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="text-left py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Date</th>
+                    <th className="text-center py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Day</th>
+                    <th className="text-center py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Present</th>
+                    <th className="text-center py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Absent/Leave</th>
+                    <th className="text-center py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Percentage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {chartDaily.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-4 px-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                        No data for selected range
+                      </td>
+                    </tr>
+                  ) : (
+                    chartDaily.map((item, index) => (
+                      <tr key={index} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <td className="py-4 px-4 text-sm text-gray-700 dark:text-gray-300">
+                          {new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </td>
+                        <td className="py-4 px-4 text-center text-sm text-gray-600 dark:text-gray-400">{item.day}</td>
+                        <td className="py-4 px-4 text-center">
+                          <span className="text-sm font-semibold text-green-600 dark:text-green-400">{item.present}</span>
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <span className="text-sm font-semibold text-red-600 dark:text-red-400">{item.absent}</span>
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <span className="text-lg font-bold text-gray-800 dark:text-gray-100">{item.percentage}%</span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -259,46 +322,31 @@ const ClassWiseReport = () => {
                     <th className="text-center py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Total Students</th>
                     <th className="text-center py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Present</th>
                     <th className="text-center py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Absent</th>
-                    <th className="text-center py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Attendance %</th>
-                    <th className="text-center py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {classData.map((item, index) => (
-                    <tr key={index} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-3">
-                          <div 
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: item.color }}
-                          ></div>
-                          <span className="text-sm font-medium text-gray-800 dark:text-gray-100">Class {item.class}</span>
-                        </div>
+                  {reportSummary ? (
+                    <tr className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <td className="py-4 px-4 text-sm font-medium text-gray-800 dark:text-gray-100">
+                        {selectedClass}
                       </td>
-                      <td className="py-4 px-4 text-center text-sm text-gray-700 dark:text-gray-300">{item.totalStudents}</td>
-                      <td className="py-4 px-4 text-center">
-                        <span className="text-sm font-semibold text-green-600 dark:text-green-400">{item.present}</span>
+                      <td className="py-4 px-4 text-center text-sm text-gray-700 dark:text-gray-300">
+                        {reportSummary.totalRecords || 0}
                       </td>
-                      <td className="py-4 px-4 text-center">
-                        <span className="text-sm font-semibold text-red-600 dark:text-red-400">{item.absent}</span>
+                      <td className="py-4 px-4 text-center text-sm text-green-600 dark:text-green-400">
+                        {reportSummary.present || 0}
                       </td>
-                      <td className="py-4 px-4 text-center">
-                        <span className="text-lg font-bold text-gray-800 dark:text-gray-100">{item.avgAttendance}%</span>
-                      </td>
-                      <td className="py-4 px-4 text-center">
-                        <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
-                          item.avgAttendance >= 95 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
-                          item.avgAttendance >= 90 ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' :
-                          item.avgAttendance >= 85 ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
-                          'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                        }`}>
-                          {item.avgAttendance >= 95 ? 'Excellent' :
-                           item.avgAttendance >= 90 ? 'Good' :
-                           item.avgAttendance >= 85 ? 'Average' : 'Poor'}
-                        </span>
+                      <td className="py-4 px-4 text-center text-sm text-red-600 dark:text-red-400">
+                        {(reportSummary.absent || 0) + (reportSummary.leave || 0)}
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="py-4 px-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                        Load a report to view data
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -316,42 +364,50 @@ const ClassWiseReport = () => {
                     <th className="text-left py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Date</th>
                     <th className="text-center py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Day</th>
                     <th className="text-center py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Present</th>
-                    <th className="text-center py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Absent</th>
+                    <th className="text-center py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Absent/Leave</th>
                     <th className="text-center py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Percentage</th>
                     <th className="text-left py-4 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Progress</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {monthlyData.map((item, index) => (
-                    <tr key={index} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                      <td className="py-4 px-4 text-sm text-gray-700 dark:text-gray-300">
-                        {new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </td>
-                      <td className="py-4 px-4 text-center text-sm text-gray-600 dark:text-gray-400">{item.day}</td>
-                      <td className="py-4 px-4 text-center">
-                        <span className="text-sm font-semibold text-green-600 dark:text-green-400">{item.present}</span>
-                      </td>
-                      <td className="py-4 px-4 text-center">
-                        <span className="text-sm font-semibold text-red-600 dark:text-red-400">{item.absent}</span>
-                      </td>
-                      <td className="py-4 px-4 text-center">
-                        <span className="text-lg font-bold text-gray-800 dark:text-gray-100">{item.percentage}%</span>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                            <div
-                              className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full transition-all duration-300"
-                              style={{ width: `${item.percentage}%` }}
-                            ></div>
-                          </div>
-                          <span className="text-xs text-gray-600 dark:text-gray-400 min-w-[40px]">
-                            {item.percentage}%
-                          </span>
-                        </div>
+                  {chartDaily.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-4 px-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                        No data for selected range
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    chartDaily.map((item, index) => (
+                      <tr key={index} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <td className="py-4 px-4 text-sm text-gray-700 dark:text-gray-300">
+                          {new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </td>
+                        <td className="py-4 px-4 text-center text-sm text-gray-600 dark:text-gray-400">{item.day}</td>
+                        <td className="py-4 px-4 text-center">
+                          <span className="text-sm font-semibold text-green-600 dark:text-green-400">{item.present}</span>
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <span className="text-sm font-semibold text-red-600 dark:text-red-400">{item.absent}</span>
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <span className="text-lg font-bold text-gray-800 dark:text-gray-100">{item.percentage}%</span>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                              <div
+                                className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full transition-all duration-300"
+                                style={{ width: `${item.percentage}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-xs text-gray-600 dark:text-gray-400 min-w-[40px]">
+                              {item.percentage}%
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
