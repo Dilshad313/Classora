@@ -103,9 +103,15 @@ const meetingSchema = new mongoose.Schema({
   },
   
   // Metadata
+  creatorRole: {
+    type: String,
+    enum: ['Admin', 'Employee'],
+    required: true,
+    default: 'Admin'
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Admin',
+    refPath: 'creatorRole',
     required: true
   }
 }, {
@@ -162,6 +168,7 @@ meetingSchema.pre('save', function(next) {
 
 // Indexes for better query performance
 meetingSchema.index({ createdBy: 1, status: 1 });
+meetingSchema.index({ creatorRole: 1, createdBy: 1 }); // For filtering by role
 meetingSchema.index({ meetingLink: 1 });
 meetingSchema.index({ scheduledDate: 1 });
 meetingSchema.index({ isScheduled: 1, startTime: 1 });
@@ -170,9 +177,14 @@ meetingSchema.index({ specificStudent: 1 });
 meetingSchema.index({ specificTeacher: 1 });
 
 // Static method to get meeting statistics
-meetingSchema.statics.getStatsByAdmin = async function(adminId) {
+meetingSchema.statics.getStatsByUser = async function(userId, creatorRole) {
   const stats = await this.aggregate([
-    { $match: { createdBy: new mongoose.Types.ObjectId(adminId) } },
+    { 
+      $match: { 
+        createdBy: new mongoose.Types.ObjectId(userId),
+        creatorRole: creatorRole
+      } 
+    },
     {
       $group: {
         _id: null,

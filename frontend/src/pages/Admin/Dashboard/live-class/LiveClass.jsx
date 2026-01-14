@@ -117,14 +117,10 @@ const LiveClass = () => {
   // Helper functions to fetch available data
   const getAvailableClasses = async () => {
     try {
-      // Use getAllClassNames to get only class names
-      const classNames = await classApi.getAllClassNames();
-      // Convert to array format expected by component
-      return classNames.map((name, index) => ({
-        _id: `class-${index}`,
-        name: name,
-        className: name
-      }));
+      // Use getAllClasses to get complete class objects with _id
+      const response = await classApi.getAllClasses();
+      // Return the classes array from the response
+      return response?.data || [];
     } catch (error) {
       console.error('Error fetching classes:', error);
       toast.error('Failed to load classes');

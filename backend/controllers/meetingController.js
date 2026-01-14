@@ -12,12 +12,16 @@ import { StatusCodes } from 'http-status-codes';
 export const getMeetings = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userRole = req.user.role; // Get user role from token
     const { status, meetingType, search, page = 1, limit = 10 } = req.query;
     
-    console.log(`📥 GET /api/meetings for user: ${userId}`);
+    console.log(`📥 GET /api/meetings for user: ${userId}, role: ${userRole}`);
     
-    // Build query
-    const query = { createdBy: userId };
+    // Build query - filter by both user ID and role
+    const query = { 
+      createdBy: userId,
+      creatorRole: userRole === 'admin' ? 'Admin' : 'Employee'
+    };
     
     if (status && status !== 'all') {
       query.status = status;
@@ -43,13 +47,13 @@ export const getMeetings = async (req, res) => {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit))
-        .populate('specificClass', 'name section')
+        .populate('specificClass', 'className section subject')
         .populate('specificStudent', 'studentName registrationNo')
         .populate('specificTeacher', 'employeeName employeeRole'),
       Meeting.countDocuments(query)
     ]);
     
-    console.log(`✅ Found ${meetings.length} meetings`);
+    console.log(`✅ Found ${meetings.length} meetings for ${userRole}`);
     
     res.status(StatusCodes.OK).json({
       success: true,
@@ -76,6 +80,7 @@ export const getMeetings = async (req, res) => {
 export const getMeetingById = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userRole = req.user.role;
     const { id } = req.params;
     
     console.log(`📥 GET /api/meetings/${id}`);
@@ -87,8 +92,12 @@ export const getMeetingById = async (req, res) => {
       });
     }
     
-    const meeting = await Meeting.findOne({ _id: id, createdBy: userId })
-      .populate('specificClass', 'name section')
+    const meeting = await Meeting.findOne({ 
+      _id: id, 
+      createdBy: userId,
+      creatorRole: userRole === 'admin' ? 'Admin' : 'Employee'
+    })
+      .populate('specificClass', 'className section subject')
       .populate('specificStudent', 'studentName registrationNo selectClass')
       .populate('specificTeacher', 'employeeName employeeRole department');
     
@@ -165,6 +174,7 @@ export const createMeeting = async (req, res) => {
       duration: parseInt(duration) || 60,
       message: message?.trim() || '',
       isScheduled: Boolean(isScheduled),
+      creatorRole: req.user.role === 'admin' ? 'Admin' : 'Employee',
       createdBy: userId
     };
     
@@ -260,6 +270,7 @@ export const createMeeting = async (req, res) => {
 export const updateMeeting = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userRole = req.user.role;
     const { id } = req.params;
     
     console.log(`📥 PUT /api/meetings/${id}`);
@@ -271,7 +282,11 @@ export const updateMeeting = async (req, res) => {
       });
     }
     
-    const meeting = await Meeting.findOne({ _id: id, createdBy: userId });
+    const meeting = await Meeting.findOne({ 
+      _id: id, 
+      createdBy: userId,
+      creatorRole: userRole === 'admin' ? 'Admin' : 'Employee'
+    });
     
     if (!meeting) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -399,6 +414,7 @@ export const updateMeeting = async (req, res) => {
 export const deleteMeeting = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userRole = req.user.role;
     const { id } = req.params;
     
     console.log(`📥 DELETE /api/meetings/${id}`);
@@ -410,7 +426,11 @@ export const deleteMeeting = async (req, res) => {
       });
     }
     
-    const meeting = await Meeting.findOneAndDelete({ _id: id, createdBy: userId });
+    const meeting = await Meeting.findOneAndDelete({ 
+      _id: id, 
+      createdBy: userId,
+      creatorRole: userRole === 'admin' ? 'Admin' : 'Employee'
+    });
     
     if (!meeting) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -503,13 +523,21 @@ export const joinMeeting = async (req, res) => {
 export const getMeetingStats = async (req, res) => {
   try {
     const userId = req.user.id;
-    console.log(`📥 GET /api/meetings/stats/summary for user: ${userId}`);
+    const userRole = req.user.role;
+    const creatorRole = userRole === 'admin' ? 'Admin' : 'Employee';
     
-    const stats = await Meeting.getStatsByAdmin(userId);
+    console.log(`📥 GET /api/meetings/stats/summary for user: ${userId}, role: ${userRole}`);
+    
+    const stats = await Meeting.getStatsByUser(userId, creatorRole);
     
     // Get meeting type distribution
     const typeDistribution = await Meeting.aggregate([
-      { $match: { createdBy: new mongoose.Types.ObjectId(userId) } },
+      { 
+        $match: { 
+          createdBy: new mongoose.Types.ObjectId(userId),
+          creatorRole: creatorRole
+        } 
+      },
       {
         $group: {
           _id: '$meetingType',
@@ -521,13 +549,19 @@ export const getMeetingStats = async (req, res) => {
     // Get upcoming meetings
     const upcomingMeetings = await Meeting.countDocuments({
       createdBy: userId,
+      creatorRole: creatorRole,
       isScheduled: true,
       startTime: { $gt: new Date() }
     });
     
     // Get average participants
     const avgParticipants = await Meeting.aggregate([
-      { $match: { createdBy: new mongoose.Types.ObjectId(userId) } },
+      { 
+        $match: { 
+          createdBy: new mongoose.Types.ObjectId(userId),
+          creatorRole: creatorRole
+        } 
+      },
       {
         $group: {
           _id: null,
@@ -588,7 +622,8 @@ export const bulkDeleteMeetings = async (req, res) => {
     // Delete meetings
     const result = await Meeting.deleteMany({
       _id: { $in: validIds },
-      createdBy: userId
+      createdBy: userId,
+      creatorRole: req.user.role === 'admin' ? 'Admin' : 'Employee'
     });
     
     console.log(`✅ Deleted ${result.deletedCount} meetings`);
@@ -635,7 +670,11 @@ export const updateMeetingStatus = async (req, res) => {
     }
     
     const meeting = await Meeting.findOneAndUpdate(
-      { _id: id, createdBy: userId },
+      { 
+        _id: id, 
+        createdBy: userId,
+        creatorRole: req.user.role === 'admin' ? 'Admin' : 'Employee'
+      },
       { status },
       { new: true }
     );
