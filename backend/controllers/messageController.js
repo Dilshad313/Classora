@@ -7,6 +7,62 @@ import Class from '../models/Class.js';
 import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinaryUpload.js';
 import { StatusCodes } from 'http-status-codes';
 
+const getUserModelFromRole = (role = 'admin') => {
+  if (role === 'teacher') return 'Employee';
+  if (role === 'student') return 'Student';
+  return 'Admin';
+};
+
+const getUserDisplayName = (user = {}) => {
+  return (
+    user.employeeName ||
+    user.studentName ||
+    user.fullName ||
+    user.name ||
+    user.emailAddress ||
+    user.email ||
+    'User'
+  );
+};
+
+const ensureParticipantPresence = (chat, userId, userModel) => {
+  if (!chat) return;
+  const alreadyParticipant = chat.participants?.some(
+    participant =>
+      participant.user?.toString() === userId &&
+      participant.model === userModel
+  );
+
+  if (!alreadyParticipant) {
+    chat.participants = chat.participants || [];
+    chat.participants.push({
+      user: userId,
+      model: userModel
+    });
+  }
+};
+
+const addRecipientsAsParticipants = (chat, recipients = []) => {
+  if (!chat || !Array.isArray(recipients)) return;
+  const existing = new Set(
+    (chat.participants || []).map(
+      p => `${p.user?.toString?.() || ''}_${p.model}`
+    )
+  );
+
+  recipients.forEach(recipient => {
+    const key = `${recipient.user?.toString?.() || ''}_${recipient.model}`;
+    if (recipient.user && recipient.model && !existing.has(key)) {
+      chat.participants = chat.participants || [];
+      chat.participants.push({
+        user: recipient.user,
+        model: recipient.model
+      });
+      existing.add(key);
+    }
+  });
+};
+
 /**
  * Get all chats for current user
  * @route GET /api/messages/chats
@@ -14,6 +70,7 @@ import { StatusCodes } from 'http-status-codes';
 export const getAllChats = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userModel = getUserModelFromRole(req.user.role);
     const { search, type, unreadOnly } = req.query;
     
     console.log(`📥 GET /api/messages/chats for user: ${userId}`);
@@ -23,7 +80,7 @@ export const getAllChats = async (req, res) => {
       isActive: true,
       $or: [
         { createdBy: userId },
-        { 'participants.user': userId, 'participants.model': 'Admin' }
+        { 'participants.user': userId, 'participants.model': userModel }
       ]
     };
     
@@ -52,7 +109,7 @@ export const getAllChats = async (req, res) => {
     
     // Calculate unread counts for each chat
     const chatsWithUnread = await Promise.all(chats.map(async (chat) => {
-      const unreadKey = `${userId}_Admin`;
+      const unreadKey = `${userId}_${userModel}`;
       const unreadCount = chat.unreadCounts.get(unreadKey) || 0;
       
       const lastMessageTime = chat.lastMessage ? chat.lastMessage.createdAt : chat.updatedAt;
@@ -103,6 +160,7 @@ export const getAllChats = async (req, res) => {
 export const getChatById = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userModel = getUserModelFromRole(req.user.role);
     const { id } = req.params;
     const { page = 1, limit = 20 } = req.query;
     
@@ -121,7 +179,7 @@ export const getChatById = async (req, res) => {
       isActive: true,
       $or: [
         { createdBy: userId },
-        { 'participants.user': userId, 'participants.model': 'Admin' }
+        { 'participants.user': userId, 'participants.model': userModel }
       ]
     })
     .populate({
@@ -152,10 +210,10 @@ export const getChatById = async (req, res) => {
     ]);
     
     // Mark messages as read for current user
-    await Message.markAsRead(id, userId, 'Admin');
+    await Message.markAsRead(id, userId, userModel);
     
     // Reset unread count for this user
-    const unreadKey = `${userId}_Admin`;
+    const unreadKey = `${userId}_${userModel}`;
     chat.unreadCounts.set(unreadKey, 0);
     await chat.save();
     
@@ -191,7 +249,8 @@ export const getChatById = async (req, res) => {
 export const sendMessage = async (req, res) => {
   try {
     const userId = req.user.id;
-    const adminName = req.user.name || 'Admin';
+    const userModel = getUserModelFromRole(req.user.role);
+    const senderName = getUserDisplayName(req.user) || 'User';
     console.log('📥 POST /api/messages/send');
     
     const {
@@ -204,7 +263,6 @@ export const sendMessage = async (req, res) => {
       chatId
     } = req.body;
     
-    // Validation
     if ((!text || !text.trim()) && (!req.files || !req.files.attachments || req.files.attachments.length === 0)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
@@ -222,7 +280,7 @@ export const sendMessage = async (req, res) => {
         isActive: true,
         $or: [
           { createdBy: userId },
-          { 'participants.user': userId, 'participants.model': 'Admin' }
+          { 'participants.user': userId, 'participants.model': userModel }
         ]
       });
       
@@ -232,10 +290,14 @@ export const sendMessage = async (req, res) => {
           message: 'Chat not found'
         });
       }
+
+      // existing chat: notify all participants except sender
+      recipients = (chat.participants || [])
+        .filter(p => p.user?.toString() !== userId || p.model !== userModel)
+        .map(p => ({ user: p.user, model: p.model }));
     } else {
       // Create new chat or find existing one
       if (type === 'broadcast') {
-        // Broadcast message
         if (!targetType || !['allStudents', 'allEmployees'].includes(targetType)) {
           return res.status(StatusCodes.BAD_REQUEST).json({
             success: false,
@@ -243,9 +305,8 @@ export const sendMessage = async (req, res) => {
           });
         }
         
-        chat = await Chat.createBroadcastChat(targetType, userId);
+        chat = await Chat.createBroadcastChat(targetType, userId, undefined, userModel);
         
-        // Get recipients based on broadcast type
         if (targetType === 'allStudents') {
           const students = await Student.find({ status: 'active' });
           recipients = students.map(student => ({
@@ -261,7 +322,6 @@ export const sendMessage = async (req, res) => {
         }
         
       } else if (type === 'group') {
-        // Group message to class
         if (!className) {
           return res.status(StatusCodes.BAD_REQUEST).json({
             success: false,
@@ -269,10 +329,17 @@ export const sendMessage = async (req, res) => {
           });
         }
         
-        const classData = await Class.findOne({
-          className: { $regex: new RegExp(className, 'i') },
-          createdBy: userId
-        });
+        const classQuery = { className: { $regex: new RegExp(className, 'i') } };
+        if (userModel === 'Employee') {
+          classQuery.$or = [
+            { teacherId: userId },
+            { teacher: req.user.employeeName }
+          ];
+        } else {
+          classQuery.createdBy = userId;
+        }
+        
+        const classData = await Class.findOne(classQuery);
         
         if (!classData) {
           return res.status(StatusCodes.NOT_FOUND).json({
@@ -281,28 +348,13 @@ export const sendMessage = async (req, res) => {
           });
         }
         
-        // Find or create chat for this class
-        chat = await Chat.findOne({
-          type: 'group',
-          class: classData._id,
-          createdBy: userId,
-          isActive: true
-        });
+        chat = await Chat.findOrCreateClassChat(
+          userId,
+          userModel,
+          classData._id,
+          `Grade ${classData.className} - Section ${classData.section || ''}`.trim()
+        );
         
-        if (!chat) {
-          chat = await Chat.create({
-            name: `Grade ${classData.className} - Section ${classData.section}`,
-            type: 'group',
-            class: classData._id,
-            participants: [{
-              user: userId,
-              model: 'Admin'
-            }],
-            createdBy: userId
-          });
-        }
-        
-        // Get students in this class
         const students = await Student.find({
           selectClass: classData.className,
           status: 'active'
@@ -314,7 +366,6 @@ export const sendMessage = async (req, res) => {
         }));
         
       } else if (type === 'individual') {
-        // Individual message
         if (!recipientId || !recipientModel) {
           return res.status(StatusCodes.BAD_REQUEST).json({
             success: false,
@@ -322,7 +373,6 @@ export const sendMessage = async (req, res) => {
           });
         }
         
-        // Find recipient
         let recipientName = '';
         let recipientData = null;
         
@@ -341,30 +391,13 @@ export const sendMessage = async (req, res) => {
           });
         }
         
-        // Find existing individual chat
-        chat = await Chat.findOne({
-          type: 'individual',
-          'individualRecipient.user': recipientId,
-          'individualRecipient.model': recipientModel,
-          createdBy: userId,
-          isActive: true
-        });
-        
-        if (!chat) {
-          chat = await Chat.create({
-            name: recipientName,
-            type: 'individual',
-            individualRecipient: {
-              user: recipientId,
-              model: recipientModel
-            },
-            participants: [
-              { user: userId, model: 'Admin' },
-              { user: recipientId, model: recipientModel }
-            ],
-            createdBy: userId
-          });
-        }
+        chat = await Chat.findOrCreateIndividualChat(
+          userId,
+          userModel,
+          recipientId,
+          recipientModel,
+          recipientName
+        );
         
         recipients = [{
           user: recipientId,
@@ -396,26 +429,26 @@ export const sendMessage = async (req, res) => {
       }
     }
     
-    // Create message
+    // Ensure participants are tracked for unread counts
+    ensureParticipantPresence(chat, userId, userModel);
+    addRecipientsAsParticipants(chat, recipients);
+    
     const message = await Message.create({
       chat: chat._id,
       sender: userId,
-      senderModel: 'Admin',
-      senderName: adminName,
+      senderModel: userModel,
+      senderName,
       text: text.trim(),
       attachments,
       readBy: [{
         user: userId,
-        userModel: 'Admin',
+        userModel,
         readAt: new Date()
       }]
     });
     
-    // Update chat's last message
     chat.lastMessage = message._id;
-    await chat.save();
     
-    // Increment unread counts for all recipients except sender
     recipients.forEach(recipient => {
       const key = `${recipient.user}_${recipient.model}`;
       const currentCount = chat.unreadCounts.get(key) || 0;
@@ -500,6 +533,7 @@ export const deleteChat = async (req, res) => {
 export const getRecipients = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userModel = getUserModelFromRole(req.user.role);
     const { type, search } = req.query;
     
     console.log(`📥 GET /api/messages/recipients`);
@@ -543,13 +577,23 @@ export const getRecipients = async (req, res) => {
     }
     
     if (!type || type === 'specificClass') {
-      const classFilter = search
-        ? {
-            className: { $regex: search, $options: 'i' },
-            createdBy: userId,
-            status: 'active'
-          }
-        : { createdBy: userId, status: 'active' };
+      const classFilter = {
+        status: 'active'
+      };
+
+      if (search) {
+        classFilter.className = { $regex: search, $options: 'i' };
+      }
+
+      // For teachers, fetch assigned classes; for admins, fetch classes they created
+      if (userModel === 'Employee') {
+        classFilter.$or = [
+          { teacherId: userId },
+          { teacher: req.user.employeeName }
+        ];
+      } else {
+        classFilter.createdBy = userId;
+      }
       
       const classes = await Class.find(classFilter)
         .select('className section subject teacher studentCount')
@@ -581,6 +625,7 @@ export const getRecipients = async (req, res) => {
 export const markChatAsRead = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userModel = getUserModelFromRole(req.user.role);
     const { id } = req.params;
     
     console.log(`📥 POST /api/messages/chats/${id}/read`);
@@ -596,7 +641,7 @@ export const markChatAsRead = async (req, res) => {
       _id: id,
       $or: [
         { createdBy: userId },
-        { 'participants.user': userId, 'participants.model': 'Admin' }
+        { 'participants.user': userId, 'participants.model': userModel }
       ]
     });
     
@@ -608,10 +653,10 @@ export const markChatAsRead = async (req, res) => {
     }
     
     // Mark all messages as read
-    await Message.markAsRead(id, userId, 'Admin');
+    await Message.markAsRead(id, userId, userModel);
     
     // Reset unread count for this user
-    const unreadKey = `${userId}_Admin`;
+    const unreadKey = `${userId}_${userModel}`;
     chat.unreadCounts.set(unreadKey, 0);
     await chat.save();
     
@@ -637,6 +682,7 @@ export const markChatAsRead = async (req, res) => {
 export const getMessageStats = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userModel = getUserModelFromRole(req.user.role);
     
     console.log(`📥 GET /api/messages/stats`);
     
@@ -645,7 +691,7 @@ export const getMessageStats = async (req, res) => {
         isActive: true,
         $or: [
           { createdBy: userId },
-          { 'participants.user': userId, 'participants.model': 'Admin' }
+          { 'participants.user': userId, 'participants.model': userModel }
         ]
       }),
       Chat.aggregate([
@@ -654,7 +700,7 @@ export const getMessageStats = async (req, res) => {
             isActive: true,
             $or: [
               { createdBy: new mongoose.Types.ObjectId(userId) },
-              { 'participants.user': new mongoose.Types.ObjectId(userId), 'participants.model': 'Admin' }
+              { 'participants.user': new mongoose.Types.ObjectId(userId), 'participants.model': userModel }
             ]
           }
         },
@@ -662,7 +708,7 @@ export const getMessageStats = async (req, res) => {
           $project: {
             unreadCount: {
               $ifNull: [
-                { $getField: { field: `${userId}_Admin`, input: '$unreadCounts' } },
+                { $getField: { field: `${userId}_${userModel}`, input: '$unreadCounts' } },
                 0
               ]
             }
@@ -677,7 +723,7 @@ export const getMessageStats = async (req, res) => {
       ]),
       Message.countDocuments({
         sender: userId,
-        senderModel: 'Admin',
+        senderModel: userModel,
         createdAt: {
           $gte: new Date(new Date().setHours(0, 0, 0, 0))
         }

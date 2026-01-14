@@ -63,8 +63,13 @@ const chatSchema = new mongoose.Schema({
   // Metadata
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Admin',
+    refPath: 'createdByModel',
     required: true
+  },
+  createdByModel: {
+    type: String,
+    enum: ['Admin', 'Student', 'Employee'],
+    default: 'Admin'
   },
   isActive: {
     type: Boolean,
@@ -143,13 +148,13 @@ chatSchema.pre('save', function(next) {
 });
 
 // Static method to create broadcast chat
-chatSchema.statics.createBroadcastChat = async function(type, adminId, name) {
+chatSchema.statics.createBroadcastChat = async function(type, userId, name, userModel = 'Admin') {
   const chatName = name || (type === 'allStudents' ? 'All Students' : 'All Employees');
   
   const existingChat = await this.findOne({
     type: 'broadcast',
     targetType: type,
-    createdBy: adminId,
+    createdBy: userId,
     isActive: true,
     isArchived: false
   });
@@ -163,20 +168,22 @@ chatSchema.statics.createBroadcastChat = async function(type, adminId, name) {
     type: 'broadcast',
     targetType: type,
     participants: [{
-      user: adminId,
-      model: 'Admin'
+      user: userId,
+      model: userModel
     }],
-    createdBy: adminId
+    createdBy: userId,
+    createdByModel: userModel
   });
 };
 
 // Static method to find or create individual chat
-chatSchema.statics.findOrCreateIndividualChat = async function(adminId, recipientId, recipientModel, recipientName) {
+chatSchema.statics.findOrCreateIndividualChat = async function(userId, userModel, recipientId, recipientModel, recipientName) {
   const existingChat = await this.findOne({
     type: 'individual',
     'individualRecipient.user': recipientId,
     'individualRecipient.model': recipientModel,
-    createdBy: adminId,
+    createdBy: userId,
+    createdByModel: userModel,
     isActive: true,
     isArchived: false
   });
@@ -193,19 +200,21 @@ chatSchema.statics.findOrCreateIndividualChat = async function(adminId, recipien
       model: recipientModel
     },
     participants: [
-      { user: adminId, model: 'Admin' },
+      { user: userId, model: userModel },
       { user: recipientId, model: recipientModel }
     ],
-    createdBy: adminId
+    createdBy: userId,
+    createdByModel: userModel
   });
 };
 
 // Static method to find or create group chat for class
-chatSchema.statics.findOrCreateClassChat = async function(adminId, classId, className) {
+chatSchema.statics.findOrCreateClassChat = async function(userId, userModel, classId, className) {
   const existingChat = await this.findOne({
     type: 'group',
     class: classId,
-    createdBy: adminId,
+    createdBy: userId,
+    createdByModel: userModel,
     isActive: true,
     isArchived: false
   });
@@ -219,10 +228,11 @@ chatSchema.statics.findOrCreateClassChat = async function(adminId, classId, clas
     type: 'group',
     class: classId,
     participants: [{
-      user: adminId,
-      model: 'Admin'
+      user: userId,
+      model: userModel
     }],
-    createdBy: adminId
+    createdBy: userId,
+    createdByModel: userModel
   });
 };
 
