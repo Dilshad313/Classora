@@ -186,7 +186,7 @@ export const createMeeting = async (req, res) => {
         // Get class details for meetingWith
         const classData = await Class.findById(specificClass);
         if (classData) {
-          meetingData.meetingWith = classData.name || classData.className;
+          meetingData.meetingWith = classData.className || classData.name;
         }
       }
     } else if (meetingType === 'specificStudent' && specificStudent) {
@@ -230,11 +230,11 @@ export const createMeeting = async (req, res) => {
     // Create meeting
     const newMeeting = await Meeting.create(meetingData);
     
-    console.log('✅ Meeting created:', newMeeting._id);
+    console.log('✅ Meeting processed:', newMeeting._id);
     
     res.status(StatusCodes.CREATED).json({
       success: true,
-      message: 'Meeting created successfully',
+      message: 'Meeting processed successfully',
       data: newMeeting
     });
   } catch (error) {
@@ -249,16 +249,9 @@ export const createMeeting = async (req, res) => {
       });
     }
     
-    if (error.code === 11000) {
-      return res.status(StatusCodes.CONFLICT).json({
-        success: false,
-        message: 'Meeting link already exists'
-      });
-    }
-    
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: 'Failed to create meeting'
+      message: 'Failed to process meeting'
     });
   }
 };
@@ -330,7 +323,7 @@ export const updateMeeting = async (req, res) => {
         // Get class details for meetingWith
         const classData = await Class.findById(specificClass);
         if (classData) {
-          meeting.meetingWith = classData.name || classData.className;
+          meeting.meetingWith = classData.className || classData.name;
         }
       }
     } else if (meetingType === 'specificStudent' && specificStudent) {

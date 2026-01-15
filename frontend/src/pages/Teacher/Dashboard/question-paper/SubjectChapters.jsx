@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BookOpen, 
   Plus, 
@@ -16,8 +16,12 @@ import {
   List,
   Grid3X3,
   Calendar,
-  Clock
+  Clock,
+  Loader2
 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { classApi } from '../../../../services/classApi';
+import { subjectApi } from '../../../../services/subjectApi';
 
 const SubjectChapters = () => {
   const [chapters, setChapters] = useState([
@@ -67,6 +71,11 @@ const SubjectChapters = () => {
     }
   ]);
 
+  const [classes, setClasses] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [loadingClasses, setLoadingClasses] = useState(false);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
+
   const [filters, setFilters] = useState({
     subject: '',
     class: '',
@@ -89,9 +98,62 @@ const SubjectChapters = () => {
     estimatedHours: 1
   });
 
-  const subjects = ['Mathematics', 'Science', 'English', 'Social Studies', 'Hindi'];
-  const classes = ['Class 10-A', 'Class 10-B', 'Class 9-A', 'Class 9-B'];
   const difficulties = ['Easy', 'Medium', 'Hard'];
+
+  // Fetch classes on component mount
+  useEffect(() => {
+    fetchClasses();
+  }, []);
+
+  // Fetch subjects when class is selected
+  useEffect(() => {
+    if (newChapter.class) {
+      fetchSubjectsForClass(newChapter.class);
+    } else {
+      setSubjects([]);
+      setNewChapter(prev => ({ ...prev, subject: '' }));
+    }
+  }, [newChapter.class]);
+
+  const fetchClasses = async () => {
+    try {
+      setLoadingClasses(true);
+      const response = await classApi.getAllClasses();
+      setClasses(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch classes:', error);
+      toast.error('Failed to load classes');
+      setClasses([]);
+    } finally {
+      setLoadingClasses(false);
+    }
+  };
+
+  const fetchSubjectsForClass = async (classId) => {
+    try {
+      setLoadingSubjects(true);
+      console.log('Fetching subjects for class:', classId);
+      
+      const response = await subjectApi.getSubjectsByClass(classId);
+      console.log('Subjects API response:', response); // Debug log
+      console.log('Subjects data:', response.data?.subjects); // Debug log
+      
+      const subjectsData = response.data?.subjects || [];
+      console.log('Setting subjects:', subjectsData);
+      
+      setSubjects(subjectsData);
+      
+      if (subjectsData.length === 0) {
+        toast.info('No subjects assigned to this class yet');
+      }
+    } catch (error) {
+      console.error('Failed to fetch subjects:', error);
+      toast.error('Failed to load subjects for this class');
+      setSubjects([]);
+    } finally {
+      setLoadingSubjects(false);
+    }
+  };
 
   const filteredChapters = chapters.filter(chapter => {
     const matchesSearch = chapter.chapter.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -213,8 +275,8 @@ const SubjectChapters = () => {
                 className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-green-500 dark:focus:border-green-400 focus:ring-2 focus:ring-green-500/20 dark:focus:ring-green-400/20 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all duration-200"
               >
                 <option value="">All Subjects</option>
-                {subjects.map(subject => (
-                  <option key={subject} value={subject}>{subject}</option>
+                {Array.isArray(subjects) && subjects.map(subject => (
+                  <option key={subject._id} value={subject._id}>{subject.subjectName}</option>
                 ))}
               </select>
               <select
@@ -223,8 +285,8 @@ const SubjectChapters = () => {
                 className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-green-500 dark:focus:border-green-400 focus:ring-2 focus:ring-green-500/20 dark:focus:ring-green-400/20 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all duration-200"
               >
                 <option value="">All Classes</option>
-                {classes.map(cls => (
-                  <option key={cls} value={cls}>{cls}</option>
+                {Array.isArray(classes) && classes.map(cls => (
+                  <option key={cls._id} value={cls._id}>{cls.className}</option>
                 ))}
               </select>
               <select
@@ -450,35 +512,52 @@ const SubjectChapters = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                        Class <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={newChapter.class}
+                        onChange={(e) => {
+                          setNewChapter(prev => ({ ...prev, class: e.target.value, subject: '' }));
+                        }}
+                        className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-green-500 dark:focus:border-green-400 focus:ring-2 focus:ring-green-500/20 dark:focus:ring-green-400/20 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all duration-200"
+                        required
+                        disabled={loadingClasses}
+                      >
+                        <option value="">Select Class</option>
+                        {loadingClasses ? (
+                          <option disabled>Loading classes...</option>
+                        ) : (
+                          Array.isArray(classes) && classes.map(cls => (
+                            <option key={cls._id} value={cls._id}>
+                              {cls.className}
+                            </option>
+                          ))
+                        )}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                         Subject <span className="text-red-500">*</span>
                       </label>
                       <select
                         value={newChapter.subject}
                         onChange={(e) => setNewChapter(prev => ({ ...prev, subject: e.target.value }))}
-                        className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-green-500 dark:focus:border-green-400 focus:ring-2 focus:ring-green-500/20 dark:focus:ring-green-400/20 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all duration-200"
+                        className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-green-500 dark:focus:border-green-400 focus:ring-2 focus:ring-green-500/20 dark:focus:ring-green-400/20 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         required
+                        disabled={!newChapter.class || loadingSubjects}
                       >
-                        <option value="">Select Subject</option>
-                        {subjects.map(subject => (
-                          <option key={subject} value={subject}>{subject}</option>
+                        <option value="">
+                          {loadingSubjects ? 'Loading subjects...' : 'Select Subject'}
+                        </option>
+                        {Array.isArray(subjects) && subjects.map(subject => (
+                          <option key={subject._id} value={subject._id}>
+                            {subject.subjectName}
+                          </option>
                         ))}
                       </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                        Class <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        value={newChapter.class}
-                        onChange={(e) => setNewChapter(prev => ({ ...prev, class: e.target.value }))}
-                        className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-green-500 dark:focus:border-green-400 focus:ring-2 focus:ring-green-500/20 dark:focus:ring-green-400/20 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all duration-200"
-                        required
-                      >
-                        <option value="">Select Class</option>
-                        {classes.map(cls => (
-                          <option key={cls} value={cls}>{cls}</option>
-                        ))}
-                      </select>
+                      {!newChapter.class && (
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Please select a class first</p>
+                      )}
                     </div>
                   </div>
 

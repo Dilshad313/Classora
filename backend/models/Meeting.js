@@ -169,7 +169,7 @@ meetingSchema.pre('save', function(next) {
 // Indexes for better query performance
 meetingSchema.index({ createdBy: 1, status: 1 });
 meetingSchema.index({ creatorRole: 1, createdBy: 1 }); // For filtering by role
-meetingSchema.index({ meetingLink: 1 });
+// Changed to allow same link for different users, but unique constraint removed for meetingLink alone
 meetingSchema.index({ scheduledDate: 1 });
 meetingSchema.index({ isScheduled: 1, startTime: 1 });
 meetingSchema.index({ specificClass: 1 });

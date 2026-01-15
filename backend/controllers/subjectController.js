@@ -325,9 +325,9 @@ export const getClassesWithSubjects = async (req, res) => {
 export const getSubjectsByClass = async (req, res) => {
   try {
     const { classId } = req.params;
-    const userId = req.user.id;
+    const { role, id: userId } = req.user;
     
-    console.log(`📥 GET /api/subjects/by-class/${classId}`);
+    console.log(`📥 GET /api/subjects/by-class/${classId} by ${role}: ${userId}`);
 
     if (!mongoose.Types.ObjectId.isValid(classId)) {
       return res.status(StatusCodes.BAD_REQUEST).json({
@@ -336,12 +336,25 @@ export const getSubjectsByClass = async (req, res) => {
       });
     }
 
-    const assignment = await SubjectAssignment.findOne({ 
-      classId, 
-      createdBy: userId 
-    })
-    .populate('classId', 'className section')
-    .populate('teacher', 'employeeName');
+    // Build query based on user role
+    let query = { classId };
+    
+    if (role === 'admin') {
+      query.createdBy = userId;
+    } else if (role === 'teacher') {
+      query.teacher = userId;
+    } else {
+      return res.status(StatusCodes.FORBIDDEN).json({
+        success: false,
+        message: 'Access denied'
+      });
+    }
+
+    console.log('Query:', query);
+
+    const assignment = await SubjectAssignment.findOne(query)
+      .populate('classId', 'className section')
+      .populate('teacher', 'employeeName');
 
     if (!assignment) {
       return res.status(StatusCodes.OK).json({
@@ -372,7 +385,8 @@ export const getSubjectsByClass = async (req, res) => {
     console.error('❌ Get subjects by class error:', error);
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: 'Failed to fetch subjects'
+      message: 'Failed to retrieve subjects',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

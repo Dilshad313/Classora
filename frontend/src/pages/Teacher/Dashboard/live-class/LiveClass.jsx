@@ -190,17 +190,28 @@ const LiveClass = () => {
         scheduledDate: isScheduled ? scheduledDate : null,
         scheduledTime: isScheduled ? scheduledTime : null,
         specificClass: meetingWith === 'specificClass' ? selectedRecipient : null,
-        specificStudent: meetingWith === 'specificStudent' ? selectedRecipient : null
+        specificStudent: meetingWith === 'specificStudent' ? selectedRecipient : null,
+        specificTeacher: meetingWith === 'specificTeacher' ? selectedRecipient : null
       };
 
       console.log('Creating meeting with data:', meetingData);
 
       // Call API to create meeting
       const newMeeting = await meetingApi.createMeeting(meetingData);
-      
-      // Add to local state
-      setMeetings(prev => [newMeeting, ...prev]);
+
+      // Add to local state - filter out existing if it was an update
+      setMeetings(prev => {
+        const filtered = prev.filter(m => m._id !== newMeeting._id);
+        return [newMeeting, ...filtered];
+      });
+      // Show initial success message
       toast.success('Meeting created successfully!');
+
+      // Automatically join the meeting after creation
+      setTimeout(() => {
+        handleJoinRoom(newMeeting);
+        toast.success('Joining meeting room now...');
+      }, 1000); // Small delay to allow UI to update
 
       // Reset form
       resetForm();
@@ -234,7 +245,18 @@ const LiveClass = () => {
 
   const handleJoinRoom = async (meeting) => {
     try {
-      // For Google Meet links, open directly in new tab
+      // First, register the user as a participant by calling the backend
+      if (meeting._id) {
+        try {
+          const joinResult = await meetingApi.joinMeeting(meeting._id);
+          console.log('Joined meeting successfully:', joinResult);
+        } catch (joinError) {
+          console.warn('Could not register join event:', joinError.message);
+          // Continue anyway, as the join isn't critical for opening the meeting
+        }
+      }
+
+      // Then open the meeting link in a new tab
       if (meeting.meetingLink && meeting.meetingLink.includes('meet.google.com')) {
         window.open(meeting.meetingLink, '_blank', 'noopener,noreferrer');
         toast.success('Opening meeting room...');
@@ -251,6 +273,8 @@ const LiveClass = () => {
     switch(meetingWith) {
       case 'allStudents':
         return 'All Students';
+      case 'allTeachers':
+        return 'All Teachers';
       case 'specificClass':
         const selectedClass = classes.find(c => c._id === selectedRecipient);
         if (selectedClass) {
@@ -643,7 +667,7 @@ const LiveClass = () => {
                     {loading.creating ? (
                       <>
                         <Loader2 className="w-6 h-6 animate-spin" />
-                        <span>Creating...</span>
+                        <span>Creating & Joining...</span>
                       </>
                     ) : (
                       <>
@@ -776,8 +800,9 @@ const LiveClass = () => {
                           >
                             <ExternalLink className="w-4 h-4" />
                             <span>
-                              {meeting.status === 'completed' ? 'Completed' : 
-                               meeting.status === 'cancelled' ? 'Cancelled' : 'Join Room'}
+                              {meeting.status === 'completed' ? 'Completed' :
+                               meeting.status === 'cancelled' ? 'Cancelled' :
+                               meeting.status === 'scheduled' ? 'Join Scheduled' : 'Join Room'}
                             </span>
                           </button>
                         </div>
