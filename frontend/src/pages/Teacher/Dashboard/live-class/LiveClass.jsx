@@ -31,6 +31,7 @@ const LiveClass = () => {
   // State for data
   const [classes, setClasses] = useState([]);
   const [students, setStudents] = useState([]);
+  const [teachers, setTeachers] = useState([]);
   const [meetings, setMeetings] = useState([]);
   
   // State for form
@@ -57,6 +58,7 @@ const LiveClass = () => {
     meetings: false,
     classes: false,
     students: false,
+    teachers: false,
     creating: false
   });
   const [error, setError] = useState('');
@@ -72,27 +74,31 @@ const LiveClass = () => {
         meetings: true,
         classes: true,
         students: true,
+        teachers: true,
         creating: false
       });
       setError('');
 
       // Fetch all data in parallel
-      const [meetingsData, classesData, studentsData] = await Promise.all([
+      const [meetingsData, classesData, studentsData, teachersData] = await Promise.all([
         meetingApi.getMeetings(),
         getAvailableClasses(),
-        getAvailableStudents()
+        getAvailableStudents(),
+        getAvailableTeachers()
       ]);
 
       console.log('📊 Fetched data:', { 
         meetings: meetingsData?.data?.length || 0, 
         classes: classesData?.length || 0, 
-        students: studentsData?.length || 0 
+        students: studentsData?.length || 0,
+        teachers: teachersData?.length || 0
       });
       console.log('📚 Classes:', classesData);
 
       setMeetings(meetingsData?.data || []);
       setClasses(classesData || []);
       setStudents(studentsData || []);
+      setTeachers(teachersData || []);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -110,6 +116,7 @@ const LiveClass = () => {
         meetings: false,
         classes: false,
         students: false,
+        teachers: false,
         creating: false
       });
     }
@@ -139,6 +146,16 @@ const LiveClass = () => {
     }
   };
 
+  const getAvailableTeachers = async () => {
+    try {
+      const response = await meetingApi.getAvailableTeachers();
+      return response || [];
+    } catch (error) {
+      console.error('Error fetching teachers:', error);
+      return [];
+    }
+  };
+
   const handleCreateMeeting = async (e) => {
     e.preventDefault();
 
@@ -164,7 +181,7 @@ const LiveClass = () => {
       return;
     }
 
-    if ((meetingWith === 'specificStudent' || meetingWith === 'specificClass') && !selectedRecipient) {
+    if ((meetingWith === 'specificStudent' || meetingWith === 'specificClass' || meetingWith === 'specificTeacher') && !selectedRecipient) {
       toast.error('Please select a recipient');
       return;
     }
@@ -195,9 +212,11 @@ const LiveClass = () => {
       };
 
       console.log('Creating meeting with data:', meetingData);
+      console.log('User token:', localStorage.getItem('token'));
 
       // Call API to create meeting
       const newMeeting = await meetingApi.createMeeting(meetingData);
+      console.log('Meeting created response:', newMeeting);
 
       // Add to local state - filter out existing if it was an update
       setMeetings(prev => {
@@ -284,6 +303,9 @@ const LiveClass = () => {
       case 'specificStudent':
         const selectedStudent = students.find(s => s._id === selectedRecipient);
         return selectedStudent ? `${selectedStudent.studentName} - ${selectedStudent.registrationNo}` : 'Select Student';
+      case 'specificTeacher':
+        const selectedTeacher = teachers.find(t => t._id === selectedRecipient);
+        return selectedTeacher ? `${selectedTeacher.employeeName} - ${selectedTeacher.employeeRole}` : 'Select Teacher';
       default:
         return '';
     }
@@ -507,7 +529,7 @@ const LiveClass = () => {
                           setSelectedRecipient('');
                         }}
                         disabled={loading.creating}
-                        className={`p-3 rounded-xl border-2 transition-all text-left md:col-span-2 disabled:opacity-50 ${
+                        className={`p-3 rounded-xl border-2 transition-all text-left disabled:opacity-50 ${
                           meetingWith === 'specificClass'
                             ? 'border-purple-500 dark:border-purple-400 bg-purple-50 dark:bg-gray-800'
                             : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 hover:bg-gray-50 dark:hover:bg-gray-700'
@@ -524,16 +546,42 @@ const LiveClass = () => {
                           <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Specific Class</span>
                         </div>
                       </button>
+
+                      {/* Specific Teacher */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMeetingWith('specificTeacher');
+                          setSelectedRecipient('');
+                        }}
+                        disabled={loading.creating}
+                        className={`p-3 rounded-xl border-2 transition-all text-left disabled:opacity-50 ${
+                          meetingWith === 'specificTeacher'
+                            ? 'border-indigo-500 dark:border-indigo-400 bg-indigo-50 dark:bg-gray-800'
+                            : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                            meetingWith === 'specificTeacher'
+                              ? 'bg-gradient-to-br from-indigo-500 to-purple-600'
+                              : 'bg-gray-100 dark:bg-gray-700'
+                          }`}>
+                            <GraduationCap className={`w-5 h-5 ${meetingWith === 'specificTeacher' ? 'text-white' : 'text-gray-400 dark:text-gray-500'}`} />
+                          </div>
+                          <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Specific Teacher</span>
+                        </div>
+                      </button>
                     </div>
                   </div>
 
                   {/* Specific Selection Dropdown */}
-                  {(meetingWith === 'specificClass' || meetingWith === 'specificStudent') && (
+                  {(meetingWith === 'specificClass' || meetingWith === 'specificStudent' || meetingWith === 'specificTeacher') && (
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                        Select {meetingWith === 'specificClass' ? 'Class' : 'Student'}
+                        Select {meetingWith === 'specificClass' ? 'Class' : meetingWith === 'specificStudent' ? 'Student' : 'Teacher'}
                       </label>
-                      {loading.classes || loading.students ? (
+                      {loading.classes || loading.students || loading.teachers ? (
                         <div className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl flex items-center justify-center bg-white dark:bg-gray-700">
                           <Loader2 className="w-5 h-5 animate-spin text-gray-400 dark:text-gray-500" />
                           <span className="ml-2 text-gray-500 dark:text-gray-400">Loading...</span>
@@ -555,6 +603,11 @@ const LiveClass = () => {
                           {meetingWith === 'specificStudent' && students.map(student => (
                             <option key={student._id} value={student._id}>
                               {student.studentName} - {student.registrationNo} (Grade {student.selectClass})
+                            </option>
+                          ))}
+                          {meetingWith === 'specificTeacher' && teachers.map(teacher => (
+                            <option key={teacher._id} value={teacher._id}>
+                              {teacher.employeeName} - {teacher.employeeRole} ({teacher.department || 'No Department'})
                             </option>
                           ))}
                         </select>

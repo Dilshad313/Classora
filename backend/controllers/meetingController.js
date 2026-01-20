@@ -17,11 +17,42 @@ export const getMeetings = async (req, res) => {
     
     console.log(`📥 GET /api/meetings for user: ${userId}, role: ${userRole}`);
     
-    // Build query - filter by both user ID and role
-    const query = { 
-      createdBy: userId,
-      creatorRole: userRole === 'admin' ? 'Admin' : 'Employee'
-    };
+    // Build query - different logic for admin vs teacher
+    let query;
+    
+    if (userRole === 'admin') {
+      // Admin can see all meetings in the system
+      query = {};
+    } else if (userRole === 'teacher') {
+      // Teacher can see:
+      // 1. Meetings they created
+      // 2. Meetings assigned to them (specificTeacher)
+      // 3. Meetings for their classes (specificClass)
+      query = {
+        $or: [
+          { createdBy: userId }, // Meetings they created
+          { specificTeacher: userId }, // Meetings assigned to them
+          // Meetings for classes they teach (need to get their classes first)
+        ]
+      };
+      
+      // Get classes taught by this teacher and add them to the query
+      try {
+        const teacherClasses = await Class.find({ teacherId: userId }).select('_id');
+        const classIds = teacherClasses.map(cls => cls._id);
+        
+        if (classIds.length > 0) {
+          query.$or.push({ specificClass: { $in: classIds } });
+        }
+      } catch (error) {
+        console.warn('Could not fetch teacher classes:', error.message);
+      }
+    } else {
+      // For other roles, only show their own meetings
+      query = { 
+        createdBy: userId
+      };
+    }
     
     if (status && status !== 'all') {
       query.status = status;
@@ -94,8 +125,7 @@ export const getMeetingById = async (req, res) => {
     
     const meeting = await Meeting.findOne({ 
       _id: id, 
-      createdBy: userId,
-      creatorRole: userRole === 'admin' ? 'Admin' : 'Employee'
+      createdBy: userId
     })
       .populate('specificClass', 'className section subject')
       .populate('specificStudent', 'studentName registrationNo selectClass')
@@ -131,8 +161,10 @@ export const getMeetingById = async (req, res) => {
 export const createMeeting = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userRole = req.user.role;
     console.log('📥 POST /api/meetings');
     console.log('Request body:', JSON.stringify(req.body, null, 2));
+    console.log('User info:', { userId, userRole, user: req.user });
     
     const {
       title,
@@ -170,11 +202,11 @@ export const createMeeting = async (req, res) => {
       title: title.trim(),
       meetingLink: meetingLink.trim(),
       meetingType,
-      meetingWith: meetingWith.trim(),
+      meetingWith: meetingWith?.trim() || '',
       duration: parseInt(duration) || 60,
       message: message?.trim() || '',
       isScheduled: Boolean(isScheduled),
-      creatorRole: req.user.role === 'admin' ? 'Admin' : 'Employee',
+      creatorRole: userRole === 'admin' ? 'Admin' : userRole === 'teacher' ? 'Employee' : 'Admin',
       createdBy: userId
     };
     
@@ -228,30 +260,96 @@ export const createMeeting = async (req, res) => {
     }
     
     // Create meeting
-    const newMeeting = await Meeting.create(meetingData);
+    console.log('📝 Creating meeting with data:', JSON.stringify(meetingData, null, 2));
     
-    console.log('✅ Meeting processed:', newMeeting._id);
-    
-    res.status(StatusCodes.CREATED).json({
-      success: true,
-      message: 'Meeting processed successfully',
-      data: newMeeting
-    });
-  } catch (error) {
-    console.error('❌ Create meeting error:', error);
-    
-    if (error.name === 'ValidationError') {
-      const errors = Object.values(error.errors).map(err => err.message);
-      return res.status(StatusCodes.BAD_REQUEST).json({
+    try {
+      const newMeeting = await Meeting.create(meetingData);
+      
+      console.log('✅ Meeting created successfully:', newMeeting._id);
+      
+      res.status(StatusCodes.CREATED).json({
+        success: true,
+        message: 'Meeting created successfully',
+        data: newMeeting
+      });
+    } catch (createError) {
+      console.error('❌ Database creation error:', createError);
+      console.error('Error details:', {
+        name: createError.name,
+        message: createError.message,
+        stack: createError.stack
+      });
+      
+      // Handle specific database errors
+      if (createError.name === 'ValidationError') {
+        const errors = Object.values(createError.errors).map(err => err.message);
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          success: false,
+          message: errors[0] || 'Validation failed',
+          errors
+        });
+      }
+      
+      // Handle duplicate key error specifically
+      if (createError.name === 'MongoServerError' && createError.code === 11000) {
+        console.log('Duplicate key error detected:', createError.keyValue);
+        
+        // If it's a meetingId duplicate, try again with a new ID
+        if (createError.keyValue && createError.keyValue.meetingId === null) {
+          console.log('Attempting to fix null meetingId issue...');
+          
+          // Add a generated meetingId and retry
+          meetingData.meetingId = 'MTG-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+          
+          try {
+            const retryMeeting = await Meeting.create(meetingData);
+            console.log('✅ Meeting created on retry:', retryMeeting._id);
+            
+            return res.status(StatusCodes.CREATED).json({
+              success: true,
+              message: 'Meeting created successfully',
+              data: retryMeeting
+            });
+          } catch (retryError) {
+            console.error('❌ Retry failed:', retryError);
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+              success: false,
+              message: 'Failed to create meeting after retry: ' + retryError.message
+            });
+          }
+        }
+        
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          success: false,
+          message: 'Duplicate entry detected: ' + JSON.stringify(createError.keyValue)
+        });
+      }
+      
+      if (createError.name === 'MongoServerError' || createError.name === 'MongoError') {
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+          success: false,
+          message: 'Database error: ' + createError.message
+        });
+      }
+      
+      // Generic error
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: errors[0] || 'Validation failed',
-        errors
+        message: 'Failed to create meeting: ' + createError.message
       });
     }
+  } catch (error) {
+    console.error('❌ Create meeting error:', error);
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      body: req.body
+    });
     
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: 'Failed to process meeting'
+      message: 'Failed to process meeting: ' + error.message
     });
   }
 };
@@ -277,8 +375,7 @@ export const updateMeeting = async (req, res) => {
     
     const meeting = await Meeting.findOne({ 
       _id: id, 
-      createdBy: userId,
-      creatorRole: userRole === 'admin' ? 'Admin' : 'Employee'
+      createdBy: userId
     });
     
     if (!meeting) {
@@ -421,8 +518,7 @@ export const deleteMeeting = async (req, res) => {
     
     const meeting = await Meeting.findOneAndDelete({ 
       _id: id, 
-      createdBy: userId,
-      creatorRole: userRole === 'admin' ? 'Admin' : 'Employee'
+      createdBy: userId
     });
     
     if (!meeting) {
@@ -517,7 +613,7 @@ export const getMeetingStats = async (req, res) => {
   try {
     const userId = req.user.id;
     const userRole = req.user.role;
-    const creatorRole = userRole === 'admin' ? 'Admin' : 'Employee';
+    const creatorRole = userRole === 'admin' ? 'Admin' : userRole === 'teacher' ? 'Employee' : 'Admin';
     
     console.log(`📥 GET /api/meetings/stats/summary for user: ${userId}, role: ${userRole}`);
     
@@ -615,8 +711,7 @@ export const bulkDeleteMeetings = async (req, res) => {
     // Delete meetings
     const result = await Meeting.deleteMany({
       _id: { $in: validIds },
-      createdBy: userId,
-      creatorRole: req.user.role === 'admin' ? 'Admin' : 'Employee'
+      createdBy: userId
     });
     
     console.log(`✅ Deleted ${result.deletedCount} meetings`);
@@ -665,8 +760,7 @@ export const updateMeetingStatus = async (req, res) => {
     const meeting = await Meeting.findOneAndUpdate(
       { 
         _id: id, 
-        createdBy: userId,
-        creatorRole: req.user.role === 'admin' ? 'Admin' : 'Employee'
+        createdBy: userId
       },
       { status },
       { new: true }
@@ -702,10 +796,25 @@ export const updateMeetingStatus = async (req, res) => {
 export const getAvailableClasses = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userRole = req.user.role;
     
-    const classes = await Class.find({ createdBy: userId })
-      .select('name section studentCount')
-      .sort({ name: 1, section: 1 });
+    let classes;
+    
+    if (userRole === 'admin') {
+      // Admin can see all classes
+      classes = await Class.find({})
+        .select('name className section subject studentCount')
+        .sort({ name: 1, section: 1 });
+    } else if (userRole === 'teacher') {
+      // Teacher can see all classes (for creating meetings) or only their assigned classes
+      // For now, let teachers see all classes so they can create meetings for any class
+      classes = await Class.find({})
+        .select('name className section subject studentCount teacherId')
+        .sort({ name: 1, section: 1 });
+    } else {
+      // Other roles see no classes
+      classes = [];
+    }
     
     res.status(StatusCodes.OK).json({
       success: true,

@@ -205,9 +205,11 @@ const LiveClass = () => {
       };
 
       console.log('Creating meeting with data:', meetingData);
+      console.log('User token:', localStorage.getItem('token'));
 
       // Call API to create meeting
       const newMeeting = await meetingApi.createMeeting(meetingData);
+      console.log('Meeting created response:', newMeeting);
 
       // Add to local state - filter out existing if it was an update
       setMeetings(prev => {

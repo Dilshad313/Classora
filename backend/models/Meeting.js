@@ -2,6 +2,14 @@ import mongoose from 'mongoose';
 
 const meetingSchema = new mongoose.Schema({
   // Basic Information
+  meetingId: {
+    type: String,
+    unique: false,  // Remove unique constraint to avoid duplicate null issues
+    required: false, // Make it optional
+    default: function() {
+      return 'MTG-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    }
+  },
   title: {
     type: String,
     required: [true, 'Meeting title is required'],
@@ -105,13 +113,12 @@ const meetingSchema = new mongoose.Schema({
   // Metadata
   creatorRole: {
     type: String,
-    enum: ['Admin', 'Employee'],
+    enum: ['Admin', 'Employee', 'admin', 'teacher'],
     required: true,
     default: 'Admin'
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
-    refPath: 'creatorRole',
     required: true
   }
 }, {
@@ -167,6 +174,7 @@ meetingSchema.pre('save', function(next) {
 });
 
 // Indexes for better query performance
+meetingSchema.index({ meetingId: 1 }); // Remove unique constraint
 meetingSchema.index({ createdBy: 1, status: 1 });
 meetingSchema.index({ creatorRole: 1, createdBy: 1 }); // For filtering by role
 // Changed to allow same link for different users, but unique constraint removed for meetingLink alone
