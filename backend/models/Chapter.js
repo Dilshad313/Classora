@@ -14,9 +14,14 @@ const chapterSchema = new mongoose.Schema({
     trim: true
   },
   topics: {
-    type: Number,
-    required: [true, 'Number of topics is required'],
-    min: [1, 'Topics must be at least 1']
+    type: [String],
+    required: [true, 'At least one topic is required'],
+    validate: {
+      validator: function(topics) {
+        return topics && topics.length > 0 && topics.every(topic => topic.trim().length > 0);
+      },
+      message: 'At least one non-empty topic is required'
+    }
   },
   description: {
     type: String,

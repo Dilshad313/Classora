@@ -287,6 +287,10 @@ export const getAllChapters = async (filters = {}) => {
  */
 export const createChapter = async (chapterData) => {
   try {
+    console.log('🔍 API: Creating chapter with data:', chapterData);
+    console.log('🔍 API: Token exists:', !!getAuthToken());
+    console.log('🔍 API: API URL:', `${API_BASE_URL}/question-paper/chapters`);
+    
     const response = await fetch(`${API_BASE_URL}/question-paper/chapters`, {
       method: 'POST',
       headers: {
@@ -296,15 +300,20 @@ export const createChapter = async (chapterData) => {
       body: JSON.stringify(chapterData),
     });
 
+    console.log('🔍 API: Response status:', response.status);
+    console.log('🔍 API: Response ok:', response.ok);
+
     if (!response.ok) {
       const errorData = await response.json();
+      console.log('🔍 API: Error response:', errorData);
       throw new Error(errorData.message || 'Failed to create chapter');
     }
 
     const result = await response.json();
+    console.log('🔍 API: Success response:', result);
     return result.data;
   } catch (error) {
-    console.error('Error creating chapter:', error);
+    console.error('❌ API Error creating chapter:', error);
     throw error;
   }
 };

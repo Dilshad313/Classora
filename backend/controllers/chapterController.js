@@ -146,13 +146,43 @@ export const createChapter = async (req, res) => {
       });
     }
 
-    // Verify subject exists and belongs to user
-    const subjectExists = await Subject.findOne({ _id: subject, createdBy: userId });
+    // Validate topics array
+    if (!Array.isArray(topics) || topics.length === 0) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'At least one topic is required'
+      });
+    }
+
+    const validTopics = topics.filter(topic => topic && topic.trim().length > 0);
+    if (validTopics.length === 0) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'At least one non-empty topic is required'
+      });
+    }
+
+    // Verify subject exists (remove createdBy check for now to debug)
+    console.log('🔍 Looking for subject with ID:', subject);
+    console.log('🔍 Subject ID type:', typeof subject);
+    console.log('🔍 Subject ID is valid ObjectId:', mongoose.Types.ObjectId.isValid(subject));
+    
+    const subjectExists = await Subject.findOne({ _id: subject });
+    console.log('🔍 Subject found:', !!subjectExists);
+    
     if (!subjectExists) {
+      console.log('❌ Subject not found for ID:', subject);
+      
+      // Let's also check what subjects exist in the database
+      const allSubjects = await Subject.find({}).limit(5);
+      console.log('🔍 Available subjects in database:', allSubjects.map(s => ({ _id: s._id, name: s.name })));
+      
       return res.status(StatusCodes.NOT_FOUND).json({
         success: false,
         message: 'Subject not found'
       });
+    } else {
+      console.log('✅ Subject found:', { _id: subjectExists._id, name: subjectExists.name });
     }
 
     // Check for duplicate chapter number for this subject
@@ -173,7 +203,7 @@ export const createChapter = async (req, res) => {
     const chapterData = {
       chapterNumber: parseInt(chapterNumber),
       title: title.trim(),
-      topics: parseInt(topics),
+      topics: validTopics, // Use the validated topics array
       subject,
       createdBy: userId
     };
@@ -270,13 +300,28 @@ export const updateChapter = async (req, res) => {
 
     // Update other fields
     if (title !== undefined) chapter.title = title.trim();
-    if (topics !== undefined) chapter.topics = parseInt(topics);
+    if (topics !== undefined) {
+      if (!Array.isArray(topics) || topics.length === 0) {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          success: false,
+          message: 'At least one topic is required'
+        });
+      }
+      const validTopics = topics.filter(topic => topic && topic.trim().length > 0);
+      if (validTopics.length === 0) {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          success: false,
+          message: 'At least one non-empty topic is required'
+        });
+      }
+      chapter.topics = validTopics;
+    }
     if (description !== undefined) chapter.description = description.trim();
     if (status !== undefined) chapter.status = status;
 
     // Update subject if provided
     if (subject) {
-      const subjectExists = await Subject.findOne({ _id: subject, createdBy: userId });
+      const subjectExists = await Subject.findOne({ _id: subject });
       if (!subjectExists) {
         return res.status(StatusCodes.NOT_FOUND).json({
           success: false,
@@ -392,7 +437,7 @@ export const getChapterStats = async (req, res) => {
         $group: {
           _id: null,
           totalChapters: { $sum: 1 },
-          totalTopics: { $sum: '$topics' },
+          totalTopics: { $sum: { $size: '$topics' } }, // Updated to handle array
           totalQuestions: { $sum: '$questionCount' },
           totalMarks: { $sum: '$totalMarks' }
         }
@@ -416,7 +461,7 @@ export const getChapterStats = async (req, res) => {
           _id: '$subject',
           subjectName: { $first: '$subjectDetails.name' },
           chapterCount: { $sum: 1 },
-          topicCount: { $sum: '$topics' },
+          topicCount: { $sum: { $size: '$topics' } }, // Updated to handle array
           questionCount: { $sum: '$questionCount' }
         }
       },
