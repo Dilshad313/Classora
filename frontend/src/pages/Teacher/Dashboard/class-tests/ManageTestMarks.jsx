@@ -14,6 +14,9 @@ import {
   Plus,
   Search
 } from 'lucide-react';
+import { classTestApi } from '../../../../services/classTestApi';
+import { classApi } from '../../../../services/classApi';
+import toast from 'react-hot-toast';
 
 const ManageTestMarks = () => {
   const [selectedClass, setSelectedClass] = useState('');
@@ -24,53 +27,63 @@ const ManageTestMarks = () => {
   const [showMarksTable, setShowMarksTable] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingStudentId, setEditingStudentId] = useState(null);
-
-  const classes = [
-    { id: '10-A', name: 'Class 10-A', students: 35 },
-    { id: '10-B', name: 'Class 10-B', students: 32 },
-    { id: '9-A', name: 'Class 9-A', students: 30 },
-    { id: '9-B', name: 'Class 9-B', students: 28 },
-    { id: '8-A', name: 'Class 8-A', students: 33 }
-  ];
-
-  const subjects = [
-    { id: 'mathematics', name: 'Mathematics' },
-    { id: 'english', name: 'English' },
-    { id: 'science', name: 'Science' },
-    { id: 'social-studies', name: 'Social Studies' },
-    { id: 'hindi', name: 'Hindi' },
-    { id: 'computer', name: 'Computer Science' }
-  ];
-
-  const students = [
-    { id: 1, name: 'Arun Kumar', rollNo: '001', class: '10-A' },
-    { id: 2, name: 'Priya Sharma', rollNo: '002', class: '10-A' },
-    { id: 3, name: 'Rahul Singh', rollNo: '003', class: '10-A' },
-    { id: 4, name: 'Sneha Patel', rollNo: '004', class: '10-A' },
-    { id: 5, name: 'Vikram Gupta', rollNo: '005', class: '10-A' },
-    { id: 6, name: 'Anita Verma', rollNo: '006', class: '10-A' },
-    { id: 7, name: 'Rohit Mehta', rollNo: '007', class: '10-B' },
-    { id: 8, name: 'Kavya Reddy', rollNo: '008', class: '10-B' },
-    { id: 9, name: 'Arjun Nair', rollNo: '009', class: '9-A' },
-    { id: 10, name: 'Meera Joshi', rollNo: '010', class: '9-A' }
-  ];
+  const [classes, setClasses] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingDropdowns, setLoadingDropdowns] = useState(true);
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
-    if (selectedClass && selectedSubject && selectedTestDate && totalMarks) {
-      const classStudents = students.filter(student => student.class === selectedClass);
-      const initialMarks = classStudents.map(student => ({
-        id: student.id,
-        studentName: student.name,
-        rollNo: student.rollNo,
-        obtainedMarks: '',
-        isSaved: false
-      }));
-      setTestMarks(initialMarks);
-      setShowMarksTable(true);
-    } else {
-      setShowMarksTable(false);
-    }
-  }, [selectedClass, selectedSubject, selectedTestDate, totalMarks]);
+    const fetchDropdownData = async () => {
+      try {
+        setLoadingDropdowns(true);
+        const [classesData, dropdownData] = await Promise.all([
+          classApi.getAllClasses(),
+          classTestApi.getDropdownData()
+        ]);
+        if (classesData.success) {
+          setClasses(classesData.data);
+        }
+        if (dropdownData.success) {
+          setSubjects(dropdownData.data.subjects);
+        }
+      } catch (error) {
+        console.error('Error fetching dropdown data:', error);
+        toast.error('Failed to load necessary data');
+      } finally {
+        setLoadingDropdowns(false);
+      }
+    };
+
+    fetchDropdownData();
+  }, []);
+
+  useEffect(() => {
+    const fetchStudents = async () => {
+      if (selectedClass) {
+        try {
+          setLoading(true);
+          const { data } = await classTestApi.getDropdownData(selectedClass);
+          setStudents(data.students);
+          const initialMarks = data.students.map(student => ({
+            id: student._id,
+            studentName: student.studentName,
+            rollNo: student.rollNumber,
+            obtainedMarks: '',
+            isSaved: false
+          }));
+          setTestMarks(initialMarks);
+        } catch (error) {
+          console.error('Error fetching students:', error);
+          toast.error('Failed to fetch students');
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    fetchStudents();
+  }, [selectedClass]);
 
   const handleMarksChange = (studentId, marks) => {
     setTestMarks(prev => prev.map(student => 

@@ -1,67 +1,55 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BookOpenCheck, Plus, Calendar, Users, FileText, Edit, Trash2, Search, User, GraduationCap, Clock, BookOpen } from 'lucide-react';
+import { homeworkApi } from '../../../../services/homeworkApi';
+import { classApi } from '../../../../services/classApi';
+import toast from 'react-hot-toast';
 
 const Homework = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchFilters, setSearchFilters] = useState({
-    homeworkDate: '',
+    date: '',
     class: '',
-    teacher: ''
   });
   const [searchResults, setSearchResults] = useState([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [formData, setFormData] = useState({
-    homeworkDate: '',
-    setBy: '',
+    date: '',
     class: '',
     subject: '',
-    homeworkDetails: ''
+    details: ''
   });
+  const [classes, setClasses] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingDropdowns, setLoadingDropdowns] = useState(true);
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-  // Sample homework data with teacher information
-  const allHomeworkData = [
-    {
-      id: 1,
-      teacherName: 'Dr. Sarah Johnson',
-      class: '10-A',
-      assignedDate: '2024-01-10',
-      subject: 'Mathematics',
-      homeworkDetails: 'Complete Chapter 5 - Quadratic Equations. Solve exercises 5.1 to 5.5 from the textbook.',
-      status: 'active'
-    },
-    {
-      id: 2,
-      teacherName: 'Mr. David Smith',
-      class: '9-B',
-      assignedDate: '2024-01-08',
-      subject: 'English',
-      homeworkDetails: 'Write a 500-word essay on Climate Change and its impact on our environment.',
-      status: 'active'
-    },
-    {
-      id: 3,
-      teacherName: 'Prof. Emily Davis',
-      class: '10-C',
-      assignedDate: '2024-01-12',
-      subject: 'Chemistry',
-      homeworkDetails: 'Prepare a detailed lab report on Chemical Reactions experiment conducted in class.',
-      status: 'active'
-    },
-    {
-      id: 4,
-      teacherName: 'Dr. Sarah Johnson',
-      class: '10-A',
-      assignedDate: '2024-01-15',
-      subject: 'Physics',
-      homeworkDetails: 'Study Newton\'s Laws of Motion and solve numerical problems from Chapter 3.',
-      status: 'active'
-    }
-  ];
+  useEffect(() => {
+    const fetchDropdownData = async () => {
+      try {
+        setLoadingDropdowns(true);
+        const classData = await classApi.getAllClasses();
+        if (classData.success) {
+          setClasses(classData.data);
+        }
+        // Assuming teacher is logged in, no need to fetch teachers
+        // Fetch subjects based on the logged in teacher's classes
+        // For simplicity, we will fetch all subjects for now
+        // A more complex implementation would fetch subjects based on the selected class
+        const dropdownData = await homeworkApi.getDropdownData();
+        if (dropdownData.success) {
+          setSubjects(dropdownData.data.subjects);
+        }
+      } catch (error) {
+        console.error('Error fetching dropdown data:', error);
+        toast.error('Failed to load necessary data');
+      } finally {
+        setLoadingDropdowns(false);
+      }
+    };
 
-  // Available options for dropdowns
-  const classes = ['10-A', '10-B', '10-C', '9-A', '9-B', '9-C', '8-A', '8-B'];
-  const teachers = ['Dr. Sarah Johnson', 'Mr. David Smith', 'Prof. Emily Davis', 'Ms. Lisa Wilson'];
-  const subjects = ['Mathematics', 'English', 'Chemistry', 'Physics', 'Biology', 'History', 'Geography'];
+    fetchDropdownData();
+  }, []);
 
   // Handle search filter changes
   const handleFilterChange = (field, value) => {

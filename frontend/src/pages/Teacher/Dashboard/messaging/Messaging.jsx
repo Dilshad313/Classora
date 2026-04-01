@@ -44,47 +44,24 @@ const Messaging = () => {
     { id: 4, name: 'Mrs. Sneha Gupta', child: 'Sneha Patel', class: 'Class 9-B' }
   ]);
 
-  const [chats] = useState([
-    { 
-      id: 1, 
-      name: 'Class 10-A', 
-      lastMessage: 'Homework submitted successfully', 
-      time: '2 min ago', 
-      unread: 3, 
-      type: 'group',
-      messages: [
-        { id: 1, sender: 'Arun P', text: 'Sir, I have submitted my homework', time: '10:30 AM', isSent: false },
-        { id: 2, sender: 'You', text: 'Great! Well done everyone', time: '10:32 AM', isSent: true },
-        { id: 3, sender: 'Priya Sharma', text: 'Homework submitted successfully', time: '10:35 AM', isSent: false }
-      ]
-    },
-    { 
-      id: 2, 
-      name: 'Mr. Arun Kumar (Parent)', 
-      lastMessage: 'Thank you for the update', 
-      time: '15 min ago', 
-      unread: 0, 
-      type: 'individual',
-      messages: [
-        { id: 1, sender: 'Mr. Arun Kumar', text: 'How is my child performing?', time: '9:00 AM', isSent: false },
-        { id: 2, sender: 'You', text: 'Arun is doing excellent work!', time: '9:02 AM', isSent: true },
-        { id: 3, sender: 'Mr. Arun Kumar', text: 'Thank you for the update', time: '9:05 AM', isSent: false }
-      ]
-    },
-    { 
-      id: 3, 
-      name: 'All My Students', 
-      lastMessage: 'Test announcement', 
-      time: '1 hour ago', 
-      unread: 0, 
-      type: 'broadcast',
-      messages: [
-        { id: 1, sender: 'You', text: 'Test announcement: Math test on Friday', time: '8:00 AM', isSent: true }
-      ]
-    }
-  ]);
-
+  const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
+  const [loadingChats, setLoadingChats] = useState(true);
+
+  useEffect(() => {
+    const fetchChats = async () => {
+      try {
+        setLoadingChats(true);
+        const { data } = await messageApi.getChats();
+        setChats(data);
+      } catch (error) {
+        toast.error('Failed to fetch chats');
+      } finally {
+        setLoadingChats(false);
+      }
+    };
+    fetchChats();
+  }, []);
   const [showNewChat, setShowNewChat] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [messageType, setMessageType] = useState('');

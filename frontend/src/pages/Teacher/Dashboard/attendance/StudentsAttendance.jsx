@@ -1,73 +1,60 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, Users, Check, X, Save, Search, UserCheck } from 'lucide-react';
+import { attendanceApi } from '../../../../services/attendanceApi';
+import { classApi } from '../../../../services/classApi';
+import toast from 'react-hot-toast';
 
 const StudentsAttendance = () => {
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [showAttendanceSection, setShowAttendanceSection] = useState(false);
+  const [students, setStudents] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingClasses, setLoadingClasses] = useState(true);
+  const [attendance, setAttendance] = useState({});
 
-  // Sample student data with photos and guardians
-  const students = [
-    { 
-      id: 1, 
-      name: 'John Doe', 
-      rollNo: '001', 
-      class: '10-A', 
-      guardian: 'Robert Doe',
-      photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-      status: 'present' 
-    },
-    { 
-      id: 2, 
-      name: 'Jane Smith', 
-      rollNo: '002', 
-      class: '10-A', 
-      guardian: 'Mary Smith',
-      photo: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-      status: 'present' 
-    },
-    { 
-      id: 3, 
-      name: 'Mike Johnson', 
-      rollNo: '003', 
-      class: '10-A', 
-      guardian: 'David Johnson',
-      photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-      status: 'absent' 
-    },
-    { 
-      id: 4, 
-      name: 'Sarah Williams', 
-      rollNo: '004', 
-      class: '10-A', 
-      guardian: 'Lisa Williams',
-      photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-      status: 'present' 
-    },
-    { 
-      id: 5, 
-      name: 'Tom Brown', 
-      rollNo: '005', 
-      class: '10-A', 
-      guardian: 'James Brown',
-      photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
-      status: 'present' 
-    },
-  ];
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        setLoadingClasses(true);
+        const data = await classApi.getAllClasses();
+        if (data.success) {
+          setClasses(data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching classes:', error);
+        toast.error('Failed to load classes');
+      } finally {
+        setLoadingClasses(false);
+      }
+    };
 
-  const [attendance, setAttendance] = useState(
-    students.reduce((acc, student) => {
-      acc[student.id] = student.status;
-      return acc;
-    }, {})
-  );
+    fetchClasses();
+  }, []);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedClass || !selectedDate) {
-      alert('Please select both class and date');
+      toast.error('Please select both class and date');
       return;
     }
-    setShowAttendanceSection(true);
+    try {
+      setLoading(true);
+      const [classData, section] = selectedClass.split('-');
+      const data = await attendanceApi.getStudentsForAttendance(classData, section, selectedDate);
+      setStudents(data);
+      const initialAttendance = data.reduce((acc, student) => {
+        acc[student._id] = student.attendanceStatus || 'present';
+        return acc;
+      }, {});
+      setAttendance(initialAttendance);
+      setShowAttendanceSection(true);
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      toast.error('Failed to fetch students');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const toggleAttendance = (studentId) => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Video,
@@ -16,46 +16,38 @@ import {
   AlertCircle,
   User
 } from 'lucide-react';
+import { meetingApi } from '../../../../services/meetingApi';
+import { classApi } from '../../../../services/classApi';
+import toast from 'react-hot-toast';
 
 const LiveClass = () => {
   const navigate = useNavigate();
+  const [classes, setClasses] = useState([]);
+  const [meetings, setMeetings] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Teacher-specific data
-  const [classes] = useState([
-    { id: 1, name: 'Class 10-A', students: 35 },
-    { id: 2, name: 'Class 10-B', students: 32 },
-    { id: 3, name: 'Class 9-A', students: 30 },
-    { id: 4, name: 'Class 9-B', students: 28 }
-  ]);
-
-  const [students] = useState([
-    { id: 1, name: 'Arun P', class: 'Class 10-A' },
-    { id: 2, name: 'Priya Sharma', class: 'Class 10-B' },
-    { id: 3, name: 'Rahul Kumar', class: 'Class 9-A' },
-    { id: 4, name: 'Sneha Patel', class: 'Class 9-B' }
-  ]);
-
-  const [parents] = useState([
-    { id: 1, name: 'Mr. Arun Kumar', child: 'Arun P', class: 'Class 10-A' },
-    { id: 2, name: 'Mrs. Priya Sharma', child: 'Priya Sharma', class: 'Class 10-B' },
-    { id: 3, name: 'Mr. Rahul Singh', child: 'Rahul Kumar', class: 'Class 9-A' },
-    { id: 4, name: 'Mrs. Sneha Gupta', child: 'Sneha Patel', class: 'Class 9-B' }
-  ]);
-
-  const [meetings, setMeetings] = useState([
-    {
-      id: 1,
-      title: 'Mathematics Class - Trigonometry',
-      meetingId: 'MTH-2024-001',
-      meetingWith: 'Class 10-A',
-      duration: 60,
-      message: 'Today we will cover Chapter 5: Trigonometry basics and applications',
-      scheduled: true,
-      scheduledDate: '2024-11-15',
-      scheduledTime: '10:00',
-      createdAt: new Date().toISOString()
-    }
-  ]);
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        setLoading(true);
+        const [meetingsData, classesData] = await Promise.all([
+          meetingApi.getMeetings(),
+          classApi.getAllClasses()
+        ]);
+        if (meetingsData.success) {
+          setMeetings(meetingsData.data);
+        }
+        if (classesData.success) {
+          setClasses(classesData.data);
+        }
+      } catch (error) {
+        toast.error('Failed to fetch initial data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInitialData();
+  }, []);
 
   const [meetingTitle, setMeetingTitle] = useState('');
   const [meetingId, setMeetingId] = useState('');

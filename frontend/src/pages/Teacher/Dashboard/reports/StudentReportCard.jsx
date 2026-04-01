@@ -1,77 +1,46 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   IdCard, Download, Search, User, Calendar, MapPin, Phone, Mail, 
   GraduationCap, Award, TrendingUp, BookOpen, Clock, Star,
   FileText, Printer, Eye, Filter, ChevronDown, Users, CheckCircle, XCircle
 } from 'lucide-react';
+import { reportApi } from '../../../../services/reportApi';
+import { classApi } from '../../../../services/classApi';
+import toast from 'react-hot-toast';
 
 const StudentReportCard = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
-  const [selectedTerm, setSelectedTerm] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
+  const [students, setStudents] = useState([]);
+  const [classes, setClasses] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingStudents, setLoadingStudents] = useState(true);
   const [notification, setNotification] = useState(null);
-  const [savedRemarks, setSavedRemarks] = useState({});
 
-  // Mock student data
-  const students = [
-    {
-      id: 1,
-      name: 'John Doe',
-      rollNo: '001',
-      class: '10-A',
-      section: 'A',
-      admissionNo: 'ADM2023001',
-      dateOfBirth: '2008-05-15',
-      gender: 'Male',
-      address: '123 Main Street, City, State - 12345',
-      phone: '+1 234-567-8900',
-      email: 'john.doe@email.com',
-      parentName: 'Robert Doe',
-      parentPhone: '+1 234-567-8901',
-      bloodGroup: 'O+',
-      subjects: [
-        { name: 'Mathematics', marks: 85, maxMarks: 100, grade: 'A', teacher: 'Mr. Smith' },
-        { name: 'English', marks: 90, maxMarks: 100, grade: 'A+', teacher: 'Ms. Johnson' },
-        { name: 'Science', marks: 88, maxMarks: 100, grade: 'A', teacher: 'Dr. Brown' },
-        { name: 'Social Studies', marks: 82, maxMarks: 100, grade: 'A', teacher: 'Mrs. Davis' },
-        { name: 'Computer Science', marks: 95, maxMarks: 100, grade: 'A+', teacher: 'Mr. Wilson' }
-      ],
-      attendance: { present: 180, total: 200, percentage: 90 },
-      behavior: { rating: 4.5, remarks: 'Excellent behavior and discipline' },
-      extracurricular: ['Basketball Team', 'Science Club', 'Debate Society'],
-      achievements: ['First Prize in Science Fair', 'Best Student Award']
-    },
-    {
-      id: 2,
-      name: 'Jane Smith',
-      rollNo: '002',
-      class: '10-A',
-      section: 'A',
-      admissionNo: 'ADM2023002',
-      dateOfBirth: '2008-08-22',
-      gender: 'Female',
-      address: '456 Oak Avenue, City, State - 12346',
-      phone: '+1 234-567-8902',
-      email: 'jane.smith@email.com',
-      parentName: 'Sarah Smith',
-      parentPhone: '+1 234-567-8903',
-      bloodGroup: 'A+',
-      subjects: [
-        { name: 'Mathematics', marks: 92, maxMarks: 100, grade: 'A+', teacher: 'Mr. Smith' },
-        { name: 'English', marks: 88, maxMarks: 100, grade: 'A', teacher: 'Ms. Johnson' },
-        { name: 'Science', marks: 94, maxMarks: 100, grade: 'A+', teacher: 'Dr. Brown' },
-        { name: 'Social Studies', marks: 86, maxMarks: 100, grade: 'A', teacher: 'Mrs. Davis' },
-        { name: 'Computer Science', marks: 90, maxMarks: 100, grade: 'A+', teacher: 'Mr. Wilson' }
-      ],
-      attendance: { present: 195, total: 200, percentage: 97.5 },
-      behavior: { rating: 5, remarks: 'Outstanding student with leadership qualities' },
-      extracurricular: ['Student Council President', 'Math Olympiad', 'Art Club'],
-      achievements: ['School Topper', 'Leadership Award', 'Art Competition Winner']
-    }
-  ];
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        setLoadingStudents(true);
+        const [studentsData, classesData] = await Promise.all([
+          reportApi.getStudentInfo(),
+          classApi.getAllClasses()
+        ]);
+        if (studentsData.success) {
+          setStudents(studentsData.data);
+        }
+        if (classesData.success) {
+          setClasses(classesData.data);
+        }
+      } catch (error) {
+        console.error('Error fetching initial data:', error);
+        toast.error('Failed to load necessary data');
+      } finally {
+        setLoadingStudents(false);
+      }
+    };
+    fetchInitialData();
+  }, []);
 
   const filteredStudents = students.filter(student => {
     const matchesSearch = searchTerm === '' || 
