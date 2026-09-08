@@ -118,7 +118,8 @@ salarySchema.statics.generateReceiptNo = function() {
 salarySchema.index({ employee: 1, month: 1 }, { unique: true });
 salarySchema.index({ month: 1 });
 salarySchema.index({ status: 1 });
-salarySchema.index({ receiptNo: 1 });
+// Note: no separate index({ receiptNo: 1 }) here — the field already
+// declares `unique: true` above, which creates the index automatically.
 
 // Add pagination plugin
 salarySchema.plugin(mongoosePaginate);

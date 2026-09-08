@@ -95,7 +95,8 @@ feePaymentSchema.index({ registrationNo: 1 });
 feePaymentSchema.index({ feeMonth: 1 });
 feePaymentSchema.index({ class: 1 });
 feePaymentSchema.index({ depositType: 1 });
-feePaymentSchema.index({ receiptNo: 1 });
+// Note: no separate index({ receiptNo: 1 }) here — the field already
+// declares `unique: true` above, which creates the index automatically.
 
 const FeePayment = mongoose.model('FeePayment', feePaymentSchema);
 

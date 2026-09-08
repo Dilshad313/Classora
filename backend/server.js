@@ -48,6 +48,13 @@ import notificationScheduler from './utils/notificationScheduler.js';
 
 const app = express();
 
+// Vercel places exactly one reverse proxy (its edge network) in front of this
+// app, which sets X-Forwarded-For. Trusting exactly 1 hop (not `true`, which
+// would trust an unbounded chain and let a client spoof its own IP via extra
+// X-Forwarded-For entries) lets Express/req.ip and express-rate-limit resolve
+// the real client IP correctly and safely.
+app.set('trust proxy', 1);
+
 app.use(requestLogger);
 
 app.use(helmet({
@@ -61,6 +68,11 @@ const limiter = rateLimit({
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  validate: {
+    // We rely on X-Forwarded-For (correctly trusted via `trust proxy` above),
+    // not the RFC 7239 `Forwarded` header, so skip that specific warning.
+    forwardedHeader: false,
+  },
 });
 app.use(limiter);
 
@@ -121,6 +133,13 @@ app.use("/api/certificates", certificateRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/user-notifications", userNotificationRoutes);
+
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Classora API is running",
+  });
+});
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({

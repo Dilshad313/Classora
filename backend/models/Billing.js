@@ -91,7 +91,8 @@ billingSchema.virtual('daysUntilExpiry').get(function() {
 });
 
 // Index for better query performance
-billingSchema.index({ userId: 1 });
+// Note: no separate index({ userId: 1 }) here — the field already declares
+// `unique: true` above, which creates the index automatically.
 billingSchema.index({ 'subscription.status': 1 });
 billingSchema.index({ 'subscription.expiryDate': 1 });
 

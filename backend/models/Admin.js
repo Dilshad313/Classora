@@ -73,7 +73,7 @@ adminSchema.methods.comparePassword = async function(candidatePassword) {
   }
 };
 
-// Index for better query performance
-adminSchema.index({ email: 1 });
+// Note: no separate index() call for email — the field already declares
+// `unique: true` above, which creates the index automatically.
 
 export default mongoose.model("Admin", adminSchema);

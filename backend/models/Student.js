@@ -319,8 +319,9 @@ studentSchema.statics.generateAdmissionNumber = async function() {
 };
 
 // Index for better query performance
+// Note: no separate index({ admissionNumber: 1 }) here — the field
+// declares `sparse: true` above, which already creates that index.
 studentSchema.index({ registrationNo: 1 });
-studentSchema.index({ admissionNumber: 1 });
 studentSchema.index({ selectClass: 1, section: 1 });
 studentSchema.index({ status: 1 });
 studentSchema.index({ studentName: 'text', registrationNo: 'text' });

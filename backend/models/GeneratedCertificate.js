@@ -129,7 +129,8 @@ generatedCertificateSchema.virtual('template', {
 });
 
 // Indexes
-generatedCertificateSchema.index({ certificateNumber: 1 }, { unique: true, sparse: true });
+// Note: no separate index({ certificateNumber: 1 }) here — the field already
+// declares `unique: true, sparse: true` above, which creates the index automatically.
 generatedCertificateSchema.index({ recipientType: 1, recipientId: 1 });
 generatedCertificateSchema.index({ createdBy: 1, status: 1 });
 generatedCertificateSchema.index({ issueDate: -1 });

@@ -118,7 +118,8 @@ transactionSchema.virtual('credit').get(function() {
 transactionSchema.index({ date: -1 });
 transactionSchema.index({ type: 1 });
 transactionSchema.index({ category: 1 });
-transactionSchema.index({ reference: 1 });
+// Note: no separate index({ reference: 1 }) here — the field already
+// declares `unique: true` above, which creates the index automatically.
 transactionSchema.index({ description: 'text' });
 
 // Static method to get account summary
