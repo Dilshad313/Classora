@@ -5,6 +5,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { UserPlus, Mail, Lock, User, Shield, Eye, EyeOff, Loader2, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+// Same pattern as every other service in src/services: use the deployed
+// backend URL in production, fall back to localhost for local dev.
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000/api';
+
 const Register = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -99,7 +103,7 @@ const Register = () => {
     const loadingToast = toast.loading('Creating your account...');
 
     try {
-      const response = await fetch('http://localhost:5000/api/admin/register', {
+      const response = await fetch(`${API_BASE_URL}/admin/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

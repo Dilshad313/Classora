@@ -76,14 +76,26 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// FRONTEND_URL may hold a single origin or a comma-separated list (e.g. the
+// production domain plus a Vercel preview URL). The production frontend
+// domain is also included directly so CORS still works even if that env var
+// isn't set on the backend's Vercel project.
+const configuredOrigins = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "https://classora-delta.vercel.app",
+  ...configuredOrigins
+];
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:5173",
-      "http://localhost:5174",
-      process.env.FRONTEND_URL
-    ].filter(Boolean),
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],

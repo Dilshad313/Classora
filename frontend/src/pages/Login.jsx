@@ -5,6 +5,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { LogIn, Mail, Lock, Eye, EyeOff, GraduationCap, Crown, Shield, Loader2, Briefcase } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+// Same pattern as every other service in src/services: use the deployed
+// backend URL in production, fall back to localhost for local dev.
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000/api';
+
 const Login = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -78,9 +82,9 @@ const Login = () => {
 
     try {
       const endpoints = {
-        admin: 'http://localhost:5000/api/admin/login',
-        student: 'http://localhost:5000/api/admin/login/student',
-        employee: 'http://localhost:5000/api/admin/login/employee'
+        admin: `${API_BASE_URL}/admin/login`,
+        student: `${API_BASE_URL}/admin/login/student`,
+        employee: `${API_BASE_URL}/admin/login/employee`
       };
 
       const response = await fetch(endpoints[formData.role], {
