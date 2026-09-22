@@ -580,7 +580,7 @@ const GenerateFeesInvoice = () => {
               </div>
 
               {/* Fee Details Table */}
-              <div className="mb-8">
+              <div className="mb-8 overflow-x-auto">
                 <table className="w-full border-2 border-gray-300 dark:border-gray-700">
                   <thead>
                     <tr className="bg-purple-600 text-white">

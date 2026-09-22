@@ -539,7 +539,7 @@ const ResultCard = () => {
 
                       {/* Performance Overview */}
                       <div className="p-6">
-                        <div className="grid grid-cols-3 gap-4 mb-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                           <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl">
                             <div className="text-2xl font-bold text-green-600 dark:text-green-400">{student.totalMarks}</div>
                             <div className="text-sm text-gray-600 dark:text-gray-400">Total Marks</div>

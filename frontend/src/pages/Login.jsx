@@ -158,7 +158,7 @@ const Login = () => {
       <div className="absolute top-20 -left-40 w-96 h-96 bg-purple-900 rounded-full filter blur-3xl opacity-30 animate-pulse"></div>
       <div className="absolute bottom-20 -right-40 w-96 h-96 bg-pink-900 rounded-full filter blur-3xl opacity-30 animate-pulse"></div>
 
-      <div className="relative z-10 min-h-screen flex items-center justify-center p-6">
+      <div className="relative z-10 min-h-screen flex items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-12 items-center">
 
           {/* Left hero section */}
@@ -184,13 +184,13 @@ const Login = () => {
           </div>
 
           {/* Right login form */}
-          <div className="backdrop-blur-2xl bg-white/5 rounded-3xl border border-white/10 shadow-2xl p-10 lg:p-12">
-            <div className="text-center mb-10">
-              <h2 className="text-4xl font-bold mb-2">Welcome Back</h2>
+          <div className="backdrop-blur-2xl bg-white/5 rounded-3xl border border-white/10 shadow-2xl p-6 sm:p-10 lg:p-12">
+            <div className="text-center mb-6 sm:mb-10">
+              <h2 className="text-3xl sm:text-4xl font-bold mb-2">Welcome Back</h2>
               <p className="text-gray-400">Sign in to your dashboard</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
               {/* Role selector */}
               <div>
                 <label className="text-sm font-medium text-gray-300 mb-4 block">Select Role</label>
@@ -220,7 +220,7 @@ const Login = () => {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Email Address</label>
                 <div className="relative">
-                  <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                  <Mail className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                   <input
                     type="email"
                     name="email"
@@ -228,7 +228,7 @@ const Login = () => {
                     onChange={handleChange}
                     placeholder={placeholders[formData.role]}
                     disabled={isLoading}
-                    className={`w-full pl-14 pr-5 py-5 rounded-2xl bg-white/5 border backdrop-blur-xl text-white placeholder-gray-500 transition-all
+                    className={`w-full pl-12 sm:pl-14 pr-5 py-4 sm:py-5 rounded-2xl bg-white/5 border backdrop-blur-xl text-white placeholder-gray-500 transition-all
                       ${errors.email ? 'border-red-500/80 focus:border-red-500' : 'border-white/10 focus:border-purple-500'}
                       disabled:opacity-50 disabled:cursor-not-allowed
                     `}
@@ -246,7 +246,7 @@ const Login = () => {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Password</label>
                 <div className="relative">
-                  <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                  <Lock className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     name="password"
@@ -254,7 +254,7 @@ const Login = () => {
                     onChange={handleChange}
                     placeholder="Enter your password"
                     disabled={isLoading}
-                    className={`w-full pl-14 pr-16 py-5 rounded-2xl bg-white/5 border backdrop-blur-xl text-white placeholder-gray-500 transition-all
+                    className={`w-full pl-12 sm:pl-14 pr-14 sm:pr-16 py-4 sm:py-5 rounded-2xl bg-white/5 border backdrop-blur-xl text-white placeholder-gray-500 transition-all
                       ${errors.password ? 'border-red-500/80 focus:border-red-500' : 'border-white/10 focus:border-purple-500'}
                       disabled:opacity-50 disabled:cursor-not-allowed
                     `}
@@ -263,7 +263,7 @@ const Login = () => {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     disabled={isLoading}
-                    className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors disabled:cursor-not-allowed"
+                    className="absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors disabled:cursor-not-allowed"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -289,7 +289,7 @@ const Login = () => {
                     onChange={handleChange}
                     placeholder="Enter admin security key"
                     disabled={isLoading}
-                    className={`w-full pl-5 pr-5 py-5 rounded-2xl bg-white/5 border backdrop-blur-xl text-white placeholder-gray-500 transition-all
+                    className={`w-full px-4 sm:px-5 py-4 sm:py-5 rounded-2xl bg-white/5 border backdrop-blur-xl text-white placeholder-gray-500 transition-all
                       ${errors.adminKey ? 'border-red-500/80 focus:border-red-500' : 'border-white/10 focus:border-purple-500'}
                       disabled:opacity-50 disabled:cursor-not-allowed
                     `}
@@ -307,7 +307,7 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl font-semibold text-lg 
+                className="w-full py-4 sm:py-5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl font-semibold text-base sm:text-lg
                   hover:from-purple-700 hover:to-pink-700 hover:scale-[1.02] 
                   flex items-center justify-center gap-3 transition-all
                   disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
@@ -330,7 +330,7 @@ const Login = () => {
                 <p className="text-gray-400 mb-4">Don't have an account?</p>
                 <Link
                   to="/register"
-                  className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-emerald-600 to-cyan-600 
+                  className="inline-flex items-center gap-3 px-6 sm:px-8 py-3.5 sm:py-4 bg-gradient-to-r from-emerald-600 to-cyan-600
                     rounded-2xl font-medium hover:from-emerald-700 hover:to-cyan-700 hover:scale-105 transition-all"
                 >
                   <Shield className="w-5 h-5" />

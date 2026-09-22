@@ -274,7 +274,7 @@ const TeacherLayout = () => {
                 </button>
 
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2">
+                  <div className="fixed sm:absolute inset-x-4 sm:inset-x-auto top-16 sm:top-full sm:right-0 mt-0 sm:mt-2 w-auto sm:w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2">
                     <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                       <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{user.name}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
@@ -307,8 +307,8 @@ const TeacherLayout = () => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-16 h-[calc(100vh-4rem)] bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 z-20 overflow-y-auto ${
-          sidebarOpen ? 'w-80' : 'lg:w-20'
+        className={`fixed left-0 top-16 h-[calc(100vh-4rem)] bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 z-20 overflow-y-auto w-[85vw] max-w-xs ${
+          sidebarOpen ? 'lg:w-80' : 'lg:w-20'
         } ${mobileMenuOpen ? 'block' : 'hidden lg:block'}`}
       >
         <nav className="p-4 space-y-2">

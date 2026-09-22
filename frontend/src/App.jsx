@@ -193,6 +193,11 @@ function App() {
     <>
      <Toaster
         position="top-right"
+        containerStyle={{
+          top: 16,
+          left: 16,
+          right: 16,
+        }}
         toastOptions={{
           duration: 4000,
           style: {
@@ -200,6 +205,8 @@ function App() {
             color: '#fff',
             borderRadius: '12px',
             padding: '16px',
+            maxWidth: 'calc(100vw - 32px)',
+            wordBreak: 'break-word',
           },
           success: {
             iconTheme: {

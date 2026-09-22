@@ -437,6 +437,7 @@ const AllEmployees = () => {
           /* List View */
           !loading && (
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
                   <tr>
@@ -509,6 +510,7 @@ const AllEmployees = () => {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           )
         )}

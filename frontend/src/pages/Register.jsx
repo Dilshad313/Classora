@@ -164,7 +164,7 @@ const Register = () => {
       <div className="absolute top-20 -left-40 w-96 h-96 bg-cyan-900 rounded-full filter blur-3xl opacity-30 animate-pulse"></div>
       <div className="absolute bottom-20 -right-40 w-96 h-96 bg-emerald-900 rounded-full filter blur-3xl opacity-30 animate-pulse"></div>
 
-      <div className="relative z-10 min-h-screen flex items-center justify-center p-6">
+      <div className="relative z-10 min-h-screen flex items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-12 items-center">
 
           {/* Left section */}
@@ -213,9 +213,9 @@ const Register = () => {
           </div>
 
           {/* Right form section */}
-          <div className="backdrop-blur-2xl bg-white/5 rounded-3xl border border-white/10 shadow-2xl p-10 lg:p-12">
-            <div className="text-center mb-10">
-              <h2 className="text-4xl font-bold mb-2">Create Admin Account</h2>
+          <div className="backdrop-blur-2xl bg-white/5 rounded-3xl border border-white/10 shadow-2xl p-6 sm:p-10 lg:p-12">
+            <div className="text-center mb-6 sm:mb-10">
+              <h2 className="text-3xl sm:text-4xl font-bold mb-2">Create Admin Account</h2>
               <p className="text-gray-400">Invitation required</p>
             </div>
 
@@ -224,7 +224,7 @@ const Register = () => {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Full Name</label>
                 <div className="relative">
-                  <User className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                  <User className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                   <input
                     type="text"
                     name="fullName"
@@ -232,7 +232,7 @@ const Register = () => {
                     onChange={handleChange}
                     placeholder="John Doe"
                     disabled={isLoading}
-                    className={`w-full pl-14 pr-5 py-5 bg-white/5 border rounded-2xl text-white placeholder-gray-500 transition-all
+                    className={`w-full pl-12 sm:pl-14 pr-5 py-4 sm:py-5 bg-white/5 border rounded-2xl text-white placeholder-gray-500 transition-all
                       ${errors.fullName ? 'border-red-500/80' : 'border-white/10 focus:border-cyan-500'}
                       disabled:opacity-50 disabled:cursor-not-allowed
                     `}
@@ -245,7 +245,7 @@ const Register = () => {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Email Address</label>
                 <div className="relative">
-                  <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                  <Mail className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                   <input
                     type="email"
                     name="email"
@@ -253,7 +253,7 @@ const Register = () => {
                     onChange={handleChange}
                     placeholder="admin@example.com"
                     disabled={isLoading}
-                    className={`w-full pl-14 pr-5 py-5 bg-white/5 border rounded-2xl text-white placeholder-gray-500 transition-all
+                    className={`w-full pl-12 sm:pl-14 pr-5 py-4 sm:py-5 bg-white/5 border rounded-2xl text-white placeholder-gray-500 transition-all
                       ${errors.email ? 'border-red-500/80' : 'border-white/10 focus:border-cyan-500'}
                       disabled:opacity-50 disabled:cursor-not-allowed
                     `}
@@ -268,7 +268,7 @@ const Register = () => {
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300">Password</label>
                   <div className="relative">
-                    <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                    <Lock className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       name="password"
@@ -276,7 +276,7 @@ const Register = () => {
                       onChange={handleChange}
                       placeholder="••••••••"
                       disabled={isLoading}
-                      className={`w-full pl-14 pr-14 py-5 bg-white/5 border rounded-2xl text-white placeholder-gray-500 transition-all
+                      className={`w-full pl-12 sm:pl-14 pr-12 sm:pr-14 py-4 sm:py-5 bg-white/5 border rounded-2xl text-white placeholder-gray-500 transition-all
                         ${errors.password ? 'border-red-500/80' : 'border-white/10 focus:border-cyan-500'}
                         disabled:opacity-50 disabled:cursor-not-allowed
                       `}
@@ -285,7 +285,7 @@ const Register = () => {
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       disabled={isLoading}
-                      className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
+                      className="absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
                     >
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
@@ -316,7 +316,7 @@ const Register = () => {
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300">Confirm Password</label>
                   <div className="relative">
-                    <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                    <Lock className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                     <input
                       type={showConfirmPassword ? 'text' : 'password'}
                       name="confirmPassword"
@@ -324,7 +324,7 @@ const Register = () => {
                       onChange={handleChange}
                       placeholder="••••••••"
                       disabled={isLoading}
-                      className={`w-full pl-14 pr-14 py-5 bg-white/5 border rounded-2xl text-white placeholder-gray-500 transition-all
+                      className={`w-full pl-12 sm:pl-14 pr-12 sm:pr-14 py-4 sm:py-5 bg-white/5 border rounded-2xl text-white placeholder-gray-500 transition-all
                         ${errors.confirmPassword ? 'border-red-500/80' : 'border-white/10 focus:border-cyan-500'}
                         disabled:opacity-50 disabled:cursor-not-allowed
                       `}
@@ -333,7 +333,7 @@ const Register = () => {
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       disabled={isLoading}
-                      className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
+                      className="absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
                     >
                       {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
@@ -354,7 +354,7 @@ const Register = () => {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Admin Key</label>
                 <div className="relative">
-                  <Shield className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                  <Shield className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                   <input
                     type="password"
                     name="adminKey"
@@ -362,7 +362,7 @@ const Register = () => {
                     onChange={handleChange}
                     placeholder="Enter admin key"
                     disabled={isLoading}
-                    className={`w-full pl-14 pr-5 py-5 bg-white/5 border rounded-2xl text-white placeholder-gray-500 transition-all
+                    className={`w-full pl-12 sm:pl-14 pr-5 py-4 sm:py-5 bg-white/5 border rounded-2xl text-white placeholder-gray-500 transition-all
                       ${errors.adminKey ? 'border-red-500/80' : 'border-white/10 focus:border-cyan-500'}
                       disabled:opacity-50 disabled:cursor-not-allowed
                     `}
@@ -378,7 +378,7 @@ const Register = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-5 bg-gradient-to-r from-emerald-600 to-cyan-600 rounded-2xl font-semibold text-lg 
+                className="w-full py-4 sm:py-5 bg-gradient-to-r from-emerald-600 to-cyan-600 rounded-2xl font-semibold text-base sm:text-lg
                   hover:from-emerald-700 hover:to-cyan-700 hover:scale-[1.02] 
                   flex items-center justify-center gap-3 transition-all
                   disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"

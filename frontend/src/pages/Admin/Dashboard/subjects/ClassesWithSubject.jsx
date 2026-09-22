@@ -450,7 +450,7 @@ const ClassesWithSubject = () => {
                   {/* Class Content */}
                   <div className="p-5">
                     {/* Stats */}
-                    <div className="grid grid-cols-3 gap-4 mb-5">
+                    <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-5">
                       <div className="text-center">
                         <div className="flex items-center justify-center space-x-2 mb-2">
                           <BookOpen className="w-5 h-5 text-blue-500 dark:text-blue-400" />

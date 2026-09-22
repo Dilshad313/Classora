@@ -403,6 +403,7 @@ export const MarksGrading = () => {
                 {/* Grading Table */}
                 <div className="mb-8">
                   <div className="overflow-hidden border-2 border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm">
+                    <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                       <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
                         <tr>
@@ -480,6 +481,7 @@ export const MarksGrading = () => {
                         ))}
                       </tbody>
                     </table>
+                    </div>
                   </div>
 
                   {/* Error Display */}
@@ -725,6 +727,7 @@ export const MarksGrading = () => {
 
                   {gradingSystem.filter(grade => grade.status === 'FAIL').length > 0 ? (
                     <div className="overflow-hidden border-2 border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm">
+                      <div className="overflow-x-auto">
                       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
                           <tr>
@@ -769,6 +772,7 @@ export const MarksGrading = () => {
                           ))}
                         </tbody>
                       </table>
+                      </div>
                     </div>
                   ) : (
                     <div className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 rounded-2xl p-8 border border-red-200 dark:border-red-800 text-center">
@@ -799,6 +803,7 @@ export const MarksGrading = () => {
 
                   {gradingSystem.filter(grade => grade.status === 'PASS').length > 0 ? (
                     <div className="overflow-hidden border-2 border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm">
+                      <div className="overflow-x-auto">
                       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
                           <tr>
@@ -843,6 +848,7 @@ export const MarksGrading = () => {
                           ))}
                         </tbody>
                       </table>
+                      </div>
                     </div>
                   ) : (
                     <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-2xl p-8 border border-emerald-200 dark:border-emerald-800 text-center">

@@ -379,6 +379,7 @@ const SalaryPaidSlip = () => {
               <Hash className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
               Salary Breakdown
             </h3>
+            <div className="overflow-x-auto">
             <table className="w-full border-2 border-gray-300 dark:border-gray-600">
               <thead>
                 <tr className="bg-emerald-600 dark:bg-emerald-500 text-white">
@@ -427,6 +428,7 @@ const SalaryPaidSlip = () => {
                 </tr>
               </tfoot>
             </table>
+            </div>
           </div>
 
           {/* Remarks */}
